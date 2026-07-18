@@ -1,0 +1,90 @@
+{% extends "pilotage/base_pilotage.html" %}
+{% block titre %}Générer le contrat — {{ employe.nom_prenoms }}{% endblock %}
+{% block contenu %}
+<div class="p-6 max-w-2xl">
+    <a href="{% url 'paie_actions_rh_salarie' employeur.id employe.id %}" class="text-sm text-gray-500 hover:text-[#C81E6E]">← Retour aux actions RH</a>
+    <div class="mt-4 mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Générer le contrat de travail</h1>
+        <p class="text-gray-500 mt-1">{{ employe.nom_prenoms }} — {{ employe.get_contrat_display }} — {{ employeur.raison_sociale }}</p>
+    </div>
+
+    <form method="post" class="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+        {% csrf_token %}
+        <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">{{ form.niveau_essai.label }}</label>
+            {{ form.niveau_essai }}
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">{{ form.lieu_travail.label }}</label>
+            {{ form.lieu_travail }}
+        </div>
+        {% if employe.contrat == "CDD" %}
+        <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">{{ form.type_terme.label }}</label>
+            {{ form.type_terme }}
+        </div>
+        <div id="bloc-motif-precis">
+            <label class="block text-sm font-medium text-gray-600 mb-1">{{ form.motif_cdd.label }}</label>
+            {{ form.motif_cdd }}
+        </div>
+        <div id="bloc-motif-imprecis" style="display:none;">
+            <label class="block text-sm font-medium text-gray-600 mb-1">{{ form.motif_cdd_imprecis.label }}</label>
+            {{ form.motif_cdd_imprecis }}
+            <label class="block text-sm font-medium text-gray-600 mb-1 mt-2">{{ form.evenement_terme.label }}</label>
+            {{ form.evenement_terme }}
+            <p class="text-xs text-gray-400 mt-1">{{ form.evenement_terme.help_text }}</p>
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">{{ form.motif_cdd_precision.label }}</label>
+            {{ form.motif_cdd_precision }}
+        </div>
+        <script>
+            (function(){
+                const sel = document.getElementById('id_type_terme');
+                const bp = document.getElementById('bloc-motif-precis');
+                const bi = document.getElementById('bloc-motif-imprecis');
+                function maj(){ const imp = sel.value === 'imprecis'; bp.style.display = imp ? 'none' : 'block'; bi.style.display = imp ? 'block' : 'none'; }
+                if (sel) { maj(); sel.addEventListener('change', maj); }
+            })();
+        </script>
+        {% endif %}
+        {% if employe.contrat == "STAGE" %}
+        <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">{{ form.type_stage.label }}</label>
+            {{ form.type_stage }}
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">{{ form.etablissement_formation.label }}</label>
+            {{ form.etablissement_formation }}
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">{{ form.indemnite_stage.label }}</label>
+            {{ form.indemnite_stage }}
+            <p class="text-xs text-gray-400 mt-1">{{ form.indemnite_stage.help_text }}</p>
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">{{ form.maitre_stage.label }}</label>
+            {{ form.maitre_stage }}
+        </div>
+        {% endif %}
+        <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">{{ form.avantages_nature.label }}</label>
+            {{ form.avantages_nature }}
+            <p class="text-xs text-gray-400 mt-1">{{ form.avantages_nature.help_text }}</p>
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">{{ form.description_poste.label }}</label>
+            {{ form.description_poste }}
+            <p class="text-xs text-gray-400 mt-1">{{ form.description_poste.help_text }}</p>
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">{{ form.clauses_particulieres.label }}</label>
+            {{ form.clauses_particulieres }}
+        </div>
+        <div class="flex items-center gap-3 pt-2">
+            <button type="submit" class="bg-[#C81E6E] text-white font-medium px-6 py-2.5 rounded-lg hover:bg-[#a81759]">Générer le contrat</button>
+            <a href="{% url 'paie_actions_rh_salarie' employeur.id employe.id %}" class="text-gray-500 hover:text-gray-700">Annuler</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

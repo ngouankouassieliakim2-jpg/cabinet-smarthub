@@ -1,0 +1,40 @@
+{% extends "pilotage/base_pilotage.html" %}
+{% block titre %}Créer un collaborateur{% endblock %}
+{% block contenu %}
+<div class="p-6 max-w-3xl mx-auto">
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Créer un collaborateur</h1>
+        <p class="text-gray-500 mt-1">Créez un compte interne destiné à la Direction, aux Cadres ou aux Collaborateurs.</p>
+    </div>
+
+    <form method="post" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
+        {% csrf_token %}
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <label class="space-y-1 text-sm text-gray-700">
+                <span>Prénom</span>
+                <input type="text" name="prenom" class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-[#C81E6E] focus:border-[#C81E6E]" required>
+            </label>
+            <label class="space-y-1 text-sm text-gray-700">
+                <span>Nom</span>
+                <input type="text" name="nom" class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-[#C81E6E] focus:border-[#C81E6E]" required>
+            </label>
+        </div>
+        <label class="space-y-1 text-sm text-gray-700">
+            <span>Email</span>
+            <input type="email" name="email" class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-[#C81E6E] focus:border-[#C81E6E]" required>
+        </label>
+        <label class="space-y-1 text-sm text-gray-700">
+            <span>Rôle</span>
+            <select name="role" class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-[#C81E6E] focus:border-[#C81E6E]">
+                {% for valeur, label in roles %}
+                <option value="{{ valeur }}">{{ label }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <div class="flex items-center justify-between gap-3">
+            <a href="{% url 'pilotage_collaborateurs_liste' %}" class="text-sm text-gray-600 hover:text-gray-900">Retour à la liste</a>
+            <button type="submit" class="bg-[#C81E6E] text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-[#a81759]">Créer</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

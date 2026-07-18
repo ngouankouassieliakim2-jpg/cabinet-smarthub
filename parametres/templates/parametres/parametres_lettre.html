@@ -1,0 +1,46 @@
+{% extends "base_parametres.html" %}
+{% block titre %}Paramètres de la lettre de mission{% endblock %}
+
+{% block para_contenu %}
+<div class="p-6 max-w-2xl">
+  <h1 class="text-2xl font-bold text-gray-800 mb-1">Paramètres de la lettre de mission</h1>
+  <p class="text-gray-500 text-sm mb-6">Ces réglages s'appliquent automatiquement à toutes les lettres de mission générées.</p>
+
+  <form method="post" class="bg-white rounded-lg shadow p-6 space-y-5">
+    {% csrf_token %}
+
+    <div>
+      <label class="block text-sm font-semibold text-gray-700 mb-1">{{ form.duree_recurrente_mois.label }}</label>
+      {{ form.duree_recurrente_mois }}
+      {% if form.duree_recurrente_mois.help_text %}<span class="text-xs text-gray-400">{{ form.duree_recurrente_mois.help_text }}</span>{% endif %}
+    </div>
+
+    <div>
+      <label class="block text-sm font-semibold text-gray-700 mb-1">{{ form.preavis_mois.label }}</label>
+      {{ form.preavis_mois }}
+    </div>
+
+    <div>
+      <label class="block text-sm font-semibold text-gray-700 mb-1">{{ form.modalites_paiement_defaut.label }}</label>
+      {{ form.modalites_paiement_defaut }}
+      <span class="text-xs text-gray-400">Pour les missions récurrentes (suivi régulier).</span>
+    </div>
+
+    <div>
+      <label class="block text-sm font-semibold text-gray-700 mb-1">{{ form.delai_paiement_ponctuel.label }}</label>
+      {{ form.delai_paiement_ponctuel }}
+      <span class="text-xs text-gray-400">Pour les missions ponctuelles.</span>
+    </div>
+
+    <div class="pt-3 border-t">
+      <button type="submit" class="bg-[#C81E6E] text-white px-6 py-2 rounded font-medium hover:bg-[#a81659]">Enregistrer</button>
+    </div>
+  </form>
+</div>
+
+<style>
+  input[type=text], input[type=number] {
+    width:100%; border:1px solid #d1d5db; border-radius:6px; padding:8px 10px; font-size:14px;
+  }
+</style>
+{% endblock %}

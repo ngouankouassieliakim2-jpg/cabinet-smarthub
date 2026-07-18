@@ -1,0 +1,112 @@
+{% extends "pilotage/base_pilotage.html" %}
+{% block titre %}Actions RH — {{ employeur.raison_sociale }}{% endblock %}
+
+{% block contenu %}
+<div class="p-6 max-w-6xl mx-auto">
+    <!-- Navigation -->
+    <a href="{% url 'paie_choisir_entreprise' 'actions-rh' %}" class="text-sm text-gray-500 hover:text-[#C81E6E] flex items-center mb-6">
+        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+        Retour aux entreprises
+    </a>
+
+    <!-- Header & KPIs -->
+    <div class="flex flex-col md:flex-row md:justify-between md:items-end mb-8 gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900 tracking-tight">Actions RH</h1>
+            <p class="text-gray-500 mt-1">{{ employeur.raison_sociale }}</p>
+        </div>
+        <div class="flex gap-3">
+            <div class="bg-white border rounded-xl p-3 shadow-sm min-w-[120px]">
+                <div class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Actifs</div>
+                <div class="text-xl font-bold text-gray-800">{{ employes|length }}</div>
+            </div>
+            <div class="bg-white border rounded-xl p-3 shadow-sm min-w-[120px]">
+                <div class="text-[10px] uppercase font-bold text-red-400 tracking-wider">Urgences</div>
+                <div class="text-xl font-bold text-red-600">{{ nb_urgences|default:"0" }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Barre de recherche et filtres -->
+    <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-6 flex flex-col md:flex-row gap-4 items-center">
+        <div class="relative flex-1 w-full">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </span>
+            <input type="text" id="rh-search" placeholder="Rechercher par nom ou matricule..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C81E6E]/20 focus:border-[#C81E6E]">
+        </div>
+        <div class="flex gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
+            <button onclick="filterTable('all')" class="px-4 py-2 text-sm font-medium bg-gray-100 rounded-lg hover:bg-gray-200">Tous</button>
+            <button onclick="filterTable('urgent')" class="px-4 py-2 text-sm font-medium bg-red-50 text-red-700 rounded-lg hover:bg-red-100">Urgences</button>
+            <button onclick="filterTable('cdd')" class="px-4 py-2 text-sm font-medium bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100">CDD / Stage</button>
+        </div>
+    </div>
+
+    <!-- Tableau -->
+    {% if employes %}
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+        <table class="w-full text-sm" id="table-rh">
+            <thead class="bg-gray-50 text-gray-600 text-left border-b">
+                <tr>
+                    <th class="px-6 py-4 font-semibold">Matricule</th>
+                    <th class="px-6 py-4 font-semibold">Salarié</th>
+                    <th class="px-6 py-4 font-semibold">Poste / Service</th>
+                    <th class="px-6 py-4 font-semibold">Échéance</th>
+                    <th class="px-6 py-4 font-semibold text-right">Action</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for e in employes %}
+                <tr class="hover:bg-[#FCEEF3] transition-colors cursor-pointer group" 
+                    data-search="{{ e.nom_prenoms|lower }} {{ e.matricule }}"
+                    data-type="{% if e.echeance_proche %}urgent{% elif e.contrat == 'CDD' or e.contrat == 'STAGE' %}cdd{% else %}all{% endif %}"
+                    onclick="window.location.href='{% url 'paie_actions_rh_salarie' employeur.id e.id %}'">
+                    <td class="px-6 py-4 font-mono text-gray-500">{{ e.matricule }}</td>
+                    <td class="px-6 py-4 font-medium text-gray-900">{{ e.nom_prenoms }}</td>
+                    <td class="px-6 py-4 text-gray-600">{{ e.poste|default:"—" }}</td>
+                    <td class="px-6 py-4">
+                        {% if e.echeance_proche %}
+                        <span class="inline-flex items-center text-xs font-bold text-red-700 bg-red-100 px-2.5 py-1 rounded-full">
+                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            {{ e.jours_avant_echeance }} j restants
+                        </span>
+                        {% elif e.contrat == "CDD" or e.contrat == "STAGE" %}
+                        <span class="text-xs text-gray-500 font-medium">{{ e.date_sortie|date:"d/m/Y" }}</span>
+                        {% else %}
+                        <span class="text-xs text-gray-400">—</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <span class="text-[#C81E6E] font-medium opacity-0 group-hover:opacity-100 transition-opacity">Accéder →</span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <!-- État vide -->
+    <div class="text-center py-20 border-2 border-dashed border-gray-200 rounded-xl">
+        <div class="text-4xl mb-3">🧑‍💼</div>
+        <p class="text-gray-500 font-medium">Aucun salarié actif dans cette entreprise.</p>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    // Recherche et Filtres
+    const searchInput = document.getElementById('rh-search');
+    const tableRows = document.querySelectorAll('#table-rh tbody tr');
+
+    function filterTable(type) {
+        const query = searchInput.value.toLowerCase();
+        tableRows.forEach(row => {
+            const matchesSearch = row.dataset.search.includes(query);
+            const matchesType = (type === 'all' || row.dataset.type === type);
+            row.style.display = (matchesSearch && matchesType) ? '' : 'none';
+        });
+    }
+
+    searchInput.addEventListener('input', () => filterTable('all'));
+</script>
+{% endblock %}

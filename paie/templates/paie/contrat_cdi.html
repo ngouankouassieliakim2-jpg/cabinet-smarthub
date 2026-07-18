@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="utf-8">
+<style>
+    @page { size: A4; margin: 2cm 2.2cm; @bottom-center { content: "© Cabinet Smart-Hub — Page " counter(page) " / " counter(pages); font-size: 7px; color: #9ca3af; } }
+    body { font-family: "Helvetica Neue", Arial, sans-serif; color: #1f2937; font-size: 10.5px; line-height: 1.65; }
+    .garde { page-break-after: always; text-align: center; padding-top: 100px; }
+    .garde .logo-wrap { width: 130px; height: 130px; border-radius: 50%; background: {{ employeur.couleur_documents|default:"#111827" }}1a; display: flex; align-items: center; justify-content: center; margin: 0 auto 30px; }
+    .garde .logo { width: 110px; height: 110px; object-fit: contain; }
+    .garde .rs { font-size: 24px; font-weight: 700; color: #111827; margin-bottom: 6px; }
+    .garde .secteur { font-size: 11px; color: {{ employeur.couleur_documents|default:"#111827" }}; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 30px; }
+    .garde .infos { font-size: 10px; color: #6b7280; line-height: 1.8; margin-bottom: 60px; }
+    .garde h1 { font-size: 20px; letter-spacing: 3px; color: {{ employeur.couleur_documents|default:"#111827" }}; margin-bottom: 10px; }
+    .garde .salarie { font-size: 13px; color: #374151; margin-top: 40px; }
+    .entete { display: flex; align-items: center; border-bottom: 3px solid {{ employeur.couleur_documents|default:"#111827" }}; padding-bottom: 12px; margin-bottom: 20px; }
+    .entete .logo-mini { width: 44px; height: 44px; object-fit: contain; margin-right: 12px; }
+    .entete .rs { font-size: 12px; font-weight: 700; color: #111827; }
+    h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: {{ employeur.couleur_documents|default:"#111827" }}; margin: 18px 0 6px; border-bottom: 1px solid #e5e7eb; padding-bottom: 3px; }
+    p { margin: 4px 0; text-align: justify; }
+    .parties { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px; margin-bottom: 10px; }
+    .pied { display: flex; justify-content: space-between; margin-top: 50px; }
+    .pied .sign { width: 45%; text-align: center; }
+    .pied .line { border-top: 1px solid #9ca3af; margin-top: 50px; padding-top: 4px; font-size: 9px; color: #6b7280; }
+    .mention { text-align: center; font-size: 8px; color: #9ca3af; margin-top: 24px; }
+    .annexe { page-break-before: always; }
+    .annexe h1 { font-size: 14px; }
+    .annexe-corps { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; min-height: 120px; }
+</style>
+</head>
+<body>
+
+<!-- PAGE DE GARDE -->
+<div class="garde">
+    <div class="logo-wrap">
+        {% if employeur.logo %}<img class="logo" src="{{ employeur.logo.url }}" alt="logo">{% endif %}
+    </div>
+    <div class="rs">{{ employeur.raison_sociale }}</div>
+    {% if employeur.secteur %}<div class="secteur">{{ employeur.secteur.nom }}</div>{% endif %}
+    <div class="infos">
+        {% if employeur.adresse %}{{ employeur.adresse }}{% if employeur.commune %}, {{ employeur.commune }}{% endif %}<br>{% endif %}
+        {% if employeur.rccm %}RCCM : {{ employeur.rccm }} &nbsp;•&nbsp; {% endif %}{% if employeur.ncc %}NCC : {{ employeur.ncc }}{% endif %}<br>
+        {% if employeur.numero_cnps %}N° CNPS employeur : {{ employeur.numero_cnps }}{% endif %}
+    </div>
+    <h1>CONTRAT DE TRAVAIL<br>À DURÉE INDÉTERMINÉE</h1>
+    <div class="salarie">{{ employe.nom_prenoms }}<br><span style="color:#9ca3af;font-size:10px;">{{ employe.poste|default:"—" }}</span></div>
+</div>
+
+<!-- CORPS DU CONTRAT -->
+<div class="entete">
+    {% if employeur.logo %}<img class="logo-mini" src="{{ employeur.logo.url }}" alt="logo">{% endif %}
+    <div class="rs">{{ employeur.raison_sociale }}</div>
+</div>
+
+<div class="parties">
+    <p><strong>ENTRE LES SOUSSIGNÉS :</strong></p>
+    <p>La société <strong>{{ employeur.raison_sociale }}</strong>, {% if employeur.adresse %}sise à {{ employeur.adresse }}{% if employeur.commune %}, {{ employeur.commune }}{% endif %}{% endif %}{% if employeur.rccm %}, immatriculée au RCCM sous le n° {{ employeur.rccm }}{% endif %}{% if employeur.numero_cnps %}, immatriculée à la CNPS sous le n° {{ employeur.numero_cnps }}{% endif %},
+    représentée par {{ employeur.signataire_nom|default:"le représentant légal" }}{% if employeur.signataire_qualite %}, {{ employeur.signataire_qualite }}{% endif %},<br>
+    ci-après dénommée « <strong>l'Employeur</strong> »,</p>
+    <p><strong>ET :</strong></p>
+    <p>{{ employe.get_civilite_display }} <strong>{{ employe.nom_prenoms }}</strong>, né(e) le {{ employe.date_naissance|date:"d/m/Y"|default:"—" }} à {{ employe.lieu_naissance|default:"—" }}, de nationalité {{ employe.nationalite }}, {{ employe.get_situation_matrimoniale_display }}, {% if employe.nature_piece %}titulaire d'une pièce {{ employe.nature_piece }} n° {{ employe.numero_piece }}{% endif %}, demeurant à {{ employe.adresse|default:employe.lieu_habitation }},<br>
+    ci-après dénommé(e) « <strong>le Travailleur</strong> »,</p>
+    <p>IL A ÉTÉ CONVENU CE QUI SUIT :</p>
+</div>
+
+<h2>Définitions préliminaires</h2>
+<p>Dans le présent contrat, les termes « l'Employeur » désignent la société {{ employeur.raison_sociale }}, « le Travailleur » désigne la personne physique engagée aux présentes, et « l'Entreprise » désigne l'ensemble des établissements de l'Employeur en République de Côte d'Ivoire.</p>
+
+<h2>Engagement et fonction</h2>
+<p>L'Employeur engage le Travailleur en qualité de <strong>{{ employe.poste|default:"—" }}</strong>, classé dans la catégorie <strong>{{ employe.categorie|default:"—" }}</strong>{% if employeur.secteur %} de la convention collective « {{ employeur.secteur.nom }} »{% endif %}, à compter du <strong>{{ employe.date_entree|date:"d/m/Y" }}</strong>. La description détaillée du poste et des missions confiées au Travailleur figure en Annexe 1 du présent contrat, laquelle en fait partie intégrante.</p>
+
+<h2>Période d'essai</h2>
+<p>Le présent contrat comporte une période d'essai de <strong>{{ duree_essai }}</strong>, renouvelable une fois par accord écrit des parties, conformément au Décret n° 2024-900 du 16 octobre 2024 relatif à l'essai et à la durée de la période d'essai. Pendant cette période, chacune des parties peut rompre le contrat sans indemnité ni préavis. Si le Travailleur est maintenu en service à l'expiration de l'essai ou de son renouvellement, les parties sont définitivement liées pour la durée prévue au présent contrat.</p>
+
+<h2>Durée du contrat</h2>
+<p>Le présent contrat est conclu pour une <strong>durée indéterminée</strong>, conformément à l'article 15.2 du Code du travail. Il pourra y être mis fin à tout moment par l'une ou l'autre des parties, dans le respect des dispositions légales relatives au préavis et, le cas échéant, à l'indemnité de licenciement.</p>
+
+<h2>Rémunération</h2>
+<p>En contrepartie de son travail, le Travailleur percevra un salaire mensuel brut de <strong>{{ employe.salaire_base|floatformat:0 }} FCFA</strong>{% if employe.sursalaire %}, incluant un sursalaire de {{ employe.sursalaire|floatformat:0 }} FCFA{% endif %}, conforme au salaire minimum de sa catégorie professionnelle. Ce salaire est payable mensuellement, à terme échu, selon les modalités de paiement en vigueur dans l'Entreprise.</p>
+{% if avantages_nature %}
+<p>Le Travailleur bénéficie en outre des avantages en nature suivants : {{ avantages_nature }}.</p>
+{% endif %}
+
+<h2>Lieu de travail</h2>
+<p>Le Travailleur exercera ses fonctions à <strong>{{ lieu_travail }}</strong>. Toute affectation à un autre lieu de travail au sein de l'Entreprise fera l'objet d'un accord entre les parties, sauf nécessité de service dûment justifiée et n'entraînant pas de modification substantielle du contrat.</p>
+
+<h2>Horaires de travail</h2>
+<p>Le Travailleur est soumis à la durée légale du travail en vigueur en Côte d'Ivoire, fixée à quarante (40) heures par semaine (article 21.1 du Code du travail), réparties selon l'organisation en vigueur dans l'Entreprise. Le Travailleur bénéficie d'un repos hebdomadaire d'au moins vingt-quatre (24) heures consécutives, en principe le dimanche.</p>
+
+<h2>Congés payés</h2>
+<p>Le Travailleur bénéficie de congés payés dans les conditions fixées par les articles 25.1 et suivants du Code du travail et, le cas échéant, par la convention collective applicable, à raison d'un minimum de deux (2) jours ouvrables acquis par mois de service effectif, majoré selon l'ancienneté.</p>
+
+<h2>Préavis et rupture</h2>
+<p>En cas de rupture du présent contrat après la période d'essai, les parties se conforment aux dispositions légales et réglementaires en vigueur relatives à la durée du préavis (Décret n° 96-200) et, le cas échéant, à l'indemnité de licenciement (Décret n° 96-201).</p>
+
+<h2>Confidentialité</h2>
+<p>Le Travailleur s'engage à observer la plus stricte discrétion sur toute information à caractère confidentiel, commercial, technique ou financier dont il aurait connaissance dans l'exercice de ses fonctions, tant pendant l'exécution du présent contrat qu'après sa cessation.</p>
+
+<h2>Modification du contrat</h2>
+<p>Toute modification substantielle du présent contrat (fonction, rémunération, lieu de travail) devra faire l'objet d'un avenant écrit signé des deux parties.</p>
+
+{% if clauses_particulieres %}
+<h2>Clauses particulières</h2>
+<p>{{ clauses_particulieres|linebreaks }}</p>
+{% endif %}
+
+<div class="pied">
+    <div class="sign">
+        {% if signature_data_uri %}
+        <img src="{{ signature_data_uri }}" style="max-height:50px;max-width:160px;margin:0 auto 4px;display:block;">
+        {% if mention_signature %}<p style="font-size:8px;color:#6b7280;margin:0 0 4px;">{{ mention_signature }}</p>{% endif %}
+        {% endif %}
+        <div class="line">L'Employeur</div>
+    </div>
+    <div class="sign"><div class="line">Le Travailleur<br>(lu et approuvé, bon pour accord)</div></div>
+</div>
+
+<div class="mention">Contrat établi en application du Code du travail ivoirien (Loi n° 2015-532 du 20 juillet 2015) et de ses décrets d'application.</div>
+
+<div class="annexe">
+    <h1>ANNEXE 1 — DESCRIPTION DU POSTE ET MISSIONS</h1>
+    <p><strong>Salarié :</strong> {{ employe.nom_prenoms }} &nbsp;•&nbsp; <strong>Poste :</strong> {{ employe.poste|default:"—" }}</p>
+    <div class="annexe-corps">
+        {% if description_poste %}{{ description_poste|linebreaks }}{% else %}<p style="color:#9ca3af;">Description non renseignée.</p>{% endif %}
+    </div>
+    <p class="mention" style="margin-top:20px;">La présente annexe fait partie intégrante du contrat de travail signé ce jour et pourra être mise à jour par avenant en cas d'évolution des missions.</p>
+</div>
+
+{% include "paie/_pied_smarthub.html" %}
+
+</body>
+</html>

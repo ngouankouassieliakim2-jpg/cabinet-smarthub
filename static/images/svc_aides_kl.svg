@@ -1,0 +1,16 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Aides publiques et privées">
+  <rect x="8" y="8" width="104" height="104" rx="24" fill="#FCEEF3"/>
+  <!-- Pièce -->
+  <circle cx="60" cy="44" r="20" fill="url(#aideRose)"/>
+  <defs>
+    <linearGradient id="aideRose" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#C81E6E"/>
+      <stop offset="1" stop-color="#8E1450"/>
+    </linearGradient>
+  </defs>
+  <circle cx="60" cy="44" r="20" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-dasharray="3 3"/>
+  <text x="60" y="52" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#FFFFFF" text-anchor="middle">€</text>
+  <!-- Main -->
+  <path d="M30 92 q0 -14 14 -14 h32 q14 0 14 14 v6 h-60 Z" fill="#16171C"/>
+  <path d="M38 78 q4 -8 12 -6 l16 4 q6 2 4 8" fill="none" stroke="#16171C" stroke-width="5" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,17 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Comptabilité">
+  <rect x="8" y="8" width="104" height="104" rx="24" fill="#FCEEF3"/>
+  <!-- Calculatrice -->
+  <rect x="38" y="30" width="44" height="60" rx="8" fill="#16171C"/>
+  <rect x="44" y="36" width="32" height="14" rx="3" fill="#ED93B1"/>
+  <g fill="#C81E6E">
+    <circle cx="48" cy="60" r="3.5"/>
+    <circle cx="60" cy="60" r="3.5"/>
+    <circle cx="72" cy="60" r="3.5"/>
+    <circle cx="48" cy="72" r="3.5"/>
+    <circle cx="60" cy="72" r="3.5"/>
+    <circle cx="72" cy="72" r="3.5"/>
+    <circle cx="48" cy="84" r="3.5"/>
+    <circle cx="60" cy="84" r="3.5"/>
+  </g>
+  <rect x="68" y="80" width="9" height="8" rx="2" fill="#ED93B1"/>
+</svg>

@@ -1,0 +1,76 @@
+{% extends "pilotage/base_pilotage.html" %}
+
+{% block titre %}Détail de la demande — Secrétariat{% endblock %}
+
+{% block contenu %}
+<div class="p-6 max-w-3xl">
+
+    <!-- Retour -->
+    <a href="{% url 'secretariat_demandes' %}" class="text-sm text-gray-500 hover:text-[#C81E6E]">← Toutes les demandes</a>
+
+    <!-- En-tête -->
+    <div class="flex items-center justify-between mt-4 mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">{{ demande.nom }}</h1>
+        {% if demande.statut == 'NOUVELLE' %}
+        <span class="bg-[#FCEEF3] text-[#C81E6E] text-sm font-medium px-3 py-1.5 rounded-full">Nouvelle</span>
+        {% else %}
+        <span class="bg-green-50 text-green-700 text-sm font-medium px-3 py-1.5 rounded-full">Traitée</span>
+        {% endif %}
+    </div>
+
+    <!-- Coordonnées -->
+    <div class="bg-white rounded-xl border border-gray-200 p-6 mb-4">
+        <h2 class="font-bold text-gray-800 mb-4">Coordonnées</h2>
+        <dl class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+            <div><dt class="text-gray-500">Téléphone</dt><dd class="font-medium text-gray-800">{{ demande.telephone }}</dd></div>
+            <div><dt class="text-gray-500">Email</dt><dd class="font-medium text-gray-800">{{ demande.email|default:"—" }}</dd></div>
+            <div><dt class="text-gray-500">Lieu souhaité</dt><dd class="font-medium text-gray-800">{{ demande.get_lieu_display }}</dd></div>
+            <div><dt class="text-gray-500">Date souhaitée</dt><dd class="font-medium text-gray-800">{{ demande.date_souhaitee|date:"d/m/Y"|default:"—" }}</dd></div>
+        </dl>
+    </div>
+
+    <!-- Objet(s) -->
+    <div class="bg-white rounded-xl border border-gray-200 p-6 mb-4">
+        <h2 class="font-bold text-gray-800 mb-2">Objet(s) de la demande</h2>
+        <p class="text-sm text-gray-700">{{ demande.motifs }}</p>
+    </div>
+
+    <!-- Pré-diagnostic -->
+    <div class="bg-white rounded-xl border border-gray-200 p-6 mb-4">
+        <h2 class="font-bold text-gray-800 mb-4">Pré-diagnostic</h2>
+        <dl class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+            <div><dt class="text-gray-500">Type de structure</dt><dd class="font-medium text-gray-800">{{ demande.get_structure_display|default:"—" }}</dd></div>
+            <div><dt class="text-gray-500">Secteur d'activité</dt><dd class="font-medium text-gray-800">{{ demande.secteur|default:"—" }}</dd></div>
+            <div><dt class="text-gray-500">Ancienneté</dt><dd class="font-medium text-gray-800">{{ demande.get_anciennete_display|default:"—" }}</dd></div>
+            <div><dt class="text-gray-500">Chiffre d'affaires prévisionnel</dt><dd class="font-medium text-gray-800">{{ demande.get_chiffre_affaires_display|default:"—" }}</dd></div>
+            <div><dt class="text-gray-500">A déjà un cabinet</dt><dd class="font-medium text-gray-800">{% if demande.cabinet_actuel %}Oui{% else %}Non{% endif %}</dd></div>
+        </dl>
+    </div>
+
+    <!-- Message -->
+    {% if demande.message %}
+    <div class="bg-white rounded-xl border border-gray-200 p-6 mb-4">
+        <h2 class="font-bold text-gray-800 mb-2">Message</h2>
+        <p class="text-sm text-gray-700 whitespace-pre-line">{{ demande.message }}</p>
+    </div>
+    {% endif %}
+
+    <!-- Action : changer le statut -->
+    <div class="bg-white rounded-xl border border-gray-200 p-6">
+        <h2 class="font-bold text-gray-800 mb-4">Action</h2>
+        <form method="post" class="flex flex-wrap gap-3">
+            {% csrf_token %}
+            {% if demande.statut == 'NOUVELLE' %}
+            <button type="submit" name="statut" value="TRAITEE" class="bg-green-600 text-white font-medium px-5 py-2.5 rounded-lg hover:bg-green-700 transition">
+                ✓ Marquer comme traitée
+            </button>
+            {% else %}
+            <button type="submit" name="statut" value="NOUVELLE" class="bg-[#C81E6E] text-white font-medium px-5 py-2.5 rounded-lg hover:bg-[#a81759] transition">
+                ↺ Remettre en « nouvelle »
+            </button>
+            {% endif %}
+        </form>
+    </div>
+
+</div>
+{% endblock %}

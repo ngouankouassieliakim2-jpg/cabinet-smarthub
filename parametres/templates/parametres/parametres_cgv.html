@@ -1,0 +1,33 @@
+{% extends "pilotage/base_pilotage.html" %}
+
+{% block titre %}Conditions d'utilisation — Paramètres{% endblock %}
+
+{% block contenu %}
+<div class="p-6 max-w-3xl">
+
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Conditions d'utilisation du portail client</h1>
+        <p class="text-gray-500 mt-1">Ce texte est présenté au client lors de sa première connexion. Il doit l'accepter pour finaliser son inscription.</p>
+    </div>
+
+    <form method="post" class="space-y-5">
+        {% csrf_token %}
+
+        <div class="bg-white rounded-xl border border-gray-200 p-6">
+            <label class="block text-sm font-medium text-gray-600 mb-2">Texte des conditions</label>
+            <textarea name="texte" rows="20" class="font-mono text-sm">{{ form.texte.value|default:'' }}</textarea>
+            <p class="text-xs text-gray-400 mt-2">Astuce : laissez une ligne vide entre les paragraphes pour aérer le texte. Les sauts de ligne sont conservés à l'affichage.</p>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <button type="submit" class="bg-[#C81E6E] text-white font-medium px-6 py-2.5 rounded-lg hover:bg-[#a81759] transition">
+                Enregistrer les conditions
+            </button>
+            {% if cgv.date_modification %}
+            <span class="text-xs text-gray-400">Dernière modification : {{ cgv.date_modification|date:"d/m/Y à H:i" }}</span>
+            {% endif %}
+        </div>
+    </form>
+
+</div>
+{% endblock %}

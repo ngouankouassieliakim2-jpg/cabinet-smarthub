@@ -1,0 +1,55 @@
+{% extends "pilotage/base_pilotage.html" %}
+{% block titre %}Jours fériés{% endblock %}
+{% block contenu %}
+<div class="p-6 max-w-3xl">
+    <div class="mt-4 mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Jours fériés</h1>
+        <p class="text-gray-500 mt-1">Les jours fériés chômés (nationaux). Ils sont exclus du décompte des congés. Saisis chaque année les fêtes à date variable (Aïd, Pâques…).</p>
+    </div>
+
+    <form method="post" class="bg-white rounded-xl border border-gray-200 p-5 mb-6 flex items-end gap-3 flex-wrap">
+        {% csrf_token %}
+        <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">Date</label>
+            {{ form.date }}
+        </div>
+        <div class="flex-1 min-w-[200px]">
+            <label class="block text-sm font-medium text-gray-600 mb-1">Libellé</label>
+            {{ form.libelle }}
+        </div>
+        <button type="submit" class="bg-[#C81E6E] text-white font-medium px-5 py-2 rounded-lg hover:bg-[#a81759] transition">Ajouter</button>
+    </form>
+
+    {% if feries %}
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50 text-gray-600 text-left">
+                <tr>
+                    <th class="px-4 py-3 font-medium">Date</th>
+                    <th class="px-4 py-3 font-medium">Libellé</th>
+                    <th class="px-4 py-3 font-medium text-right"></th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for f in feries %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3 text-gray-700">{{ f.date|date:"d/m/Y" }}</td>
+                    <td class="px-4 py-3 text-gray-800">{{ f.libelle }}</td>
+                    <td class="px-4 py-3 text-right">
+                        <form method="post" action="{% url 'paie_jour_ferie_supprimer' f.id %}" onsubmit="return confirm('Supprimer ce jour férié ?');" class="inline">
+                            {% csrf_token %}
+                            <button type="submit" class="text-red-500 hover:underline text-sm">Supprimer</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="bg-white rounded-xl border border-gray-200 p-10 text-center text-gray-400 text-sm">
+        Aucun jour férié saisi. Ajoute-les avec le formulaire ci-dessus.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

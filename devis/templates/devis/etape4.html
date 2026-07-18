@@ -1,0 +1,48 @@
+{% extends "pilotage/base_recouvrement.html" %}
+{% block titre %}Nouveau devis — Étape 4{% endblock %}
+{% block style %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+{% endblock %}
+
+{% block contenu %}
+<div class="no-print">
+  {% include "devis/_barre_etapes.html" %}
+</div>
+
+<div class="max-w-4xl mx-auto p-6">
+  <!-- Barre d'actions (cachée à l'impression) -->
+  <div class="no-print bg-white rounded-lg shadow p-4 mb-5 flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <h1 class="text-lg font-bold text-gray-800">Étape 4 — Visualisation du brouillon</h1>
+      <p class="text-gray-500 text-sm">Vérifiez le devis et la note avant de le proposer au client.</p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <button onclick="window.print()" class="bg-[#C81E6E] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#a81659]">🖨️ Imprimer le brouillon</button>
+      <a href="{% url 'rapport_analyse' devis.id %}" class="bg-[#16171C] text-white px-4 py-2 rounded text-sm font-medium hover:bg-black">🔍 Rapport d'analyse</a>
+    </div>
+  </div>
+
+  <!-- LE DOCUMENT (devis + note) affiché directement -->
+  {% include "devis/_document_devis.html" %}
+
+  <!-- Navigation (cachée à l'impression) -->
+  <div class="no-print flex justify-between items-center pt-6 mt-6 border-t">
+    <a href="{% url 'devis_etape3' devis.id %}" class="text-sm text-gray-500 hover:underline">← Précédent</a>
+    <a href="{% url 'devis_etape5' devis.id %}" class="bg-[#C81E6E] text-white px-6 py-2 rounded font-medium hover:bg-[#a81659]">Continuer vers la validation →</a>
+  </div>
+</div>
+
+<style>
+  @media print {
+    .no-print { display: none !important; }
+    body { background: #fff !important; margin: 0 !important; }
+    .sheet { box-shadow: none !important; max-width: 100% !important; margin: 0 !important; }
+    /* Forcer l'impression des fonds colorés (masthead noir, encadrés roses) */
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    /* Éviter de couper les blocs en deux */
+    .section, .totaux, .block, .objet, .sign { break-inside: avoid; }
+  }
+  @page { size: A4; margin: 8mm; }
+</style>
+{% endblock %}

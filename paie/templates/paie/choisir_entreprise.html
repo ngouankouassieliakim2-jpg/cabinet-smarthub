@@ -1,0 +1,35 @@
+{% extends "pilotage/base_pilotage.html" %}
+{% block titre %}{{ titre_section }} — Paie{% endblock %}
+{% block contenu %}
+<div class="p-6">
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">{{ titre_section }}</h1>
+        <p class="text-gray-500 mt-1">Choisis l'entreprise concernée</p>
+    </div>
+    {% if employeurs %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {% for emp in employeurs %}
+            {% if section == "personnel" %}{% url 'paie_employes_liste' emp.id as cible %}
+            {% elif section == "rubriques" %}{% url 'paie_rubriques_liste' emp.id as cible %}
+            {% elif section == "traitement" %}{% url 'traitement_paie' emp.id as cible %}
+            {% elif section == "actions-rh" %}{% url 'paie_actions_rh_liste' emp.id as cible %}
+            {% else %}{% url 'paie_documents_periodes' emp.id as cible %}{% endif %}
+            <a href="{{ cible }}" class="block bg-white border border-gray-200 rounded-xl p-4 hover:border-[#C81E6E] hover:shadow-sm transition">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-[#FCEEF3] flex items-center justify-center text-lg">🏢</div>
+                    <div>
+                        <p class="font-medium text-gray-800">{{ emp.raison_sociale }}</p>
+                        <p class="text-xs text-gray-400">{{ emp.employes.count }} salarié(s)</p>
+                    </div>
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="bg-white rounded-xl border border-gray-200 p-12 text-center">
+        <div class="text-5xl mb-4">🏢</div>
+        <p class="text-gray-500">Aucun employeur. Va dans « Employeurs » pour en créer un.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

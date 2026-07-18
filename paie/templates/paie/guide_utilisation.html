@@ -1,0 +1,111 @@
+{% extends "pilotage/base_pilotage.html" %}
+{% block titre %}Guide d'utilisation — Paie/RH{% endblock %}
+{% block contenu %}
+<div class="p-6 max-w-4xl mx-auto">
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Guide d'utilisation — Paie/RH</h1>
+        <p class="text-gray-500 mt-1">Mode d'emploi du module, étape par étape. Pour les questions de calcul, voir le Livre de calcul.</p>
+    </div>
+
+    <div class="bg-white rounded-xl border border-gray-200 p-5 mb-6">
+        <h2 class="font-bold text-gray-800 mb-3 text-sm uppercase tracking-wide">Sommaire</h2>
+        <ol class="text-sm text-[#C81E6E] space-y-1.5 list-decimal list-inside">
+            <li><a href="#demarrer" class="hover:underline">Démarrer avec une entreprise</a></li>
+            <li><a href="#personnel" class="hover:underline">Gérer le personnel</a></li>
+            <li><a href="#traitement" class="hover:underline">Traiter la paie du mois</a></li>
+            <li><a href="#conges" class="hover:underline">Congés</a></li>
+            <li><a href="#absences" class="hover:underline">Absences / Pointage</a></li>
+            <li><a href="#prets" class="hover:underline">Prêts et avances</a></li>
+            <li><a href="#contrats" class="hover:underline">Contrats et avenants</a></li>
+            <li><a href="#documents" class="hover:underline">Documents et archives</a></li>
+            <li><a href="#declarations" class="hover:underline">Déclarations (CNPS, EDI, DISA/DASC)</a></li>
+            <li><a href="#fin-contrat" class="hover:underline">Fin de contrat et réembauche</a></li>
+            <li><a href="#indicateurs" class="hover:underline">Indicateurs et journal du personnel</a></li>
+            <li><a href="#imports" class="hover:underline">Imports de documents</a></li>
+        </ol>
+    </div>
+
+    <div class="space-y-6">
+
+        <section id="demarrer" class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="font-bold text-gray-800 mb-3">1. Démarrer avec une entreprise</h2>
+            <p class="text-sm text-gray-700 mb-2"><strong>Créer un employeur :</strong> menu <em>Employeurs</em> → « Nouvel employeur ». Choisis le client déjà enregistré dans le cabinet et la convention collective applicable (elle porte la grille des salaires et le taux d'accident du travail). Tu peux renseigner le RIB de l'entreprise dès cette étape, ou le compléter plus tard.</p>
+            <p class="text-sm text-gray-700 mb-2"><strong>Compléter le RIB :</strong> depuis la liste des employeurs, clique sur « RIB » à côté de l'entreprise. Ce compte servira pour l'ordre de virement des salaires.</p>
+            <p class="text-sm text-gray-700 mb-2"><strong>Vérifier la grille de salaires :</strong> menu <em>Grille des salaires</em>. Si aucune catégorie n'existe pour la convention de l'entreprise, ajoute-les ici avant de créer des salariés — sinon la fiche salarié ne pourra pas déterminer le salaire de base.</p>
+        </section>
+
+        <section id="personnel" class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="font-bold text-gray-800 mb-3">2. Gérer le personnel</h2>
+            <p class="text-sm text-gray-700 mb-2"><strong>Créer un salarié :</strong> menu <em>Personnel</em> → choisis l'entreprise → « Nouveau salarié ». Le matricule est proposé automatiquement (modifiable). Renseigne la catégorie (obligatoire, détermine le salaire de base), le type de contrat, la date d'entrée, et le <strong>poste occupé</strong> (l'intitulé métier réel, distinct du « Emploi » qui est un code réglementaire pour les déclarations).</p>
+            <p class="text-sm text-gray-700 mb-2"><strong>Mode de paiement :</strong> si tu choisis « Virement bancaire », le bloc RIB du salarié s'active et devient à remplir. Pour les autres modes, il reste grisé.</p>
+            <p class="text-sm text-gray-700 mb-2"><strong>CDD :</strong> une alerte rouge apparaît automatiquement si un CDD atteint 2 ans de cumul — régularise-le en le passant en CDI via le bouton dédié sur la liste du personnel.</p>
+        </section>
+
+        <section id="traitement" class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="font-bold text-gray-800 mb-3">3. Traiter la paie du mois</h2>
+            <p class="text-sm text-gray-700 mb-2"><strong>Ouvrir le mois :</strong> menu <em>Traitement de la paie</em> → choisis l'entreprise, le mois et l'année. Clique « Générer / compléter la paie du mois » pour créer les bulletins des salariés qui n'en ont pas encore — les jours travaillés sont pré-remplis automatiquement selon les absences déjà saisies (voir section 5).</p>
+            <p class="text-sm text-gray-700 mb-2"><strong>Ajuster :</strong> la table affiche chaque salarié avec ses gains modifiables (jours, transport, heures sup, avance). Les calculs (ITS, CNPS, net) se mettent à jour en direct pendant la saisie. Clique « Enregistrer la paie du mois » pour valider.</p>
+            <p class="text-sm text-gray-700 mb-2"><strong>Heures supplémentaires :</strong> bouton dédié « Heures sup » depuis l'écran de traitement, avec les 4 taux légaux (15 %, 50 %, 75 %, 100 %).</p>
+            <p class="text-sm text-gray-700 mb-2"><strong>Bulletins :</strong> l'icône 📄 sur chaque ligne ouvre le bulletin individuel. Le bouton « Tous les bulletins (PDF) » regroupe tous les salariés du mois dans un seul document.</p>
+        </section>
+
+        <section id="conges" class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="font-bold text-gray-800 mb-3">4. Congés</h2>
+            <p class="text-sm text-gray-700 mb-2"><strong>Poser un congé :</strong> menu <em>Actions RH</em> → choisis l'entreprise puis le salarié → onglet « Congés » → « Poser un congé ». Saisis la date de départ et la date de retour (jour de reprise du travail), clique « Calculer » pour voir le résultat (jours ouvrables, indemnité, répartition si le congé chevauche deux mois), puis « Confirmer et enregistrer ».</p>
+            <p class="text-sm text-gray-700 mb-2"><strong>Le solde affiché</strong> (acquis / pris / restant) se met à jour automatiquement. Le cycle se réinitialise 12 mois après la date d'entrée ou le dernier congé pris.</p>
+            <p class="text-sm text-gray-700 mb-2"><strong>Congé exceptionnel</strong> (mariage, naissance, décès) : bouton séparé dans le même onglet — il ne décompte pas le solde de congé annuel.</p>
+            <p class="text-sm text-gray-700 mb-2">Une attestation de congé est générée et archivée automatiquement à la confirmation.</p>
+        </section>
+
+        <section id="absences" class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="font-bold text-gray-800 mb-3">5. Absences / Pointage</h2>
+            <p class="text-sm text-gray-700 mb-2">Onglet « Absences » de la fiche salarié (Actions RH). Saisis la période et le motif. Une <strong>maladie justifiée</strong> ne réduit jamais le salaire. Une absence <strong>injustifiée</strong> ou <strong>autorisée non payée</strong> réduit les jours travaillés du mois — sauf si tu décoches « Retirer les jours du bulletin » pour ce cas particulier.</p>
+            <p class="text-sm text-gray-700 mb-2">⚠️ Pour que l'absence soit prise en compte, saisis-la <strong>avant</strong> de générer le bulletin du mois concerné. Une absence saisie après ne recalcule pas un bulletin déjà créé.</p>
+        </section>
+
+        <section id="prets" class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="font-bold text-gray-800 mb-3">6. Prêts et avances</h2>
+            <p class="text-sm text-gray-700 mb-2">Onglet « Prêts » de la fiche salarié. Un seul prêt actif à la fois par salarié. Le décaissement apparaît en gain sur le bulletin du mois de départ du remboursement, puis chaque mensualité est prélevée automatiquement en retenue jusqu'au solde complet.</p>
+            <p class="text-sm text-gray-700 mb-2">Le justificatif (reconnaissance de dette) se génère depuis la liste des prêts du salarié.</p>
+        </section>
+
+        <section id="contrats" class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="font-bold text-gray-800 mb-3">7. Contrats et avenants</h2>
+            <p class="text-sm text-gray-700 mb-2"><strong>Générer un contrat :</strong> onglet « Documents » de la fiche salarié → « Générer » sous Contrat de travail. Le gabarit s'adapte automatiquement au type (CDI, CDD, Stage). Pour un CDD, précise s'il est à terme précis (durée fixe) ou imprécis (lié à un événement — motif obligatoire dans ce cas).</p>
+            <p class="text-sm text-gray-700 mb-2"><strong>Avenant de reconduction</strong> (CDD/Stage uniquement) : depuis l'onglet Documents, saisis la nouvelle date de fin. Une alerte s'affiche si la durée cumulée dépasse la limite légale (2 ans pour un CDD, 12 mois pour un stage) — à valider avec le cabinet avant signature dans ce cas.</p>
+            <p class="text-sm text-gray-700 mb-2">Une alerte automatique apparaît sur la fiche du salarié quand son contrat arrive à échéance dans les 30 jours, ou sa période d'essai dans les 7 jours.</p>
+        </section>
+
+        <section id="documents" class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="font-bold text-gray-800 mb-3">8. Documents et archives</h2>
+            <p class="text-sm text-gray-700 mb-2"><strong>Attestations :</strong> onglet « Documents » → « Voir les attestations ». Les documents proposés dépendent du statut du salarié (travail si actif, certificat si sorti, fin de stage si stagiaire sorti).</p>
+            <p class="text-sm text-gray-700 mb-2"><strong>Ordre de virement :</strong> depuis l'écran de Traitement de la paie, bouton « Ordre de virement » — génère la lettre avec le RIB de l'entreprise et l'annexe listant uniquement les salariés payés par virement, avec leurs RIB.</p>
+            <p class="text-sm text-gray-700 mb-2"><strong>Archives :</strong> chaque document généré (bulletin, attestation, contrat, déclaration...) est automatiquement archivé. Menu <em>Archives</em> → choisis l'entreprise pour retrouver tous ses documents, triés par date. Un document régénéré la même année <strong>remplace</strong> l'ancien ; l'année suivante, il devient figé et n'est plus modifiable.</p>
+        </section>
+
+        <section id="declarations" class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="font-bold text-gray-800 mb-3">9. Déclarations (CNPS, EDI, DISA/DASC)</h2>
+            <p class="text-sm text-gray-700 mb-2">Depuis <em>Documents</em> → choisis l'entreprise et la période. La <strong>CNPS nominative</strong> et l'<strong>EDI ITS</strong> (mensuel et annuel) se génèrent en un clic à partir des bulletins du mois. La <strong>DISA/DASC</strong> se génère depuis <em>Documents → Déclarations annuelles</em> ; elle s'adapte automatiquement au nombre de salariés (insertion ou suppression de lignes dans le fichier).</p>
+            <p class="text-sm text-gray-700 mb-2">Les règlements CNPS effectivement payés se saisissent séparément (menu Règlements CNPS) pour le suivi des écarts déclaré/payé.</p>
+        </section>
+
+        <section id="fin-contrat" class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="font-bold text-gray-800 mb-3">10. Fin de contrat et réembauche</h2>
+            <p class="text-sm text-gray-700 mb-2"><strong>Fin de contrat :</strong> depuis la liste du personnel, bouton « Fin de contrat » sur un salarié actif. Choisis le motif et la date de sortie — le système calcule automatiquement le solde de tout compte (préavis, indemnité de licenciement, gratification, congés, prime de précarité si CDD) à partir de l'historique des bulletins. Le bouton « Reporter » enregistre le solde sur le bulletin du mois de sortie et marque le salarié comme sorti.</p>
+            <p class="text-sm text-gray-700 mb-2"><strong>Réembauche :</strong> sur un salarié marqué « Sorti », bouton « Réembaucher ». La période précédente est archivée dans son historique, un nouveau matricule est attribué, et une nouvelle période active démarre.</p>
+        </section>
+
+        <section id="indicateurs" class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="font-bold text-gray-800 mb-3">11. Indicateurs et journal du personnel</h2>
+            <p class="text-sm text-gray-700 mb-2"><strong>Indicateurs RH :</strong> depuis la liste des employeurs, bouton « Indicateurs ». Affiche l'effectif, la répartition par contrat et catégorie, la masse salariale (brute et nette) du mois choisi, le turnover de l'année, et les alertes actives (CDD proches de la requalification, échéances proches).</p>
+            <p class="text-sm text-gray-700 mb-2"><strong>Journal du personnel :</strong> bouton « Journal » — historique chronologique de tous les mouvements (embauche, sortie, transformation CDD→CDI, réembauche, changement de salaire ou de poste).</p>
+        </section>
+
+        <section id="imports" class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="font-bold text-gray-800 mb-3">12. Imports de documents</h2>
+            <p class="text-sm text-gray-700 mb-2">Menu <em>Imports</em> — pour déposer un document externe (contrat signé, avenant signé, pièce d'identité...) dans les archives. Choisis la nature du document, l'entreprise, puis le salarié si applicable. Un contrat signé importé <strong>n'écrase pas</strong> le contrat généré par le système — les deux coexistent dans les archives, l'un comme projet, l'autre comme version signée.</p>
+        </section>
+
+    </div>
+</div>
+{% endblock %}

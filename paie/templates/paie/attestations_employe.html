@@ -1,0 +1,64 @@
+{% extends "pilotage/base_pilotage.html" %}
+{% block titre %}Attestations — {{ employe.nom_prenoms }}{% endblock %}
+{% block contenu %}
+<div class="p-6 max-w-2xl">
+    <a href="{% url 'paie_employes_liste' employeur.id %}" class="text-sm text-gray-500 hover:text-[#C81E6E]">← Retour au personnel</a>
+    <div class="mt-4 mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Attestations & certificats</h1>
+        <p class="text-gray-500 mt-1">{{ employe.nom_prenoms }} — {{ employeur.raison_sociale }}</p>
+    </div>
+
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden divide-y divide-gray-100">
+
+        {% if est_actif %}
+        <a href="{% url 'paie_attestation_pdf' employeur.id employe.id 'travail' %}" target="_blank" class="flex items-center justify-between px-5 py-4 hover:bg-gray-50">
+            <div>
+                <span class="text-gray-800 font-medium">📄 Attestation de travail</span>
+                <p class="text-xs text-gray-400 mt-0.5">Atteste que le salarié travaille dans l'entreprise.</p>
+            </div>
+            <span class="text-[#C81E6E] text-sm">Générer le PDF →</span>
+        </a>
+        {% endif %}
+
+        {% if est_sorti %}
+        <a href="{% url 'paie_attestation_pdf' employeur.id employe.id 'certificat' %}" target="_blank" class="flex items-center justify-between px-5 py-4 hover:bg-gray-50">
+            <div>
+                <span class="text-gray-800 font-medium">📜 Certificat de travail</span>
+                <p class="text-xs text-gray-400 mt-0.5">Remis à la fin du contrat (dates d'entrée et de sortie).</p>
+            </div>
+            <span class="text-[#C81E6E] text-sm">Générer le PDF →</span>
+        </a>
+        {% endif %}
+        {% if est_sorti and employe.contrat == "STAGE" %}
+        <a href="{% url 'paie_attestation_pdf' employeur.id employe.id 'stage' %}" target="_blank" class="flex items-center justify-between px-5 py-4 hover:bg-gray-50">
+            <div>
+                <span class="text-gray-800 font-medium">🎓 Attestation de fin de stage</span>
+                <p class="text-xs text-gray-400 mt-0.5">Qualification acquise, objet et durée du stage (art. 13.20).</p>
+            </div>
+            <span class="text-[#C81E6E] text-sm">Générer le PDF →</span>
+        </a>
+        {% endif %}
+
+        {% if conges %}
+        <div class="px-5 py-4">
+            <span class="text-gray-800 font-medium">🌴 Attestation de congé</span>
+            <p class="text-xs text-gray-400 mt-0.5 mb-3">Le salarié a pris {{ conges|length }} congé(s). Choisis la période :</p>
+            <div class="space-y-2">
+                {% for c in conges %}
+                <div class="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
+                    <span class="text-sm text-gray-700">Congé de {{ c.libelle }}</span>
+                    <a href="{% url 'paie_attestation_pdf' employeur.id employe.id 'conge' %}?debut={{ c.debut }}&fin={{ c.fin }}" target="_blank" class="text-[#C81E6E] text-sm font-medium hover:underline">Générer →</a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if not est_actif and not est_sorti and not conges %}
+        <div class="px-5 py-8 text-center text-gray-400 text-sm">Aucun document disponible pour ce salarié dans son état actuel.</div>
+        {% endif %}
+    </div>
+
+    <p class="text-xs text-gray-400 mt-3">Chaque document généré est automatiquement archivé (menu Archives).</p>
+</div>
+{% endblock %}

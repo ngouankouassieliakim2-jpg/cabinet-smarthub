@@ -1,0 +1,279 @@
+{% load static %}
+<style>
+  /* ISOLATION : empêche le style du document d'affecter l'interface (sidebar, barre) */
+  /* ISOLATION : le style du document ne doit pas affecter la sidebar */
+  aside a, aside span, aside nav * { border: none !important; box-shadow: none !important; }
+  :root{
+    --noir:#16171C; --gris-fonce:#2E3036; --gris:#6E7077; --gris-clair:#9A9CA2;
+    --rose:#C81E6E; --rose-vif:#D62E7C; --rose-clair:#FCEEF3; --rose-texte:#8A1349;
+    --line:#EAEAEC; --clair-noir:#D7D8DC; --clair-noir-2:#92949B; --gris-sub:#EEF0F2;
+  }
+  .sheet{max-width:794px;margin:0 auto;background:#fff;box-shadow:0 12px 50px rgba(0,0,0,.14);font-family:'Inter',system-ui,sans-serif;color:var(--noir);}
+  .sheet *{box-sizing:border-box;}
+  .mast{background:var(--noir);padding:24px 36px;}
+  .mast-row{display:flex;justify-content:space-between;align-items:center;gap:24px;}
+  .logo-card{background:#fff;border-radius:6px;padding:9px 13px;flex-shrink:0;box-shadow:0 6px 18px rgba(0,0,0,.3);}
+  .logo-card img{height:60px;display:block;}
+  .services{display:grid;grid-template-columns:1fr 1fr;gap:5px 12px;flex:1;}
+  .srv{display:flex;align-items:center;gap:5px;font-size:7.5px;letter-spacing:.02em;text-transform:uppercase;color:var(--clair-noir);font-weight:400;white-space:nowrap;}
+  .srv svg{flex-shrink:0;}
+  .rose-rule{height:3px;background:var(--rose);}
+  .titre{padding:28px 44px 20px;display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1px solid var(--line);}
+  .badge{display:inline-block;background:var(--rose);color:#fff;font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;padding:6px 14px;border-radius:4px;margin-bottom:12px;}
+  .num{font-family:'Playfair Display',serif;font-weight:600;font-size:30px;color:var(--noir);margin:0;}
+  .titre-right{text-align:right;}
+  .titre-right .l{font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--gris-clair);margin:0 0 3px;font-weight:500;}
+  .titre-right .v{font-size:13px;color:var(--gris-fonce);margin:0 0 8px;font-weight:500;}
+  .parties{padding:22px 44px;display:flex;gap:60px;flex-wrap:wrap;}
+  .pl{font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--gris-clair);margin:0 0 5px;font-weight:600;}
+  .pn{font-size:14px;font-weight:600;color:var(--noir);margin:0;}
+  .ps{font-size:12px;color:var(--gris);margin:2px 0 0;}
+  .objet{margin:0 44px 24px;background:var(--rose-clair);border:1px solid var(--rose);border-radius:8px;padding:12px 16px;}
+  .objet .ol{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--rose);margin:0 0 3px;font-weight:600;}
+  .objet p{margin:0;font-size:13px;color:var(--rose-texte);font-weight:600;}
+  .corps{padding:0 44px 30px;}
+  .section{margin-bottom:20px;border:1px solid var(--rose);border-radius:8px;overflow:hidden;}
+  .sec-head{display:flex;align-items:center;gap:12px;padding:11px 18px;background:var(--rose-clair);border-bottom:1px solid var(--rose);}
+  .sec-num{font-family:'Playfair Display',serif;font-size:18px;font-weight:600;color:var(--rose);line-height:1;}
+  .sec-title{font-weight:600;font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--rose-texte);margin:0;}
+  .sheet table{width:100%;border-collapse:collapse;font-size:13px;}
+  .sheet thead th{text-align:left;padding:9px 18px;color:var(--gris-clair);font-weight:600;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;background:#FAFAFA;}
+  .sheet th.c{text-align:center;}.sheet th.r{text-align:right;}
+  .sheet tbody td{padding:10px 18px;border-top:1px solid var(--line);color:var(--gris-fonce);}
+  .sheet td.c{text-align:center;}.sheet td.r{text-align:right;font-weight:600;color:var(--noir);font-variant-numeric:tabular-nums;}
+  .sheet tfoot td{padding:10px 18px;background:#FAFAFA;border-top:1px solid var(--rose);}
+  .sub-lbl{text-align:right;font-weight:600;color:var(--rose-texte);font-size:12px;}
+  .sub-val{text-align:right;font-weight:700;color:var(--rose-texte);font-size:14px;font-variant-numeric:tabular-nums;}
+  .totaux{border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:22px;}
+  .tot-line{display:flex;justify-content:space-between;padding:10px 20px;font-size:13px;border-top:1px solid var(--line);}
+  .tot-line:first-child{border-top:none;}
+  .tot-line .lbl{color:var(--gris);}
+  .tot-line .val{font-weight:600;font-variant-numeric:tabular-nums;}
+  .total-final{background:var(--noir);padding:18px 28px;display:flex;justify-content:space-between;align-items:center;}
+  .total-final .t-lbl{color:#fff;font-weight:600;font-size:14px;letter-spacing:.04em;}
+  .total-final .t-val{font-family:'Playfair Display',serif;color:var(--rose-vif);font-size:27px;font-weight:600;font-variant-numeric:tabular-nums;}
+  .sign{display:grid;grid-template-columns:1fr 1fr;gap:50px;padding-top:18px;}
+  .sign .col{text-align:center;}
+  .sign .s-lbl{font-size:12px;color:var(--gris-fonce);font-weight:600;margin:0 0 4px;}
+  .sign .s-sub{font-size:10.5px;color:var(--gris-clair);margin:0 0 50px;}
+  .sign .s-line{border-top:1.5px solid var(--noir);width:75%;margin:0 auto;}
+  .note-start{page-break-before:always;}
+  .intro-note{padding:28px 44px 6px;}
+  .intro-note .ref{display:inline-block;background:var(--rose-clair);border:1px solid var(--rose);color:var(--rose-texte);font-weight:600;font-size:11px;padding:5px 13px;border-radius:999px;margin-bottom:16px;}
+  .intro-note p{font-size:13.5px;line-height:1.75;color:var(--gris-fonce);margin:0;}
+  .block{margin:0 44px 18px;border:1px solid var(--rose);border-radius:8px;overflow:hidden;}
+  .blk-body{padding:14px 18px;}
+  .blk-body p{font-size:13px;line-height:1.75;color:var(--gris-fonce);margin:0;white-space:pre-line;}
+  .closing{padding:8px 44px 4px;}
+  .closing p{font-size:13px;line-height:1.75;color:var(--gris-fonce);}
+  .ft-inner{background:var(--noir);padding:18px 44px 22px;}
+  .ft-row{font-size:9.5px;line-height:1.9;color:var(--clair-noir-2);text-align:center;letter-spacing:.02em;}
+  .ft-row .k{color:#fff;font-weight:500;}
+
+  /* ===== PDF (WeasyPrint) : pied répété sur CHAQUE page ===== */
+  @page{
+    size:A4 portrait;
+    margin:14mm 12mm 26mm 12mm;
+    @bottom-center{
+      content: "Cabinet Comptable & Fiscal K&L — SARL au capital de 2 000 000 FCFA · RCCM CI-DAL-2019-B-7777 · NCC 1909283-F\AImmeuble Gog Brigitte, Carrefour Copro, Abidjan · Tél : 27 32 70 44 04 · 07 07 31 59 64 · cabinetkl120@gmail.com";
+      white-space: pre-line;
+      font-family: 'Inter', sans-serif;
+      font-size: 7px;
+      line-height: 1.5;
+      color: #6E7077;
+    }
+  }
+  @media print {
+    .sheet{box-shadow:none;max-width:100%;}
+    .pied-integre{display:none;}
+    *{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  }
+</style>
+
+<div class="sheet">
+
+  <!-- MASTHEAD -->
+  <div class="mast">
+    <div class="mast-row">
+      <div class="logo-card"><img src="{% static 'images/LOGO_2025_KL_fne.PNG' %}" alt="Cabinet Comptable & Fiscal K&L"></div>
+      <div class="services">
+        <div class="srv"><svg width="12" height="12" viewBox="0 0 14 14"><circle cx="7" cy="7" r="7" fill="#D62E7C"/><path d="M3.7 7.1l2 2 4.3-4.6" fill="none" stroke="#16171C" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Assistance comptable</div>
+        <div class="srv"><svg width="12" height="12" viewBox="0 0 14 14"><circle cx="7" cy="7" r="7" fill="#D62E7C"/><path d="M3.7 7.1l2 2 4.3-4.6" fill="none" stroke="#16171C" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Audit</div>
+        <div class="srv"><svg width="12" height="12" viewBox="0 0 14 14"><circle cx="7" cy="7" r="7" fill="#D62E7C"/><path d="M3.7 7.1l2 2 4.3-4.6" fill="none" stroke="#16171C" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Fiscalité</div>
+        <div class="srv"><svg width="12" height="12" viewBox="0 0 14 14"><circle cx="7" cy="7" r="7" fill="#D62E7C"/><path d="M3.7 7.1l2 2 4.3-4.6" fill="none" stroke="#16171C" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Planification stratégique</div>
+        <div class="srv"><svg width="12" height="12" viewBox="0 0 14 14"><circle cx="7" cy="7" r="7" fill="#D62E7C"/><path d="M3.7 7.1l2 2 4.3-4.6" fill="none" stroke="#16171C" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Assistance RH</div>
+        <div class="srv"><svg width="12" height="12" viewBox="0 0 14 14"><circle cx="7" cy="7" r="7" fill="#D62E7C"/><path d="M3.7 7.1l2 2 4.3-4.6" fill="none" stroke="#16171C" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Conseil juridique</div>
+        <div class="srv"><svg width="12" height="12" viewBox="0 0 14 14"><circle cx="7" cy="7" r="7" fill="#D62E7C"/><path d="M3.7 7.1l2 2 4.3-4.6" fill="none" stroke="#16171C" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Ingénierie financière</div>
+        <div class="srv"><svg width="12" height="12" viewBox="0 0 14 14"><circle cx="7" cy="7" r="7" fill="#D62E7C"/><path d="M3.7 7.1l2 2 4.3-4.6" fill="none" stroke="#16171C" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Formation</div>
+      </div>
+    </div>
+  </div>
+  <div class="rose-rule"></div>
+
+  <!-- TITRE -->
+  <div class="titre">
+    <div>
+      <span class="badge">{% if est_proforma %}Facture Proforma{% else %}Devis{% endif %}</span>
+      <p class="num">{% if est_proforma %}{{ numero_proforma }}{% else %}{{ devis.numero_devis }}{% endif %}</p>
+    </div>
+    <div class="titre-right">
+      <p class="l">Émis le</p>
+      <p class="v">{{ devis.date_creation|date:"d F Y" }}</p>
+      {% if est_proforma %}
+      <p class="l">Statut</p>
+      <p class="v" style="color:var(--rose-texte);font-weight:700;">Non définitif</p>
+      {% else %}
+      <p class="l">Validité</p>
+      <p class="v">30 jours</p>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if est_proforma %}
+  <div style="margin:0 44px 18px;background:#FFFBEB;border:1px solid #FDE68A;border-radius:8px;padding:10px 16px;">
+    <p style="margin:0;font-size:11.5px;color:#92400E;line-height:1.6;">
+      <b>Document non définitif</b> — cette facture proforma est fournie à titre indicatif et n'a pas de valeur comptable
+      ou fiscale. Elle ne constitue ni une facture, ni un document justificatif de paiement.
+    </p>
+  </div>
+  {% endif %}
+
+  <!-- PARTIES -->
+  <div class="parties">
+    <div>
+      <p class="pl">Prestataire</p>
+      <p class="pn">Cabinet Comptable &amp; Fiscal K&amp;L</p>
+      <p class="ps">Assistance comptable &amp; fiscale</p>
+    </div>
+    <div>
+      <p class="pl">Client</p>
+      {% if devis.type_client == "PM" %}
+      <p class="pn">{{ devis.pm_raison_sociale|default:"—" }}</p>
+      {% if devis.dirigeant_nom %}<p class="ps">Représentée par {{ devis.dirigeant_qualite }}, {{ devis.dirigeant_nom }}</p>{% endif %}
+      {% if devis.ncc %}<p class="ps">NCC : {{ devis.ncc }}{% if devis.rccm_numero %} · RCCM : {{ devis.rccm_numero }}{% endif %}</p>{% endif %}
+      {% else %}
+      <p class="pn">{{ devis.pp_nom_prenoms|default:"—" }}</p>
+      {% if devis.ncc %}<p class="ps">NCC : {{ devis.ncc }}</p>{% endif %}
+      {% endif %}
+      {% if devis.telephone %}<p class="ps">Tél : {{ devis.telephone }}{% if devis.email %} · {{ devis.email }}{% endif %}</p>{% endif %}
+    </div>
+  </div>
+
+  {% if devis.type_mission %}
+  <div class="objet">
+    <p class="ol">Objet de la mission</p>
+    <p>{{ devis.type_mission }}</p>
+  </div>
+  {% endif %}
+
+  <!-- PRESTATIONS -->
+  <div class="corps">
+    {% for section in sections %}
+    <div class="section">
+      <div class="sec-head">
+        <span class="sec-num">{{ forloop.counter|stringformat:"02d" }}</span>
+        <p class="sec-title">{{ section.titre }}</p>
+      </div>
+      <table>
+        <thead><tr><th style="width:55%;">Désignation</th><th class="c">Qté</th><th class="r">Prix unitaire</th><th class="r">Montant HT</th></tr></thead>
+        <tbody>
+          {% for ligne in section.lignes %}
+          <tr>
+            <td>{{ ligne.designation }}</td>
+            <td class="c">{{ ligne.quantite|floatformat:0 }}</td>
+            <td class="r">{{ ligne.prix_unitaire|floatformat:0 }} F</td>
+            <td class="r">{{ ligne.total_ht|floatformat:0 }} F</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot><tr><td colspan="3" class="sub-lbl">Sous-total — {{ section.titre }}</td><td class="sub-val">{{ section.sous_total|floatformat:0 }} F</td></tr></tfoot>
+      </table>
+    </div>
+    {% empty %}
+    <p style="text-align:center;color:var(--gris-clair);padding:30px;">Aucune prestation.</p>
+    {% endfor %}
+
+    <!-- TOTAUX -->
+    <div class="totaux">
+      <div class="tot-line"><span class="lbl">Total HT brut</span><span class="val">{{ devis.total_ht_brut|floatformat:0 }} F CFA</span></div>
+      {% if devis.remise_pourcentage %}
+      <div class="tot-line"><span class="lbl">Remise ({{ devis.remise_pourcentage|floatformat:0 }} %)</span><span class="val" style="color:var(--rose);">− {{ devis.montant_remise|floatformat:0 }} F CFA</span></div>
+      <div class="tot-line"><span class="lbl">Total HT net</span><span class="val">{{ devis.total_ht|floatformat:0 }} F CFA</span></div>
+      {% endif %}
+      <div class="tot-line"><span class="lbl">TVA</span><span class="val">{{ devis.montant_tva|floatformat:0 }} F CFA</span></div>
+      <div class="total-final"><span class="t-lbl">TOTAL TTC</span><span class="t-val">{{ devis.total_ttc|floatformat:0 }} F CFA</span></div>
+    </div>
+
+    <!-- SIGNATURES -->
+    <div class="sign">
+      <div class="col">
+        <p class="s-lbl">Bon pour accord — Le Client</p>
+        <p class="s-sub">Date, signature et cachet</p>
+        <div class="s-line"></div>
+      </div>
+      <div class="col">
+        <p class="s-lbl">Pour le Cabinet K&amp;L — La Direction</p>
+        <p class="s-sub">Date, signature et cachet</p>
+        <div class="s-line"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOTE EXPLICATIVE -->
+  {% if devis.note_explicative %}
+  <div class="note-start">
+    <div class="mast">
+      <div class="mast-row">
+        <div class="logo-card"><img src="{% static 'images/LOGO_2025_KL_fne.PNG' %}" alt="Cabinet K&L"></div>
+        <div style="text-align:right;">
+          <p style="font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:var(--rose-vif);margin:0 0 6px;font-weight:600;">Annexe</p>
+          <p style="font-family:'Playfair Display',serif;font-size:21px;color:#fff;margin:0;font-weight:600;">Note explicative</p>
+        </div>
+      </div>
+    </div>
+    <div class="rose-rule"></div>
+
+    <div class="intro-note">
+      <span class="ref">Accompagne le devis {{ devis.numero_devis }}</span>
+      <p>Madame, Monsieur,</p>
+      {% if devis.note_explicative.intro %}<p style="margin-top:10px;">{{ devis.note_explicative.intro }}</p>{% endif %}
+    </div>
+
+    <div style="padding:16px 0 10px;">
+      {% for bloc in devis.note_explicative.blocs %}
+      <div class="block">
+        <div class="sec-head">
+          <span class="sec-num">{{ forloop.counter|stringformat:"02d" }}</span>
+          <p class="sec-title">{{ bloc.titre }}</p>
+        </div>
+        <div class="blk-body"><p>{{ bloc.contenu }}</p></div>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% if devis.note_explicative.conclusion %}
+    <div class="closing"><p>{{ devis.note_explicative.conclusion }}</p></div>
+    {% endif %}
+
+    <div class="sign" style="margin:0 44px;">
+      <div class="col"></div>
+      <div class="col">
+        <p class="s-lbl">Pour le Cabinet Comptable &amp; Fiscal K&amp;L</p>
+        <p class="s-sub">La Direction</p>
+        <div class="s-line"></div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- PIED (visible à l'écran ; remplacé par le pied @page dans le PDF) -->
+  <div class="pied-integre" style="margin-top:18px;">
+    <div class="rose-rule"></div>
+    <div class="ft-inner">
+      <div class="ft-row"><span class="k">SARL au capital de 2 000 000 FCFA</span> &nbsp;·&nbsp; RCCM CI-DAL-2019-B-7777 &nbsp;·&nbsp; NCC 1909283-F</div>
+      <div class="ft-row">Immeuble Gog Brigitte, Carrefour Copro (non loin de la pharmacie Parvis) — Abidjan</div>
+      <div class="ft-row">Tél : 27 32 70 44 04 &nbsp;·&nbsp; 07 07 31 59 64 &nbsp;·&nbsp; 01 01 58 71 96 &nbsp;·&nbsp; <span class="k">cabinetkl120@gmail.com</span></div>
+    </div>
+  </div>
+
+</div>

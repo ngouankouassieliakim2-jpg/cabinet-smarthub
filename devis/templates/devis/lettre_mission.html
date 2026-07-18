@@ -1,0 +1,257 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lettre de mission — {{ devis.numero_devis }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{ --noir:#16171C; --gris:#555; --rose:#C81E6E; --line:#E5E5E8; }
+  *{box-sizing:border-box;}
+  body{margin:0;background:#E9E9EB;padding:30px 16px;font-family:'Inter',sans-serif;color:var(--noir);}
+  .toolbar{max-width:794px;margin:0 auto 16px;display:flex;justify-content:space-between;gap:10px;}
+  .toolbar a,.toolbar button{font-size:13px;padding:10px 18px;border-radius:6px;border:none;cursor:pointer;text-decoration:none;font-weight:600;}
+  .btn-back{background:#E5E7EB;color:#374151;}
+  .btn-print{background:var(--rose);color:#fff;}
+  .msg-zone{max-width:794px;margin:0 auto 14px;}
+  .msg{padding:10px 16px;border-radius:6px;font-size:13px;margin-bottom:6px;}
+  .msg-ok{background:#ECFDF5;color:#065F46;border:1px solid #A7F3D0;}
+  .msg-warn{background:#FFFBEB;color:#92400E;border:1px solid #FDE68A;}
+  .msg-err{background:#FEF2F2;color:#991B1B;border:1px solid #FECACA;}
+  .sheet{max-width:794px;margin:0 auto;background:#fff;padding:48px 56px;box-shadow:0 12px 50px rgba(0,0,0,.14);}
+
+  .head{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:18px;border-bottom:2px solid var(--rose);}
+  .head img{height:64px;}
+  .head .cab{text-align:right;font-size:10.5px;line-height:1.6;color:var(--gris);}
+  .head .cab b{color:var(--noir);font-size:12px;}
+
+  .titre{text-align:center;margin:34px 0 8px;}
+  .titre h1{font-family:'Playfair Display',serif;font-size:26px;font-weight:700;margin:0;letter-spacing:.02em;}
+  .titre .ref{font-size:12px;color:var(--rose);font-weight:600;margin-top:6px;}
+
+  .parties{margin:26px 0;font-size:13px;line-height:1.7;}
+  .parties .bloc{margin-bottom:14px;}
+  .parties .lbl{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--rose);font-weight:700;margin-bottom:3px;}
+  .parties b{font-weight:600;}
+
+  .art{margin:20px 0;}
+  .art h2{font-size:13px;font-weight:700;color:var(--noir);margin:0 0 6px;padding-bottom:4px;border-bottom:1px solid var(--line);}
+  .art h2 span{color:var(--rose);}
+  .art p{font-size:12.5px;line-height:1.75;color:#333;margin:0 0 8px;text-align:justify;}
+  .art ul{margin:6px 0;padding-left:0;list-style:none;}
+  .art li{font-size:12.5px;line-height:1.6;color:#333;padding:4px 0 4px 16px;position:relative;}
+  .art li::before{content:"";position:absolute;left:0;top:11px;width:5px;height:5px;border-radius:50%;background:var(--rose);}
+  .art li .liv{color:var(--gris);font-style:italic;}
+  .cat-titre{font-size:12px;font-weight:600;margin:8px 0 2px;color:var(--rose);}
+
+  .sign{display:grid;grid-template-columns:1fr 1fr;gap:50px;margin-top:40px;padding-top:10px;}
+  .sign .col{text-align:center;}
+  .sign .s-lbl{font-size:12px;font-weight:600;margin:0 0 2px;}
+  .sign .s-sub{font-size:10.5px;color:var(--gris);margin:0 0 56px;}
+  .sign .s-line{border-top:1.5px solid var(--noir);width:80%;margin:0 auto;}
+  .fait{font-size:12px;color:var(--gris);margin-top:30px;}
+
+  .pied{margin-top:30px;padding-top:14px;border-top:2px solid var(--rose);text-align:center;font-size:9.5px;line-height:1.7;color:var(--gris);}
+  .pied b{color:var(--noir);}
+
+  @media print{
+    html, body{
+      background:#fff;
+      padding:0;
+      margin:0;
+    }
+    .toolbar{display:none;}
+    .msg-zone{display:none;}
+    .sheet{
+      box-shadow:none;
+      width:auto;
+      max-width:100%;
+      min-height:0;
+      margin:0;
+      padding:0;
+    }
+    .art{break-inside:avoid;}
+    .sign{break-inside:avoid;}
+    .head{break-inside:avoid;}
+    *{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  }
+  @page{
+    size:A4 portrait;
+    margin:18mm 16mm;
+  }
+</style>
+</head>
+<body>
+
+  <div class="toolbar">
+    <a href="{% url 'liste_devis' %}" class="btn-back">&larr; Retour à la liste des devis</a>
+    <button class="btn-print" onclick="window.print()">🖨️ Imprimer / PDF</button>
+  </div>
+
+  <!-- MESSAGES (confirmation d'envoi email) -->
+  {% if messages %}
+  <div class="msg-zone">
+    {% for m in messages %}
+    <div class="msg {% if m.tags == 'success' %}msg-ok{% elif m.tags == 'warning' %}msg-warn{% else %}msg-err{% endif %}">{{ m }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="sheet">
+
+    <!-- EN-TÊTE -->
+    <div class="head">
+      <img src="{% static 'images/LOGO_2025_KL_fne.PNG' %}" alt="Cabinet K&L">
+      <div class="cab">
+        <b>Cabinet Comptable &amp; Fiscal K&amp;L</b><br>
+        SARL au capital de 2 000 000 FCFA<br>
+        RCCM CI-DAL-2019-B-7777 · NCC 1909283-F<br>
+        Immeuble Gog Brigitte, Carrefour Copro — Abidjan<br>
+        Tél : 27 32 70 44 04 · cabinetkl120@gmail.com
+      </div>
+    </div>
+
+    <!-- TITRE -->
+    <div class="titre">
+      <h1>Lettre de mission</h1>
+      <p class="ref">Référence devis {{ devis.numero_devis }}</p>
+    </div>
+
+    <!-- PARTIES -->
+    <div class="parties">
+      <p style="font-size:12px;color:var(--gris);margin-bottom:14px;">Entre les soussignés :</p>
+      <div class="bloc">
+        <div class="lbl">Le Cabinet</div>
+        <b>Cabinet Comptable &amp; Fiscal K&amp;L</b>, SARL au capital de 2 000 000 FCFA, RCCM CI-DAL-2019-B-7777, NCC 1909283-F, dont le siège est à Abidjan (Immeuble Gog Brigitte, Carrefour Copro), représenté par sa Direction, ci-après « le Cabinet »,
+      </div>
+      <div class="bloc">
+        <div class="lbl">Le Client</div>
+        {% if devis.type_client == "PM" %}
+        <b>{{ devis.pm_raison_sociale }}</b>{% if devis.pm_forme_juridique %}, {{ devis.pm_forme_juridique }}{% endif %}{% if devis.pm_capital_social %} au capital de {{ devis.pm_capital_social }}{% endif %}{% if devis.rccm_numero %}, RCCM {{ devis.rccm_numero }}{% endif %}{% if devis.ncc %}, NCC {{ devis.ncc }}{% endif %}{% if devis.siege_ville %}, dont le siège est à {{ devis.siege_commune }} {{ devis.siege_ville }}{% endif %}{% if devis.dirigeant_nom %}, représentée par {{ devis.dirigeant_nom }}{% if devis.dirigeant_qualite %} en qualité de {{ devis.dirigeant_qualite }}{% endif %}{% endif %}, ci-après « le Client »,
+        {% else %}
+        <b>{{ devis.pp_nom_prenoms }}</b>{% if devis.ncc %}, NCC {{ devis.ncc }}{% endif %}{% if devis.pp_adresse_perso %}, demeurant à {{ devis.pp_adresse_perso }}{% endif %}, ci-après « le Client »,
+        {% endif %}
+      </div>
+      <p style="font-size:12px;color:var(--gris);">Il a été convenu ce qui suit :</p>
+    </div>
+
+    <!-- ARTICLE 1 -->
+    <div class="art">
+      <h2><span>Article 1 —</span> Objet</h2>
+      <p>La présente lettre de mission a pour objet de définir les conditions dans lesquelles le Cabinet apporte son concours au Client au titre des prestations décrites à l'article 2, conformément au devis n° {{ devis.numero_devis }} accepté par le Client.</p>
+    </div>
+
+    <!-- ARTICLE 2 -->
+    <div class="art">
+      <h2><span>Article 2 —</span> Nature et étendue des travaux</h2>
+      <p>Le Cabinet réalise pour le compte du Client les prestations suivantes :</p>
+
+      {% if a_recurrent %}
+      <p style="font-weight:600;margin-bottom:2px;">Prestations de suivi régulier (livrables périodiques) :</p>
+      {% for g in groupes_recurrents %}
+      <p class="cat-titre">{{ g.nom }}</p>
+      <ul>
+        {% for p in g.lignes %}
+        <li>{{ p.libelle }}{% if p.periodicite %} <span class="liv">— {{ p.periodicite }}</span>{% endif %}{% if p.livrable %} <span class="liv">· Livrable : {{ p.livrable }}</span>{% endif %}</li>
+        {% endfor %}
+      </ul>
+      {% endfor %}
+      {% endif %}
+
+      {% if a_ponctuel %}
+      <p style="font-weight:600;margin:8px 0 2px;">Prestations ponctuelles (livrables uniques) :</p>
+      <ul>
+        {% for p in ponctuelles %}
+        <li>{{ p.libelle }}{% if p.livrable %} <span class="liv">· Livrable : {{ p.livrable }}</span>{% endif %}{% if p.delai %} <span class="liv">· Délai : {{ p.delai }}</span>{% endif %}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    </div>
+
+    <!-- ARTICLE 3 -->
+    <div class="art">
+      <h2><span>Article 3 —</span> Obligations du Cabinet</h2>
+      <p>Le Cabinet s'engage à exécuter sa mission avec diligence, conformément aux normes professionnelles et à la réglementation en vigueur (référentiel SYSCOHADA, Code général des impôts). Il est tenu à une obligation de moyens et informe le Client de toute difficulté significative rencontrée dans l'exécution de la mission.</p>
+    </div>
+
+    <!-- ARTICLE 4 -->
+    <div class="art">
+      <h2><span>Article 4 —</span> Obligations du Client</h2>
+      <p>Le Client s'engage à communiquer au Cabinet, dans les délais requis, l'ensemble des documents, pièces et informations nécessaires à la bonne exécution de la mission, et à en garantir la fiabilité et l'exhaustivité. Il désigne un interlocuteur habilité. Le Client demeure seul responsable de sa gestion et des décisions qu'il prend.</p>
+    </div>
+
+    <!-- ARTICLE 5 — DURÉE (dynamique, détaillée par catégorie) -->
+    <div class="art">
+      <h2><span>Article 5 —</span> Durée de la mission</h2>
+      {% if a_recurrent %}
+      <p>Les prestations de suivi régulier prennent effet le {{ date_effet|date:"d F Y" }} et sont conclues pour les durées suivantes, renouvelables par tacite reconduction pour des périodes successives de même durée, sauf dénonciation dans les conditions de l'article 9 :</p>
+      <ul>
+        {% for g in groupes_recurrents %}
+        <li>{{ g.nom }} : {{ g.duree|default:12 }} mois</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+      {% if a_ponctuel %}
+      <p>Pour les prestations ponctuelles, le Cabinet s'engage à livrer les travaux dans les délais indiqués à l'article 2, à compter de la réception de l'ensemble des pièces nécessaires à leur réalisation.</p>
+      {% endif %}
+    </div>
+
+    <!-- ARTICLE 6 — HONORAIRES -->
+    <div class="art">
+      <h2><span>Article 6 —</span> Honoraires et modalités de paiement</h2>
+      <p>Les honoraires sont fixés à <b>{{ honoraires|floatformat:0 }} FCFA TTC</b>, conformément au devis n° {{ devis.numero_devis }}.{% if a_recurrent and modalites_rec %} {{ modalites_rec }}.{% elif a_ponctuel and modalites_ponc %} {{ modalites_ponc }}.{% endif %} Ils rémunèrent exclusivement les prestations du Cabinet, à l'exclusion des droits, taxes, impôts et pénalités éventuellement dus à l'administration, qui demeurent à la charge du Client.</p>
+    </div>
+
+    <!-- ARTICLE 7 -->
+    <div class="art">
+      <h2><span>Article 7 —</span> Confidentialité</h2>
+      <p>Le Cabinet et ses collaborateurs sont tenus au secret professionnel. Les informations communiquées par le Client sont traitées de manière confidentielle et ne sont divulguées à aucun tiers, sauf obligation légale ou réglementaire.</p>
+    </div>
+
+    <!-- ARTICLE 8 -->
+    <div class="art">
+      <h2><span>Article 8 —</span> Responsabilité</h2>
+      <p>La responsabilité du Cabinet est limitée aux conséquences directes des fautes qui lui seraient imputables dans l'exécution de sa mission. Elle ne saurait être engagée à raison d'informations erronées ou incomplètes fournies par le Client, ni d'un retard résultant de la transmission tardive des pièces.</p>
+    </div>
+
+    <!-- ARTICLE 9 — RÉSILIATION (dynamique) -->
+    <div class="art">
+      <h2><span>Article 9 —</span> Résiliation</h2>
+      <p>Chaque partie peut résilier la mission moyennant un préavis de {{ preavis }} mois notifié par écrit. En cas de manquement grave de l'une des parties à ses obligations, l'autre partie peut résilier de plein droit après mise en demeure restée sans effet pendant trente (30) jours. À défaut de respect du préavis, la partie défaillante sera redevable d'une indemnité égale aux honoraires correspondant à la période de préavis non observée.</p>
+    </div>
+
+    <!-- ARTICLE 10 — DIFFÉRENDS -->
+    <div class="art">
+      <h2><span>Article 10 —</span> Droit applicable et différends</h2>
+      <p>La présente mission est régie par le droit ivoirien et les Actes uniformes de l'OHADA. En cas de différend, les parties s'efforceront de rechercher une solution amiable. À défaut d'accord, le litige sera porté devant les tribunaux compétents d'Abidjan.</p>
+    </div>
+
+    <!-- FAIT À / SIGNATURES -->
+    <p class="fait">Fait à Abidjan, le {{ devis.date_creation|date:"d F Y" }}, en deux (2) exemplaires originaux.</p>
+    <div class="sign">
+      <div class="col">
+        <p class="s-lbl">Pour le Client</p>
+        <p class="s-sub">Lu et approuvé, date et signature</p>
+        <div class="s-line"></div>
+      </div>
+      <div class="col">
+        <p class="s-lbl">Pour le Cabinet K&amp;L</p>
+        <p class="s-sub">La Direction</p>
+        {% if signature_direction_data_uri %}
+        <img src="{{ signature_direction_data_uri }}" style="max-height:52px;max-width:180px;margin:0 auto 6px;display:block;">
+        {% endif %}
+        <div class="s-line"></div>
+      </div>
+    </div>
+
+    <!-- PIED -->
+    <div class="pied">
+      <b>Cabinet Comptable &amp; Fiscal K&amp;L</b> — SARL au capital de 2 000 000 FCFA · RCCM CI-DAL-2019-B-7777 · NCC 1909283-F<br>
+      Immeuble Gog Brigitte, Carrefour Copro (non loin de la pharmacie Parvis), Abidjan · Tél : 27 32 70 44 04 · cabinetkl120@gmail.com
+    </div>
+
+  </div>
+</body>
+</html>

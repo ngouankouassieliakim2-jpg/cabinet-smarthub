@@ -1,0 +1,14 @@
+{% extends "pilotage/base_recouvrement.html" %}
+
+{% block titre %}Devis verrouillé — {{ devis.numero_devis }}{% endblock %}
+
+{% block contenu %}
+<div class="max-w-xl mx-auto p-8">
+  <div class="bg-white shadow rounded-lg p-8 text-center">
+      <h1 class="text-xl font-bold text-gray-800 mb-3">Modification verrouillée</h1>
+      <p class="text-gray-600">Le devis <b>{{ devis.numero_devis }}</b> ne peut plus être modifié.</p>
+      <p class="text-gray-500 text-sm mt-2">Le délai de 30 jours est dépassé depuis le {{ devis.date_limite_modification|date:"d/m/Y" }}.</p>
+      <a href="{% url 'detail_devis' devis.id %}" class="inline-block mt-5 bg-blue-700 text-white px-5 py-2 rounded hover:bg-blue-800">Retour au devis</a>
+  </div>
+</div>
+{% endblock %}

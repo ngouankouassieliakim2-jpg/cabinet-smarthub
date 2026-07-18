@@ -1,0 +1,86 @@
+{% extends "pilotage/base_pilotage.html" %}
+{% block titre %}Indicateurs RH — {{ employeur.raison_sociale }}{% endblock %}
+{% block contenu %}
+<div class="p-6">
+    <a href="{% url 'paie_employeur_modifier' employeur.id %}" class="text-sm text-gray-500 hover:text-[#C81E6E]">← Retour à l'entreprise</a>
+    <div class="mt-4 mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Indicateurs RH</h1>
+        <p class="text-gray-500 mt-1">{{ employeur.raison_sociale }} — synthèse des effectifs et de la masse salariale</p>
+    </div>
+
+    <div class="mb-6 bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <form method="get" class="flex flex-wrap gap-3 items-end">
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Année</label>
+                <select name="annee" class="mt-1 block w-full rounded-lg border-gray-300 bg-white text-sm text-gray-700 shadow-sm focus:border-[#C81E6E] focus:ring-[#C81E6E]/30">
+                    {% for a in annees_liste %}
+                    <option value="{{ a }}" {% if a == annee %}selected{% endif %}>{{ a }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Mois</label>
+                <select name="mois" class="mt-1 block w-full rounded-lg border-gray-300 bg-white text-sm text-gray-700 shadow-sm focus:border-[#C81E6E] focus:ring-[#C81E6E]/30">
+                    {% for valeur, nom in mois_liste %}
+                    <option value="{{ valeur }}" {% if valeur == mois %}selected{% endif %}>{{ nom }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="inline-flex items-center rounded-lg bg-[#C81E6E] px-4 py-2 text-sm font-medium text-white hover:bg-[#a81759] transition">Actualiser</button>
+        </form>
+    </div>
+
+    <div class="grid gap-6 xl:grid-cols-3">
+        <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+            <h2 class="text-lg font-semibold text-gray-900">Effectif actif</h2>
+            <p class="mt-4 text-4xl font-bold text-[#C81E6E]">{{ effectif_total }}</p>
+            <div class="mt-4 text-sm text-gray-500">
+                <div>CDI : {{ par_contrat.CDI }}</div>
+                <div>CDD : {{ par_contrat.CDD }}</div>
+                <div>Stage : {{ par_contrat.STAGE }}</div>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+            <h2 class="text-lg font-semibold text-gray-900">Masse salariale</h2>
+            <p class="mt-4 text-4xl font-bold text-[#C81E6E]">{{ masse_nette|floatformat:0 }} F</p>
+            <p class="text-sm text-gray-500 mt-2">Net à payer — {{ mois_nom }} {{ annee }}</p>
+            <p class="text-sm text-gray-500">Brut estimé : {{ masse_brute|floatformat:0 }} F</p>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+            <h2 class="text-lg font-semibold text-gray-900">Turnover</h2>
+            <p class="mt-4 text-4xl font-bold text-[#C81E6E]">{{ nb_sorties }}</p>
+            <p class="text-sm text-gray-500 mt-2">Sorties sur l'année</p>
+            <p class="text-sm text-gray-500">Embauches : {{ nb_embauches }}</p>
+        </div>
+    </div>
+
+    <div class="mt-6 grid gap-6 xl:grid-cols-2">
+        <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+            <h2 class="text-lg font-semibold text-gray-900">Répartition par catégorie</h2>
+            {% if par_categorie %}
+            <div class="mt-4 space-y-2 text-sm text-gray-700">
+                {% for categorie, compte in par_categorie.items %}
+                <div class="flex items-center justify-between rounded-lg bg-gray-50 px-4 py-3">
+                    <span>{{ categorie }}</span>
+                    <span class="font-semibold text-gray-900">{{ compte }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="mt-4 text-sm text-gray-500">Aucune catégorie renseignée.</p>
+            {% endif %}
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+            <h2 class="text-lg font-semibold text-gray-900">Alertes RH</h2>
+            <div class="mt-4 space-y-3 text-sm text-gray-700">
+                <div class="rounded-lg bg-yellow-50 p-4">
+                    <strong>{{ alertes_requalification|length }}</strong> salariés avec alerte requalification CDI
+                </div>
+                <div class="rounded-lg bg-blue-50 p-4">
+                    <strong>{{ alertes_echeance|length }}</strong> échéances prochaines de CDD/Stage
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

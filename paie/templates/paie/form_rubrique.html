@@ -1,0 +1,75 @@
+{% extends "pilotage/base_pilotage.html" %}
+{% block titre %}{{ titre }} — Rubriques{% endblock %}
+{% block contenu %}
+<div class="p-6 max-w-2xl">
+    <a href="{% url 'paie_rubriques_liste' employeur.id %}" class="text-sm text-gray-500 hover:text-[#C81E6E]">← Retour aux rubriques</a>
+    <div class="mt-4 mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">{{ titre }}</h1>
+        <p class="text-gray-500 mt-1">{{ employeur.raison_sociale }}</p>
+    </div>
+
+    <form method="post" class="bg-white rounded-xl border border-gray-200 p-6 space-y-5">
+        {% csrf_token %}
+
+        <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">Type de rubrique</label>
+            {{ form.type_rubrique }}
+            <p class="text-xs text-gray-400 mt-1">Un <strong>gain</strong> s'ajoute au salaire ; une <strong>retenue</strong> se déduit du net (ex : CMU).</p>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">Libellé</label>
+            {{ form.libelle }}
+            <p class="text-xs text-gray-400 mt-1">Ex : Prime de transport, Prime de rendement, Cotisation CMU…</p>
+        </div>
+
+        <div id="bloc-fiscal">
+            <label class="block text-sm font-medium text-gray-600 mb-1">Nature fiscale (ITS)</label>
+            {{ form.traitement_fiscal }}
+        </div>
+
+        <div id="bloc-plafond">
+            <label class="block text-sm font-medium text-gray-600 mb-1">Plafond d'exonération (FCFA)</label>
+            {{ form.plafond_exoneration }}
+            <p class="text-xs text-gray-400 mt-1">La part au-delà de ce plafond sera imposable. Ex : transport 30 000.</p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-600 mb-1">Montant par défaut (FCFA)</label>
+                {{ form.montant_par_defaut }}
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-600 mb-1">Ordre d'affichage</label>
+                {{ form.ordre }}
+            </div>
+        </div>
+
+        <label id="bloc-cnps" class="flex items-center gap-2 text-sm text-gray-700">
+            {{ form.soumis_cnps }} Soumise à la CNPS
+        </label>
+
+        <div class="flex items-center gap-3 pt-2">
+            <button type="submit" class="bg-[#C81E6E] text-white font-medium px-6 py-2.5 rounded-lg hover:bg-[#a81759] transition">Enregistrer</button>
+            <a href="{% url 'paie_rubriques_liste' employeur.id %}" class="text-gray-500 hover:text-gray-700">Annuler</a>
+        </div>
+    </form>
+</div>
+
+<script>
+    const selType = document.getElementById('id_type_rubrique');
+    const selTrait = document.getElementById('id_traitement_fiscal');
+    const blocFiscal = document.getElementById('bloc-fiscal');
+    const blocPlafond = document.getElementById('bloc-plafond');
+    const blocCnps = document.getElementById('bloc-cnps');
+    function maj() {
+        const estRetenue = (selType.value === 'RETENUE');
+        blocFiscal.style.display = estRetenue ? 'none' : 'block';
+        blocCnps.style.display = estRetenue ? 'none' : 'flex';
+        blocPlafond.style.display = (!estRetenue && selTrait.value === 'plafonne') ? 'block' : 'none';
+    }
+    maj();
+    selType.addEventListener('change', maj);
+    selTrait.addEventListener('change', maj);
+</script>
+{% endblock %}

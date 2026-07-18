@@ -1,0 +1,76 @@
+{% extends "vitrine/base_vitrine.html" %}
+
+{% block titre %}Actualités — Cabinet K&L{% endblock %}
+
+{% block style %}
+<style>
+  .reveal { opacity: 0; transform: translateY(24px); transition: opacity .6s ease, transform .6s ease; }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+  .art-card { transition: transform .18s ease, box-shadow .18s ease; }
+  .art-card:hover { transform: translateY(-6px); box-shadow: 0 14px 28px rgba(15,23,42,0.10); }
+</style>
+{% endblock %}
+
+{% block contenu %}
+
+<!-- HERO -->
+<section class="relative overflow-hidden bg-[#16171C]">
+    <div class="absolute -top-32 -right-20 w-96 h-96 bg-[#C81E6E] opacity-20 rounded-full blur-3xl"></div>
+    <div class="relative max-w-5xl mx-auto px-4 py-24 text-center">
+        <p class="text-sm font-semibold text-[#ED93B1] tracking-wide uppercase">Actualités</p>
+        <h1 class="mt-3 text-3xl md:text-5xl font-bold text-white leading-tight">Les actualités du cabinet</h1>
+        <p class="mt-5 text-slate-300 max-w-2xl mx-auto text-lg">
+            Suivez nos publications, nos conseils et nos informations fiscales et sociales.
+        </p>
+    </div>
+</section>
+
+<!-- LISTE DES ARTICLES -->
+<section class="max-w-6xl mx-auto px-4 py-16">
+    {% if articles %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for article in articles %}
+        <a href="{% url 'detail_article' article.id %}" class="reveal art-card block bg-white rounded-xl border border-slate-200 overflow-hidden">
+            {% if article.image %}
+            <img src="{{ article.image.url }}" alt="{{ article.titre }}" class="w-full h-48 object-cover">
+            {% else %}
+            <div class="w-full h-48 bg-[#FCEEF3] flex items-center justify-center text-4xl">📰</div>
+            {% endif %}
+            <div class="p-5">
+                <p class="text-xs text-slate-400">{{ article.date_publication|date:"d F Y" }}</p>
+                <h3 class="mt-1 font-bold text-slate-900 leading-snug">{{ article.titre }}</h3>
+                <p class="mt-2 text-sm text-slate-600 leading-relaxed">{{ article.contenu|truncatewords:20 }}</p>
+                <span class="mt-3 inline-block text-sm font-semibold text-[#C81E6E]">Lire la suite →</span>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-16">
+        <div class="text-5xl mb-4">📰</div>
+        <p class="text-slate-500">Aucune actualité pour le moment. Revenez bientôt !</p>
+    </div>
+    {% endif %}
+</section>
+
+<script>
+  (function () {
+    var els = document.querySelectorAll('.reveal');
+    if (!('IntersectionObserver' in window)) {
+      els.forEach(function (c) { c.classList.add('visible'); });
+      return;
+    }
+    var obs = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry, i) {
+        if (entry.isIntersecting) {
+          var el = entry.target;
+          setTimeout(function () { el.classList.add('visible'); }, i * 70);
+          obs.unobserve(el);
+        }
+      });
+    }, { threshold: 0.12 });
+    els.forEach(function (c) { obs.observe(c); });
+  })();
+</script>
+
+{% endblock %}

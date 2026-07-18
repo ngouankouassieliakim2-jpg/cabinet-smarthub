@@ -1,0 +1,611 @@
+{% extends "vitrine/base_vitrine.html" %}
+{% load static %}
+
+{% block titre %}Nos services — Cabinet K&L{% endblock %}
+
+{% block style %}
+<style>
+  /* Transitions d'apparition fluide globale */
+  .reveal { opacity: 0; transform: translateY(24px); transition: opacity .6s cubic-bezier(0.16, 1, 0.3, 1), transform .6s cubic-bezier(0.16, 1, 0.3, 1); }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+
+  /* Style des cartes de service interactives */
+  .svc-card { 
+    transition: transform .25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow .25s cubic-bezier(0.16, 1, 0.3, 1), border-color .25s ease; 
+  }
+  .svc-card:hover { 
+    transform: translateY(-8px); 
+    box-shadow: 0 20px 40px rgba(200, 30, 110, 0.08); 
+    border-color: #C81E6E; 
+  }
+
+  /* Filtre actif style */
+  .filter-btn.active {
+    background-color: #C81E6E;
+    color: #FFFFFF;
+    border-color: #C81E6E;
+  }
+</style>
+{% endblock %}
+
+{% block contenu %}
+
+<!-- SECTION HERO AVEC CONFIANCE IMMÉDIATE -->
+<section class="relative overflow-hidden bg-[#16171C] text-white py-24 sm:py-32">
+    <div class="absolute -top-32 -right-20 w-96 h-96 bg-[#C81E6E] opacity-20 rounded-full blur-3xl"></div>
+    <div class="absolute -bottom-32 -left-20 w-96 h-96 bg-blue-900/10 rounded-full blur-3xl"></div>
+    
+    <div class="relative max-w-5xl mx-auto px-4 text-center z-10">
+        <span class="inline-flex items-center gap-1.5 py-1 px-3 rounded-full text-xs font-semibold bg-white/10 text-pink-400 border border-white/10 tracking-wider uppercase mb-6">
+            Nos domaines d'intervention
+        </span>
+        <h1 class="text-4xl sm:text-6xl font-black tracking-tight leading-tight">
+            Un partenaire stratégique pour<br class="hidden md:block"> piloter votre croissance
+        </h1>
+        <p class="mt-6 text-slate-300 max-w-2xl mx-auto text-lg leading-relaxed">
+            Comptabilité, fiscalité, audit, ressources humaines, formation et conseil — l'excellence pluridisciplinaire au service de votre rentabilité.
+        </p>
+        
+        <div class="mt-8 flex justify-center gap-4">
+            <a href="{% url 'contact' %}" class="inline-flex items-center justify-center px-6 py-3 rounded-xl text-sm font-bold bg-gradient-to-r from-[#FF4081] to-[#C81E6E] text-white hover:opacity-90 shadow-lg shadow-pink-500/20 transition duration-200">
+                Parler à un expert
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- SECTION CHIFFRES CLÉS (ANIMÉS PAR JAVASCRIPT) -->
+<section class="bg-white border-b border-slate-100 py-12 relative z-20 shadow-sm">
+    <div class="max-w-5xl mx-auto px-4 grid grid-cols-3 gap-6 text-center">
+        <div>
+            <div class="flex items-baseline justify-center gap-0.5">
+                <span class="text-3xl md:text-5xl font-extrabold text-[#C81E6E] js-counter" data-target="8">0</span>
+                <span class="text-xl md:text-2xl font-bold text-[#C81E6E]">+</span>
+            </div>
+            <p class="mt-2 text-xs md:text-sm font-semibold text-slate-500 uppercase tracking-wider">Expertises métiers</p>
+        </div>
+        <div>
+            <div class="flex items-baseline justify-center gap-0.5">
+                <span class="text-3xl md:text-5xl font-extrabold text-[#C81E6E] js-counter" data-target="2">0</span>
+            </div>
+            <p class="mt-2 text-xs md:text-sm font-semibold text-slate-500 uppercase tracking-wider">Cabinets physiques</p>
+        </div>
+        <div>
+            <div class="flex items-baseline justify-center gap-0.5">
+                <span class="text-3xl md:text-5xl font-extrabold text-[#C81E6E] js-counter" data-target="9">0</span>
+                <span class="text-xl md:text-2xl font-bold text-[#C81E6E]">+</span>
+            </div>
+            <p class="mt-2 text-xs md:text-sm font-semibold text-slate-500 uppercase tracking-wider">Secteurs d'activité</p>
+        </div>
+    </div>
+</section>
+
+<!-- SECTION FILTRE DES SERVICES -->
+<section class="max-w-6xl mx-auto px-4 pt-16 text-center">
+    <div class="mb-10">
+        <h2 class="text-3xl font-black text-slate-900 tracking-tight">Parcourez nos offres de services</h2>
+        <p class="text-slate-500 text-sm mt-2">Sélectionnez une catégorie pour filtrer instantanément nos domaines d'action.</p>
+    </div>
+    
+    <div class="flex flex-wrap justify-center gap-2 max-w-3xl mx-auto">
+        <button class="filter-btn active px-4 py-2 rounded-xl text-sm font-semibold border border-slate-200 hover:border-pink-500 text-slate-600 transition" data-filter="all">Tous nos services</button>
+        <button class="filter-btn px-4 py-2 rounded-xl text-sm font-semibold border border-slate-200 hover:border-pink-500 text-slate-600 transition" data-filter="compta-fiscal">Comptabilité & Fiscalité</button>
+        <button class="filter-btn px-4 py-2 rounded-xl text-sm font-semibold border border-slate-200 hover:border-pink-500 text-slate-600 transition" data-filter="audit-conseil">Audit, Conseil & Stratégie</button>
+        <button class="filter-btn px-4 py-2 rounded-xl text-sm font-semibold border border-slate-200 hover:border-pink-500 text-slate-600 transition" data-filter="rh-formation">RH & Formation</button>
+    </div>
+</section>
+
+<!-- GRILLE DES SERVICES CLIQUABLES -->
+<section class="max-w-6xl mx-auto px-4 py-12">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="services-grid">
+
+        <!-- Comptabilité -->
+        <a href="{% url 'services' %}#comptabilite" class="reveal svc-card bg-white rounded-2xl border border-slate-100 p-6 flex flex-col justify-between h-full group" data-category="compta-fiscal">
+            <div>
+                <div class="flex justify-between items-start mb-6">
+                    <img src="{% static 'images/svc_comptabilite_kl.svg' %}" alt="Comptabilité" class="w-[72px] h-[72px] transition-transform duration-300 group-hover:scale-110">
+                    <span class="text-[10px] font-bold text-[#C81E6E] bg-pink-50 px-2.5 py-1 rounded-full uppercase tracking-wider">Populaire</span>
+                </div>
+                <h3 class="font-extrabold text-slate-900 text-lg mb-2">Assistance comptable</h3>
+                <p class="text-sm text-slate-500 leading-relaxed mb-6">Saisie des opérations, rapprochements, comptes annuels et états financiers conformes au système SYSCOHADA.</p>
+                <ul class="space-y-2 mb-8 text-xs text-slate-600 font-medium">
+                    <li class="flex items-center gap-2"><svg class="w-4 h-4 text-emerald-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg> États financiers SYSCOHADA (SMT, SN)</li>
+                    <li class="flex items-center gap-2"><svg class="w-4 h-4 text-emerald-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg> Tenue & Saisie comptable rigoureuse</li>
+                    <li class="flex items-center gap-2"><svg class="w-4 h-4 text-emerald-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg> Déclarations annuelles DISA / DASC</li>
+                </ul>
+            </div>
+            <span class="inline-flex items-center gap-1.5 text-sm font-bold text-[#C81E6E] group-hover:gap-2.5 transition-all">
+                Découvrir ce service <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+            </span>
+        </a>
+
+        <!-- Fiscalité -->
+        <a href="{% url 'services' %}#fiscalite" class="reveal svc-card bg-white rounded-2xl border border-slate-100 p-6 flex flex-col justify-between h-full group" data-category="compta-fiscal">
+            <div>
+                <div class="flex justify-between items-start mb-6">
+                    <img src="{% static 'images/svc_fiscalite_kl.svg' %}" alt="Fiscalité" class="w-[72px] h-[72px] transition-transform duration-300 group-hover:scale-110">
+                    <span class="text-[10px] font-bold text-[#C81E6E] bg-pink-50 px-2.5 py-1 rounded-full uppercase tracking-wider">Populaire</span>
+                </div>
+                <h3 class="font-extrabold text-slate-900 text-lg mb-2">Fiscalité</h3>
+                <p class="text-sm text-slate-500 leading-relaxed mb-6">Gestion de vos obligations et optimisation pour sécuriser la rentabilité de votre entreprise en Côte d'Ivoire.</p>
+                <ul class="space-y-2 mb-8 text-xs text-slate-600 font-medium">
+                    <li class="flex items-center gap-2"><svg class="w-4 h-4 text-emerald-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg> Déclarations fiscales (TVA, BIC, ITS)</li>
+                    <li class="flex items-center gap-2"><svg class="w-4 h-4 text-emerald-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg> Accompagnement aux contrôles fiscaux</li>
+                    <li class="flex items-center gap-2"><svg class="w-4 h-4 text-emerald-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg> Optimisation & Planification fiscale</li>
+                </ul>
+            </div>
+            <span class="inline-flex items-center gap-1.5 text-sm font-bold text-[#C81E6E] group-hover:gap-2.5 transition-all">
+                Découvrir ce service <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+            </span>
+        </a>
+
+        <!-- Audit -->
+        <a href="{% url 'services' %}#audit" class="reveal svc-card bg-white rounded-2xl border border-slate-100 p-6 flex flex-col justify-between h-full group" data-category="audit-conseil">
+            <div>
+                <div class="flex justify-between items-start mb-6">
+                    <img src="{% static 'images/svc_audit_kl.svg' %}" alt="Audit" class="w-[72px] h-[72px] transition-transform duration-300 group-hover:scale-110">
+                </div>
+                <h3 class="font-extrabold text-slate-900 text-lg mb-2">Audit</h3>
+                <p class="text-sm text-slate-500 leading-relaxed mb-6">Évaluation objective et indépendante de vos structures pour une transparence financière irréprochable.</p>
+                <ul class="space-y-2 mb-8 text-xs text-slate-600 font-medium">
+                    <li class="flex items-center gap-2"><svg class="w-4 h-4 text-emerald-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg> Audit comptable et financier</li>
+                    <li class="flex items-center gap-2"><svg class="w-4 h-4 text-emerald-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg> Audit organisationnel et opérationnel</li>
+                    <li class="flex items-center gap-2"><svg class="w-4 h-4 text-emerald-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg> Diagnostic général de conformité</li>
+                </ul>
+            </div>
+            <span class="inline-flex items-center gap-1.5 text-sm font-bold text-[#C81E6E] group-hover:gap-2.5 transition-all">
+                Découvrir ce service <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+            </span>
+        </a>
+
+        <!-- Ressources Humaines -->
+        <a href="{% url 'services' %}#rh" class="reveal svc-card bg-white rounded-2xl border border-slate-100 p-6 flex flex-col justify-between h-full group" data-category="rh-formation">
+            <div>
+                <div class="flex justify-between items-start mb-6">
+                    <img src="{% static 'images/svc_rh_kl.svg' %}" alt="Ressources humaines" class="w-[72px] h-[72px] transition-transform duration-300 group-hover:scale-110">
+                    <span class="text-[10px] font-bold text-[#C81E6E] bg-pink-50 px-2.5 py-1 rounded-full uppercase tracking-wider">Populaire</span>
+                </div>
+                <h3 class="font-extrabold text-slate-900 text-lg mb-2">Assistance en ressources humaines</h3>
+                <p class="text-sm text-slate-500 leading-relaxed mb-6">Gestion administrative du personnel, bulletins de salaire sécurisés et conformité stricte avec la CNPS.</p>
+                <ul class="space-y-2 mb-8 text-xs text-slate-600 font-medium">
+                    <li class="flex items-center gap-2"><svg class="w-4 h-4 text-emerald-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg> Paie & Bulletins de salaire optimisés</li>
+                    <li class="flex items-center gap-2"><svg class="w-4 h-4 text-emerald-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg> Déclarations CNPS & Cotisations</li>
+                    <li class="flex items-center gap-2"><svg class="w-4 h-4 text-emerald-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg> Gestion des contrats & recrutement</li>
+                </ul>
+            </div>
+            <span class="inline-flex items-center gap-1.5 text-sm font-bold text-[#C81E6E] group-hover:gap-2.5 transition-all">
+                Découvrir ce service <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+            </span>
+        </a>
+
+        <!-- Formation -->
+        <a href="{% url 'services' %}#formation" class="reveal svc-card bg-white rounded-2xl border border-slate-100 p-6 flex flex-col justify-between h-full group" data-category="rh-formation">
+            <div>
+                <div class="flex justify-between items-start mb-6">
+                    <img src="{% static 'images/svc_formation_kl.svg' %}" alt="Formation" class="w-[72px] h-[72px] transition-transform duration-300 group-hover:scale-110">
+                </div>
+                <h3 class="font-extrabold text-slate-900 text-lg mb-2">Formation</h3>
+                <p class="text-sm text-slate-500 leading-relaxed mb-6">Développement des compétences de vos collaborateurs sur l'entrepreneuriat, les progiciels SAARI et Sage.</p>
+                <ul class="space-y-2 mb-8 text-xs text-slate-600 font-medium">
+                    <li class="flex items-center gap-2"><svg class="w-4 h-4 text-emerald-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg> Formations SAARI Compta / Paie</li>
+                    <li class="flex items-center gap-2"><svg class="w-4 h-4 text-emerald-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg> Gestion des PME / PMI locales</li>
+                    <li class="flex items-center gap-2"><svg class="w-4 h-4 text-emerald-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg> Modules finances et pilotage</li>
+                </ul>
+            </div>
+            <span class="inline-flex items-center gap-1.5 text-sm font-bold text-[#C81E6E] group-hover:gap-2.5 transition-all">
+                Découvrir ce service <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+            </span>
+        </a>
+
+        <!-- Conseil -->
+        <a href="{% url 'services' %}#conseil" class="reveal svc-card bg-white rounded-2xl border border-slate-100 p-6 flex flex-col justify-between h-full group" data-category="audit-conseil">
+            <div>
+                <div class="flex justify-between items-start mb-6">
+                    <img src="{% static 'images/svc_conseil_kl.svg' %}" alt="Conseil" class="w-[72px] h-[72px] transition-transform duration-300 group-hover:scale-110">
+                </div>
+                <h3 class="font-extrabold text-slate-900 text-lg mb-2">Conseil</h3>
+                <p class="text-sm text-slate-500 leading-relaxed mb-6">Assistance stratégique et opérationnelle, manuels de procédures, et accompagnement à la croissance.</p>
+                <ul class="space-y-2 mb-8 text-xs text-slate-600 font-medium">
+                    <li class="flex items-center gap-2"><svg class="w-4 h-4 text-emerald-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg> Diagnostic & restructuration de PME</li>
+                    <li class="flex items-center gap-2"><svg class="w-4 h-4 text-emerald-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg> Études d'impact et de faisabilité</li>
+                    <li class="flex items-center gap-2"><svg class="w-4 h-4 text-emerald-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg> Rédaction de manuels de procédures</li>
+                </ul>
+            </div>
+            <span class="inline-flex items-center gap-1.5 text-sm font-bold text-[#C81E6E] group-hover:gap-2.5 transition-all">
+                Découvrir ce service <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+            </span>
+        </a>
+
+        <!-- Organisation & stratégie -->
+        <a href="{% url 'services' %}#strategie" class="reveal svc-card bg-white rounded-2xl border border-slate-100 p-6 flex flex-col justify-between h-full group" data-category="audit-conseil">
+            <div>
+                <div class="flex justify-between items-start mb-6">
+                    <img src="{% static 'images/svc_organisation_kl.svg' %}" alt="Organisation et stratégie" class="w-[72px] h-[72px] transition-transform duration-300 group-hover:scale-110">
+                </div>
+                <h3 class="font-extrabold text-slate-900 text-lg mb-2">Organisation &amp; stratégie</h3>
+                <p class="text-sm text-slate-500 leading-relaxed mb-6">Cadrage de votre vision d'entreprise à long terme, restructuration opérationnelle et gouvernance saine.</p>
+                <ul class="space-y-2 mb-8 text-xs text-slate-600 font-medium">
+                    <li class="flex items-center gap-2"><svg class="w-4 h-4 text-emerald-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg> Planification stratégique pluriannuelle</li>
+                    <li class="flex items-center gap-2"><svg class="w-4 h-4 text-emerald-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg> Structuration de gouvernance d'entreprise</li>
+                    <li class="flex items-center gap-2"><svg class="w-4 h-4 text-emerald-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg> Accompagnement aux fusions / acquisitions</li>
+                </ul>
+            </div>
+            <span class="inline-flex items-center gap-1.5 text-sm font-bold text-[#C81E6E] group-hover:gap-2.5 transition-all">
+                Découvrir ce service <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+            </span>
+        </a>
+
+        <!-- Aides publiques -->
+        <a href="{% url 'services' %}#financement" class="reveal svc-card bg-white rounded-2xl border border-slate-100 p-6 flex flex-col justify-between h-full group" data-category="compta-fiscal">
+            <div>
+                <div class="flex justify-between items-start mb-6">
+                    <img src="{% static 'images/svc_aides_kl.svg' %}" alt="Aides publiques et privées" class="w-[72px] h-[72px] transition-transform duration-300 group-hover:scale-110">
+                </div>
+                <h3 class="font-extrabold text-slate-900 text-lg mb-2">Expertise d'aides publiques &amp; privées</h3>
+                <p class="text-sm text-slate-500 leading-relaxed mb-6">Accompagnement rigoureux et constitution de dossiers pour l'accès aux subventions et financements.</p>
+                <ul class="space-y-2 mb-8 text-xs text-slate-600 font-medium">
+                    <li class="flex items-center gap-2"><svg class="w-4 h-4 text-emerald-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg> Identification de financements éligibles</li>
+                    <li class="flex items-center gap-2"><svg class="w-4 h-4 text-emerald-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg> Constitution &amp; soutenance de dossiers</li>
+                    <li class="flex items-center gap-2"><svg class="w-4 h-4 text-emerald-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg> Suivi des subventions et rapports de gestion</li>
+                </ul>
+            </div>
+            <span class="inline-flex items-center gap-1.5 text-sm font-bold text-[#C81E6E] group-hover:gap-2.5 transition-all">
+                Découvrir ce service <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+            </span>
+        </a>
+
+    </div>
+</section>
+
+<!-- SECTION DÉTAIL DE CHAQUE SERVICE (une section par entrée de SERVICES_DATA, ancrée par slug) -->
+<div class="border-t border-slate-100">
+    <div class="max-w-5xl mx-auto px-4 pt-16 pb-4 text-center">
+        <span class="text-xs font-bold uppercase tracking-widest text-[#C81E6E]">En détail</span>
+        <h2 class="text-2xl sm:text-3xl font-black text-slate-900 mt-2 tracking-tight">Chaque service, expliqué en profondeur</h2>
+        <p class="text-slate-500 text-sm mt-2 max-w-xl mx-auto">Ce que ça couvre, pourquoi c'est important pour votre entreprise, et pourquoi le confier au Cabinet K&amp;L.</p>
+    </div>
+
+    {% for slug, svc in services.items %}
+    <section id="{{ slug }}" class="{% cycle 'bg-white' 'bg-slate-50' %} scroll-mt-24 py-14 border-b border-slate-100">
+        <div class="max-w-5xl mx-auto px-4">
+
+            <div class="max-w-2xl mb-10">
+                <span class="inline-flex items-center gap-1.5 py-1 px-3 rounded-full text-xs font-semibold bg-pink-50 text-[#C81E6E] tracking-wider uppercase mb-4">{{ svc.badge_category }}</span>
+                <h3 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">{{ svc.title }}</h3>
+                <p class="mt-3 text-slate-600 leading-relaxed">{{ svc.hero_description }}</p>
+            </div>
+
+            <!-- 3 piliers : Ce que ça couvre / Pourquoi c'est important / Pourquoi nous choisir -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-10">
+                {% for pillar in svc.pillars %}
+                <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
+                    <span class="text-[10px] font-black text-slate-300 tracking-widest uppercase block mb-2">0{{ forloop.counter }}</span>
+                    <h4 class="font-bold text-slate-900 mb-2">{{ pillar.title }}</h4>
+                    <p class="text-xs text-slate-500 mb-4 leading-relaxed">{{ pillar.desc }}</p>
+                    <ul class="space-y-1.5">
+                        {% for point in pillar.points %}
+                        <li class="flex items-start gap-2 text-xs text-slate-700">
+                            <svg class="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+                            <span>{{ point }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Petites métriques de repère -->
+            <div class="flex flex-wrap gap-6 mb-10 text-xs">
+                <div class="flex items-baseline gap-1.5">
+                    <span class="font-black text-lg text-[#C81E6E]">{{ svc.metric_value }}{{ svc.metric_suffix }}</span>
+                    <span class="text-slate-500">{{ svc.metric_title }}</span>
+                </div>
+                <div class="flex items-baseline gap-1.5">
+                    <span class="font-bold text-slate-800">{{ svc.extra_val_1 }}</span>
+                    <span class="text-slate-500">{{ svc.extra_label_1 }}</span>
+                </div>
+                <div class="flex items-baseline gap-1.5">
+                    <span class="font-bold text-slate-800">{{ svc.extra_val_2 }}</span>
+                    <span class="text-slate-500">{{ svc.extra_label_2 }}</span>
+                </div>
+            </div>
+
+            <!-- FAQ courte propre à ce service -->
+            {% if svc.faq %}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
+                {% for item in svc.faq %}
+                <div class="bg-white rounded-xl p-5 border border-slate-100">
+                    <h4 class="font-bold text-sm text-slate-900 mb-1.5">{{ item.q }}</h4>
+                    <p class="text-xs text-slate-500 leading-relaxed">{{ item.a }}</p>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <a href="{% url 'contact' %}?service={{ svc.motif_code }}" class="inline-flex items-center gap-1.5 text-sm font-bold text-[#C81E6E] hover:gap-2.5 transition-all">
+                Discuter de ce service avec un conseiller
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+            </a>
+
+        </div>
+    </section>
+    {% endfor %}
+</div>
+
+<!-- SECTION NOTRE PROCESSUS D'ACCOMPAGNEMENT -->
+<section class="bg-slate-950 text-white py-20 relative overflow-hidden">
+    <div class="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,rgba(200,30,110,0.1),transparent_40%)]"></div>
+    <div class="max-w-6xl mx-auto px-4 relative z-10">
+        <div class="text-center mb-16">
+            <span class="text-xs font-bold uppercase tracking-widest text-pink-400">Méthodologie</span>
+            <h2 class="text-3xl font-black mt-2">Votre parcours d'intégration chez K&L</h2>
+            <p class="text-slate-400 text-sm mt-2 max-w-lg mx-auto">Une structure d'intégration claire et professionnelle pour garantir un démarrage sans accroc.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div class="reveal relative">
+                <div class="text-6xl font-black text-white/5 absolute -top-10 -left-4">01</div>
+                <div class="relative z-10">
+                    <h3 class="font-bold text-lg mb-2">1. Premier échange</h3>
+                    <p class="text-xs text-slate-400 leading-relaxed">Prise de contact téléphonique ou physique pour comprendre votre projet et évaluer vos premiers besoins d'orientation.</p>
+                </div>
+            </div>
+            <div class="reveal relative">
+                <div class="text-6xl font-black text-white/5 absolute -top-10 -left-4">02</div>
+                <div class="relative z-10">
+                    <h3 class="font-bold text-lg mb-2">2. Diagnostic d'expert</h3>
+                    <p class="text-xs text-slate-400 leading-relaxed">Analyse en profondeur de votre comptabilité, de votre structure fiscale ou de votre organisation pour cerner les urgences.</p>
+                </div>
+            </div>
+            <div class="reveal relative">
+                <div class="text-6xl font-black text-white/5 absolute -top-10 -left-4">03</div>
+                <div class="relative z-10">
+                    <h3 class="font-bold text-lg mb-2">3. Proposition d'honoraires</h3>
+                    <p class="text-xs text-slate-400 leading-relaxed">Une offre sur-mesure adaptée à la taille de votre structure (TPE, PME ou grande entreprise), sans mauvaise surprise.</p>
+                </div>
+            </div>
+            <div class="reveal relative">
+                <div class="text-6xl font-black text-white/5 absolute -top-10 -left-4">04</div>
+                <div class="relative z-10">
+                    <h3 class="font-bold text-lg mb-2">4. Mise en route</h3>
+                    <p class="text-xs text-slate-400 leading-relaxed">Lancement de la mission et ouverture de vos accès sécurisés sur notre plateforme SmartHub pour un suivi à 360°.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- SECTION POURQUOI CHOISIR K&L (ARGUMENTS COMMERCIAUX) -->
+<section class="max-w-6xl mx-auto px-4 py-20">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        <div class="reveal">
+            <span class="text-xs font-bold uppercase tracking-widest text-[#C81E6E]">Notre Valeur Ajoutée</span>
+            <h2 class="text-3xl font-black text-slate-900 mt-2 leading-tight">Plus qu'un simple cabinet, un partenaire de confiance au quotidien</h2>
+            <p class="text-slate-600 text-sm mt-4 leading-relaxed">
+                Le Cabinet K&L allie l'expertise juridique locale de la Côte d'Ivoire avec la réactivité et la technologie d'un cabinet digital moderne. Nous ne nous contentons pas d'aligner des chiffres, nous créons de la valeur pour votre gouvernance.
+            </p>
+            <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-pink-50 text-[#C81E6E] flex items-center justify-center shrink-0">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-slate-900 text-sm">Cabinet agréé</h4>
+                        <p class="text-slate-500 text-xs mt-0.5">Enregistré et habilité pour toutes vos démarches réglementaires.</p>
+                    </div>
+                </div>
+                <div class="flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-pink-50 text-[#C81E6E] flex items-center justify-center shrink-0">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-slate-900 text-sm">Réponse sous 24h</h4>
+                        <p class="text-slate-500 text-xs mt-0.5">Une équipe réactive prête à répondre à toutes vos interrogations d'urgence.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="reveal bg-slate-50 p-8 rounded-2xl border border-slate-100 flex flex-col justify-center">
+            <h3 class="font-extrabold text-slate-900 mb-6">Nous pilotons votre entreprise avec les meilleurs outils</h3>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 text-center">
+                <div class="bg-white p-4 rounded-xl border border-slate-200/50 shadow-sm font-bold text-sm text-slate-600">Sage / SAARI</div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200/50 shadow-sm font-bold text-sm text-slate-600">QuickBooks</div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200/50 shadow-sm font-bold text-sm text-slate-600">Odoo</div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200/50 shadow-sm font-bold text-sm text-slate-600">MS Excel</div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200/50 shadow-sm font-bold text-sm text-slate-600">Power BI</div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200/50 shadow-sm font-bold text-sm text-slate-600">SmartHub</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- SECTION SECTEURS D'ACTIVITÉ ACCOMPAGNÉS -->
+<section class="bg-slate-50 border-y border-slate-100 py-20">
+    <div class="max-w-6xl mx-auto px-4">
+        <div class="text-center mb-12">
+            <span class="text-xs font-bold uppercase tracking-widest text-[#C81E6E]">Nos Secteurs</span>
+            <h2 class="text-3xl font-black text-slate-900 mt-2">Des réponses adaptées à chaque marché</h2>
+            <p class="text-slate-500 text-sm mt-2 max-w-lg mx-auto">Chaque secteur a ses spécificités comptables et fiscales. Nos équipes maîtrisent les codes de votre métier.</p>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-6 gap-4">
+            <div class="bg-white p-6 rounded-2xl border border-slate-100 text-center shadow-sm">
+                <div class="text-2xl mb-2">🚜</div>
+                <h4 class="font-bold text-xs text-slate-800 uppercase">Agriculture</h4>
+            </div>
+            <div class="bg-white p-6 rounded-2xl border border-slate-100 text-center shadow-sm">
+                <div class="text-2xl mb-2">🏗️</div>
+                <h4 class="font-bold text-xs text-slate-800 uppercase">BTP &amp; Immobilier</h4>
+            </div>
+            <div class="bg-white p-6 rounded-2xl border border-slate-100 text-center shadow-sm">
+                <div class="text-2xl mb-2">🛒</div>
+                <h4 class="font-bold text-xs text-slate-800 uppercase">Commerce</h4>
+            </div>
+            <div class="bg-white p-6 rounded-2xl border border-slate-100 text-center shadow-sm">
+                <div class="text-2xl mb-2">🏭</div>
+                <h4 class="font-bold text-xs text-slate-800 uppercase">Industrie</h4>
+            </div>
+            <div class="bg-white p-6 rounded-2xl border border-slate-100 text-center shadow-sm">
+                <div class="text-2xl mb-2">🤝</div>
+                <h4 class="font-bold text-xs text-slate-800 uppercase">ONG &amp; Projets</h4>
+            </div>
+            <div class="bg-white p-6 rounded-2xl border border-slate-100 text-center shadow-sm">
+                <div class="text-2xl mb-2">🚚</div>
+                <h4 class="font-bold text-xs text-slate-800 uppercase">Logistique</h4>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- SECTION TÉMOIGNAGES CLIENTS -->
+<section class="max-w-6xl mx-auto px-4 py-20">
+    <div class="text-center mb-16">
+        <span class="text-xs font-bold uppercase tracking-widest text-[#C81E6E]">Témoignages</span>
+        <h2 class="text-3xl font-black text-slate-900 mt-2">La parole est à nos clients</h2>
+        <p class="text-slate-500 text-sm mt-2">La satisfaction de nos partenaires est le premier indicateur de notre réussite.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm relative">
+            <span class="text-pink-400 text-4xl font-serif absolute top-4 right-6">“</span>
+            <div class="flex gap-1 text-amber-400 mb-4">★ ★ ★ ★ ★</div>
+            <p class="text-xs text-slate-600 italic leading-relaxed mb-6">"Le Cabinet K&L a restructuré de fond en comble notre comptabilité. Grâce à l'outil SmartHub, nous suivons en direct nos charges."</p>
+            <div>
+                <h4 class="font-bold text-sm text-slate-900">Directeur Général</h4>
+                <p class="text-[11px] text-slate-400">Coopérative Agricole (Daloa)</p>
+            </div>
+        </div>
+        <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm relative">
+            <span class="text-pink-400 text-4xl font-serif absolute top-4 right-6">“</span>
+            <div class="flex gap-1 text-amber-400 mb-4">★ ★ ★ ★ ★</div>
+            <p class="text-xs text-slate-600 italic leading-relaxed mb-6">"Une équipe réactive et un accompagnement fiscal sans reproche. Fini le stress des déclarations de TVA de fin de mois !"</p>
+            <div>
+                <h4 class="font-bold text-sm text-slate-900">Fondatrice &amp; Gérante</h4>
+                <p class="text-[11px] text-slate-400">Entreprise de BTP (Grand-Bassam)</p>
+            </div>
+        </div>
+        <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm relative">
+            <span class="text-pink-400 text-4xl font-serif absolute top-4 right-6">“</span>
+            <div class="flex gap-1 text-amber-400 mb-4">★ ★ ★ ★ ★</div>
+            <p class="text-xs text-slate-600 italic leading-relaxed mb-6">"Les formations dispensées sur le logiciel SAARI ont considérablement optimisé la productivité de notre équipe financière interne."</p>
+            <div>
+                <h4 class="font-bold text-sm text-slate-900">Responsable RH</h4>
+                <p class="text-[11px] text-slate-400">Société d'Import-Export</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- SECTION CTA FINAL (DOPÉ COMMERCIALEMENT) -->
+<section class="max-w-6xl mx-auto px-4 pb-24">
+    <div class="bg-[#16171C] rounded-3xl px-8 py-16 text-center relative overflow-hidden shadow-xl">
+        <div class="absolute -bottom-24 -left-16 w-80 h-80 bg-[#C81E6E] opacity-15 rounded-full blur-3xl"></div>
+        <div class="absolute -top-24 -right-16 w-80 h-80 bg-blue-900/10 rounded-full blur-3xl"></div>
+        
+        <p class="relative text-xs font-bold uppercase tracking-widest text-pink-400 mb-2">Prêt à sécuriser votre croissance ?</p>
+        <h2 class="relative text-2xl sm:text-4xl font-black text-white">Bénéficiez d'un audit de cadrage offert</h2>
+        <p class="relative mt-4 text-slate-400 max-w-xl mx-auto text-sm sm:text-base leading-relaxed">
+            Parlez à l'un de nos conseillers dédiés, étudiez vos pistes d'optimisation et recevez votre devis sans aucun engagement sous 24h.
+        </p>
+
+        <!-- CTA Action -->
+        <div class="relative mt-8 flex flex-col sm:flex-row justify-center gap-4">
+            <a href="{% url 'contact' %}" class="inline-flex items-center justify-center px-8 py-4 rounded-xl text-sm font-bold bg-[#C81E6E] text-white hover:bg-[#a81759] transition shadow-lg shadow-pink-500/20">
+                Planifier un rendez-vous gratuit
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- LOGO PARTENAIRES DE CONFIANCE (DGI, CNPS...) -->
+<div class="max-w-5xl mx-auto px-4 pb-20 text-center">
+    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6">Notre cadre d'excellence s'appuie sur</p>
+    <div class="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-40 select-none">
+        <span class="font-extrabold text-sm tracking-widest text-slate-600">DIRECTION GÉNÉRALE DES IMPÔTS (DGI)</span>
+        <span class="font-extrabold text-sm tracking-widest text-slate-600">CNPS CÔTE D'IVOIRE</span>
+        <span class="font-extrabold text-sm tracking-widest text-slate-600">SYSCOHADA COMPTABLE</span>
+    </div>
+</div>
+
+<!-- SCRIPT DE TRANSITION (OBSERVER) & FILTRE DES CARTES & COMPTEUR ANIMÉ -->
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // 1. ANIME LES ÉLÉMENTS AU DÉFILEMENT (OBSERVER)
+    var els = document.querySelectorAll('.reveal');
+    if (!('IntersectionObserver' in window)) {
+      els.forEach(function (c) { c.classList.add('visible'); });
+    } else {
+      var obs = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry, i) {
+          if (entry.isIntersecting) {
+            var el = entry.target;
+            setTimeout(function () { el.classList.add('visible'); }, i * 50);
+            obs.unobserve(el);
+          }
+        });
+      }, { threshold: 0.1 });
+      els.forEach(function (c) { obs.observe(c); });
+    }
+
+    // 2. LOGIQUE DE FILTRAGE DES SERVICES SANS RECHARGEMENT
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    const serviceCards = document.querySelectorAll('#services-grid > a');
+
+    filterButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            // Retirer la classe active de tous les boutons
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+
+            const filterValue = button.getAttribute('data-filter');
+
+            serviceCards.forEach(card => {
+                const category = card.getAttribute('data-category');
+                
+                if (filterValue === 'all') {
+                    card.style.display = 'flex';
+                } else if (category === filterValue) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+    });
+
+    // 3. LOGIQUE DES COMPTEURS ANIMÉS
+    const counters = document.querySelectorAll('.js-counter');
+    const animateCounters = () => {
+        counters.forEach(counter => {
+            const target = +counter.getAttribute('data-target');
+            const updateCounter = () => {
+                const current = +counter.innerText;
+                const increment = Math.ceil(target / 30); // Vitesse d'incrément
+                if (current < target) {
+                    counter.innerText = Math.min(current + increment, target);
+                    setTimeout(updateCounter, 50);
+                } else {
+                    counter.innerText = target;
+                }
+            };
+            updateCounter();
+        });
+    };
+
+    // Déclenche l'animation des compteurs dès qu'ils apparaissent à l'écran
+    const counterSection = document.querySelector('.js-counter').closest('section');
+    if ('IntersectionObserver' in window) {
+        const counterObs = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting) {
+                animateCounters();
+                counterObs.unobserve(counterSection);
+            }
+        }, { threshold: 0.2 });
+        counterObs.observe(counterSection);
+    } else {
+        animateCounters();
+    }
+  });
+</script>
+
+{% endblock %}

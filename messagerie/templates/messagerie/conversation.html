@@ -1,0 +1,264 @@
+{% extends "pilotage/base_pilotage.html" %}
+{% block titre %}{{ nom_affiche }} — Messagerie{% endblock %}
+
+{% block contenu %}
+<!-- Micro-animation pour l'apparition naturelle des messages -->
+<style>
+    @keyframes messageIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    .animate-message-in {
+        animation: messageIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+</style>
+
+<div class="p-4 sm:p-6 max-w-4xl mx-auto flex flex-col space-y-4" style="height: calc(100vh - 90px);">
+    
+    <!-- ================= BOUTON RETOUR PREMIUM ================= -->
+    <div class="shrink-0">
+        <a href="{% url 'messagerie_liste' %}" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition duration-150">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+            </svg>
+            Toutes les conversations
+        </a>
+    </div>
+
+    <!-- ================= BARRE DE CONVERSATION (Header Premium) ================= -->
+    <div class="flex items-center justify-between bg-white border border-slate-200/80 rounded-2xl px-5 py-4 shadow-sm shrink-0">
+        <div class="flex items-center gap-3">
+            <!-- Avatar premium avec dégradé K&L -->
+            <div class="w-11 h-11 rounded-full bg-gradient-to-tr from-[#C81E6E] to-[#FF4081] text-white flex items-center justify-center font-bold text-sm shadow-sm shadow-[#C81E6E]/10 shrink-0">
+                {{ nom_affiche|slice:":2"|upper }}
+            </div>
+            <div>
+                <h2 class="text-sm font-bold text-slate-900 leading-tight">{{ nom_affiche }}</h2>
+                <p class="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1.5 font-medium">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    En ligne
+                </p>
+            </div>
+        </div>
+        
+        <!-- Action secondaire discrète -->
+        <div class="text-slate-400 hover:text-slate-600 transition cursor-pointer p-1.5 hover:bg-slate-50 rounded-lg">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.637 10.637Z" />
+            </svg>
+        </div>
+    </div>
+
+    <!-- ================= FIL DE DISCUSSION (Contrasté et aéré) ================= -->
+    <div id="zone-messages" class="flex-1 overflow-y-auto bg-slate-50/80 border border-slate-200/70 rounded-2xl p-5 space-y-4 shadow-inner">
+        {% for m in messages_liste %}
+        <div class="flex {% if m.expediteur_id == request.user.id %}justify-end{% else %}justify-start{% endif %} animate-message-in" data-msg-id="{{ m.id }}">
+            
+            {% if m.expediteur_id == request.user.id %}
+                <!-- Message de l'utilisateur (Rose K&L) -->
+                <div class="max-w-[75%] bg-[#C81E6E] text-white rounded-2xl rounded-tr-sm px-5 py-3 shadow-sm shadow-[#C81E6E]/10">
+                    {% if m.texte %}
+                    <p class="text-sm leading-relaxed whitespace-pre-line">{{ m.texte }}</p>
+                    {% endif %}
+                    
+                    {% if m.fichier %}
+                    <!-- Composant Fichier Joint Premium (Envoyé) -->
+                    <a href="{{ m.fichier.url }}" target="_blank" class="flex items-center gap-3 bg-white/10 hover:bg-white/15 border border-white/10 rounded-xl p-3 mt-2 transition duration-150">
+                        <div class="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center text-white shrink-0">
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                            </svg>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <p class="text-xs font-bold truncate text-white leading-tight">{{ m.nom_fichier_original }}</p>
+                            <p class="text-[10px] text-pink-100 font-semibold mt-0.5">Document partagé</p>
+                        </div>
+                        <svg class="w-4 h-4 text-white/80 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                        </svg>
+                    </a>
+                    {% endif %}
+                    <p class="text-[10px] text-pink-100/80 font-medium mt-2 text-right">{{ m.envoye_le|date:"H:i" }}</p>
+                </div>
+            {% else %}
+                <!-- Message du correspondant (Blanc Premium) -->
+                <div class="max-w-[75%] bg-white text-slate-800 rounded-2xl rounded-tl-sm px-5 py-3 shadow-sm border border-slate-200/40">
+                    <p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-1">{{ m.expediteur.username }}</p>
+                    
+                    {% if m.texte %}
+                    <p class="text-sm leading-relaxed whitespace-pre-line">{{ m.texte }}</p>
+                    {% endif %}
+                    
+                    {% if m.fichier %}
+                    <!-- Composant Fichier Joint Premium (Reçu) -->
+                    <a href="{{ m.fichier.url }}" target="_blank" class="flex items-center gap-3 bg-slate-50 hover:bg-slate-100/80 border border-slate-200 rounded-xl p-3 mt-2 transition duration-150">
+                        <div class="w-9 h-9 rounded-lg bg-pink-50 flex items-center justify-center text-[#C81E6E] shrink-0">
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                            </svg>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <p class="text-xs font-bold truncate text-slate-800 leading-tight">{{ m.nom_fichier_original }}</p>
+                            <p class="text-[10px] text-slate-400 font-semibold mt-0.5">Document partagé</p>
+                        </div>
+                        <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                        </svg>
+                    </a>
+                    {% endif %}
+                    <p class="text-[10px] text-slate-400/80 font-medium mt-2 text-right">{{ m.envoye_le|date:"H:i" }}</p>
+                </div>
+            {% endif %}
+
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- ================= ZONE DE SAISIE DE MESSAGE ================= -->
+    <div class="shrink-0 space-y-2">
+        <!-- Badge dynamique indiquant la sélection de fichier -->
+        <div id="file-selected-indicator" class="hidden flex items-center gap-2 bg-emerald-50 text-emerald-700 border border-emerald-200/50 rounded-xl px-3.5 py-2 text-xs font-semibold w-fit animate-message-in">
+            <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+            </svg>
+            <span id="file-name-placeholder" class="truncate max-w-[200px]">Document sélectionné</span>
+            <button type="button" onclick="clearSelectedFile()" class="text-emerald-500 hover:text-emerald-800 font-bold ml-1 transition">✕</button>
+        </div>
+
+        <form method="post" enctype="multipart/form-data" class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-3 flex items-center gap-3">
+            {% csrf_token %}
+            
+            <!-- Bouton Pièce Jointe SVG -->
+            <label class="cursor-pointer p-2.5 bg-slate-50 hover:bg-[#FCEEF3] text-slate-400 hover:text-[#C81E6E] rounded-xl transition duration-150 shrink-0 flex items-center justify-center border border-slate-100" title="Joindre un fichier">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m18.375 12.739-7.693 7.693a4.5 4.5 0 0 1-6.364-6.364l10.94-10.94A3 3 0 1 1 19.5 7.372L8.552 18.32a1.5 1.5 0 0 1-2.122-2.122l8-8" />
+                </svg>
+                <input type="file" id="message-file-input" name="fichier" class="hidden" onchange="handleFileSelection(this)">
+            </label>
+            
+            <!-- Textarea ergonomique -->
+            <textarea name="texte" rows="1" placeholder="Écrire un message pour {{ nom_affiche }}…" class="flex-1 bg-slate-50/60 border border-slate-200/60 focus:border-[#C81E6E] focus:ring-1 focus:ring-[#C81E6E] focus:bg-white rounded-xl px-4 py-2.5 text-sm resize-none transition duration-150 outline-none max-h-32 leading-relaxed" style="min-height: 44px;" onkeydown="handleKeyPress(event)"></textarea>
+            
+            <!-- Bouton d'Envoi Premium avec Avion en Papier -->
+            <button type="submit" class="bg-[#C81E6E] text-white p-2.5 rounded-xl hover:bg-[#a81759] transition duration-150 flex items-center justify-center shadow-sm shadow-[#C81E6E]/15 shrink-0" title="Envoyer le message">
+                <svg class="w-5 h-5 transform rotate-45 -translate-x-0.5 translate-y-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
+                </svg>
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+// Gestion de l'affichage du fichier sélectionné
+function handleFileSelection(input) {
+    const indicator = document.getElementById('file-selected-indicator');
+    const placeholder = document.getElementById('file-name-placeholder');
+    if (input.files && input.files.length > 0) {
+        placeholder.textContent = input.files[0].name;
+        indicator.classList.remove('hidden');
+    } else {
+        indicator.classList.add('hidden');
+    }
+}
+
+function clearSelectedFile() {
+    const input = document.getElementById('message-file-input');
+    const indicator = document.getElementById('file-selected-indicator');
+    input.value = '';
+    indicator.classList.add('hidden');
+}
+
+// Envoyer avec la touche "Entrée" et sauter une ligne avec "Shift + Entrée"
+function handleKeyPress(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        e.target.form.dispatchEvent(new Event('submit', { cancelable: true }));
+    }
+}
+
+(function(){
+    const zone = document.getElementById('zone-messages');
+    const conversationId = {{ conversation.id }};
+    const urlActualiser = "{% url 'messagerie_actualiser' conversation.id %}";
+    const monId = {{ request.user.id }};
+
+    zone.scrollTop = zone.scrollHeight;
+
+    function dernierIdAffiche(){
+        const tous = zone.querySelectorAll('[data-msg-id]');
+        if (!tous.length) return 0;
+        return parseInt(tous[tous.length - 1].dataset.msgId, 10);
+    }
+
+    // Le moteur d'ajout de message JS doit générer EXACTEMENT la même structure premium que Django
+    function ajouterMessage(m){
+        const div = document.createElement('div');
+        div.dataset.msgId = m.id;
+        div.className = 'flex animate-message-in ' + (m.est_moi ? 'justify-end' : 'justify-start');
+        
+        let contenu = '';
+        if (m.est_moi) {
+            contenu += '<div class="max-w-[75%] bg-[#C81E6E] text-white rounded-2xl rounded-tr-sm px-5 py-3 shadow-sm shadow-[#C81E6E]/10">';
+            if (m.texte) {
+                contenu += '<p class="text-sm leading-relaxed whitespace-pre-line">' + m.texte.replace(/</g, '&lt;') + '</p>';
+            }
+            if (m.fichier_url) {
+                contenu += '<a href="' + m.fichier_url + '" target="_blank" class="flex items-center gap-3 bg-white/10 hover:bg-white/15 border border-white/10 rounded-xl p-3 mt-2 transition duration-150">';
+                contenu += '  <div class="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center text-white shrink-0">';
+                contenu += '    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>';
+                contenu += '  </div>';
+                contenu += '  <div class="min-w-0 flex-1">';
+                contenu += '    <p class="text-xs font-bold truncate text-white leading-tight">' + m.nom_fichier.replace(/</g, '&lt;') + '</p>';
+                contenu += '    <p class="text-[10px] text-pink-100 font-semibold mt-0.5">Document partagé</p>';
+                contenu += '  </div>';
+                contenu += '  <svg class="w-4 h-4 text-white/80 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>';
+                contenu += '</a>';
+            }
+            contenu += '<p class="text-[10px] text-pink-100/80 font-medium mt-2 text-right">' + m.heure + '</p></div>';
+        } else {
+            contenu += '<div class="max-w-[75%] bg-white text-slate-800 rounded-2xl rounded-tl-sm px-5 py-3 shadow-sm border border-slate-200/40">';
+            contenu += '<p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-1">' + m.expediteur.replace(/</g, '&lt;') + '</p>';
+            if (m.texte) {
+                contenu += '<p class="text-sm leading-relaxed whitespace-pre-line">' + m.texte.replace(/</g, '&lt;') + '</p>';
+            }
+            if (m.fichier_url) {
+                contenu += '<a href="' + m.fichier_url + '" target="_blank" class="flex items-center gap-3 bg-slate-50 hover:bg-slate-100/80 border border-slate-200 rounded-xl p-3 mt-2 transition duration-150">';
+                contenu += '  <div class="w-9 h-9 rounded-lg bg-pink-50 flex items-center justify-center text-[#C81E6E] shrink-0">';
+                contenu += '    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>';
+                contenu += '  </div>';
+                contenu += '  <div class="min-w-0 flex-1">';
+                contenu += '    <p class="text-xs font-bold truncate text-slate-800 leading-tight">' + m.nom_fichier.replace(/</g, '&lt;') + '</p>';
+                contenu += '    <p class="text-[10px] text-slate-400 font-semibold mt-0.5">Document partagé</p>';
+                contenu += '  </div>';
+                contenu += '  <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>';
+                contenu += '</a>';
+            }
+            contenu += '<p class="text-[10px] text-slate-400/80 font-medium mt-2 text-right">' + m.heure + '</p></div>';
+        }
+        
+        div.innerHTML = contenu;
+        zone.appendChild(div);
+    }
+
+    function actualiser(){
+        fetch(urlActualiser + '?depuis=' + dernierIdAffiche())
+            .then(r => r.json())
+            .then(data => {
+                if (data.messages && data.messages.length) {
+                    data.messages.forEach(ajouterMessage);
+                    zone.scrollTop = zone.scrollHeight;
+                }
+            });
+    }
+
+    setInterval(actualiser, 4000); // Polling propre toutes les 4 secondes
+})();
+</script>
+{% endblock %}

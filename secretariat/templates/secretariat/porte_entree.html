@@ -1,0 +1,50 @@
+{% extends "pilotage/base_pilotage.html" %}
+
+{% block titre %}Porte d'entrée — Secrétariat{% endblock %}
+
+{% block contenu %}
+<div class="p-6">
+    <div class="mb-6">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+                <h1 class="text-3xl font-extrabold text-slate-900">Porte d'entrée</h1>
+                <p class="text-slate-500 mt-2">Sélectionnez un devis envoyé pour compléter l'identification complète du dossier.</p>
+            </div>
+        </div>
+    </div>
+
+    {% if devis_envoyes %}
+    <div class="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
+        <table class="w-full text-sm">
+            <thead class="bg-slate-50 text-slate-600 text-left uppercase tracking-[0.08em] text-[11px]">
+                <tr>
+                    <th class="px-5 py-3 font-semibold">N° Devis</th>
+                    <th class="px-5 py-3 font-semibold">Nom</th>
+                    <th class="px-5 py-3 font-semibold">Type</th>
+                    <th class="px-5 py-3 font-semibold">Date d'envoi</th>
+                    <th class="px-5 py-3 font-semibold"></th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                {% for devis in devis_envoyes %}
+                <tr class="hover:bg-[#F8FAFC] transition-colors">
+                    <td class="px-5 py-4 text-slate-600">{{ devis.numero_devis }}</td>
+                    <td class="px-5 py-4 font-medium text-slate-900">{{ devis.pm_raison_sociale|default:devis.pp_nom_prenoms|default:"Sans nom" }}</td>
+                    <td class="px-5 py-4 text-slate-600">{{ devis.get_type_client_display }}</td>
+                    <td class="px-5 py-4 text-slate-600 whitespace-nowrap">{{ devis.date_envoi|date:"d/m/Y"|default:"—" }}</td>
+                    <td class="px-5 py-4 text-right">
+                        <a href="{% url 'secretariat_porte_entree_detail' devis.id %}" class="inline-flex items-center justify-center rounded-2xl bg-[#C81E6E] px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-[#a81759] transition">Compléter →</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="bg-white rounded-3xl border border-slate-200 p-12 text-center shadow-sm">
+        <div class="mx-auto mb-4 inline-flex h-16 w-16 items-center justify-center rounded-3xl bg-[#FCEEF3] text-[#C81E6E] text-4xl">🚪</div>
+        <p class="text-slate-500">Aucun devis envoyé n'est actuellement disponible pour la porte d'entrée.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

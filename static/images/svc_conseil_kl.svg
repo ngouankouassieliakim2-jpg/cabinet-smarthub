@@ -1,0 +1,16 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Conseil">
+  <rect x="8" y="8" width="104" height="104" rx="24" fill="#FCEEF3"/>
+  <!-- Ampoule -->
+  <path d="M60 30 a22 22 0 0 1 14 39 q-2 2 -2 6 h-24 q0 -4 -2 -6 a22 22 0 0 1 14 -39 Z" fill="#FFFFFF" stroke="#C81E6E" stroke-width="2.5"/>
+  <!-- Filament -->
+  <path d="M53 58 l4 6 l6 -10 l4 6" fill="none" stroke="#C81E6E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Culot -->
+  <rect x="50" y="78" width="20" height="6" rx="3" fill="#16171C"/>
+  <rect x="53" y="86" width="14" height="6" rx="3" fill="#16171C"/>
+  <!-- Rayons -->
+  <g stroke="#ED93B1" stroke-width="3" stroke-linecap="round">
+    <line x1="60" y1="20" x2="60" y2="14"/>
+    <line x1="86" y1="34" x2="91" y2="29"/>
+    <line x1="34" y1="34" x2="29" y2="29"/>
+  </g>
+</svg>

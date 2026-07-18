@@ -1,0 +1,260 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="{% static 'favicon.svg' %}">
+<title>{% block titre %}{{ module_actif.nom|default:'Direction' }} — Cabinet K&L{% endblock %}</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  @media print { .no-print { display: none !important; } body { background:#fff !important; } }
+  .nav-scroll::-webkit-scrollbar { display: none; }
+  .nav-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+
+  /* Transition globale & formulaires premiums (Amélioration 5) */
+  input[type="text"], input[type="password"], input[type="email"],
+  input[type="date"], input[type="file"], input[type="number"], select, textarea {
+      width: 100%;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.625rem;
+      padding: 0.6rem 0.85rem;
+      font-size: 0.875rem;
+      background-color: #fff;
+      color: #1e293b;
+      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  input[type="text"]:focus, input[type="password"]:focus, input[type="email"]:focus,
+  input[type="date"]:focus, input[type="number"]:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: #C81E6E;
+      box-shadow: 0 0 0 4px rgba(200, 30, 110, 0.15);
+  }
+  input[type="file"] { padding: 0.45rem 0.6rem; background-color: #f8fafc; cursor: pointer; }
+</style>
+{% block style %}{% endblock %}
+</head>
+<body class="bg-[#F8FAFC] text-slate-800 min-h-screen flex flex-col font-sans antialiased">
+
+  <nav class="no-print bg-[#16171CEB] backdrop-blur-md text-white sticky top-0 z-50 shadow-lg shadow-black/10 border-b border-white/5">
+    <div class="flex items-center gap-4 px-4 py-2.5">
+      
+      <button onclick="toggleSidebar()" class="lg:hidden shrink-0 w-9 h-9 rounded-lg hover:bg-white/10 flex items-center justify-center transition-colors" title="Menu principal">
+        <svg class="w-6 h-6 text-slate-200" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+        </svg>
+      </button>
+
+      <a href="/pilotage/" class="shrink-0 flex items-center">
+        <span class="bg-white rounded-lg p-1.5 flex items-center shadow-sm">
+          <img src="{% static 'images/LOGO_2025_KL_fne.PNG' %}" alt="Cabinet K&L" class="h-6 w-auto">
+        </span>
+        <div class="hidden sm:block ml-4 border-l border-white/10 pl-4">
+          <p class="text-[9px] uppercase tracking-[0.25em] text-slate-400">Pilotage</p>
+          <p class="text-sm font-semibold text-white">{{ module_actif.nom|default:'Direction' }}</p>
+        </div>
+      </a>
+
+      <button id="nav-left" onclick="scrollNav(-200)" class="shrink-0 w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all text-sm" title="Défiler à gauche">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" /></svg>
+      </button>
+
+      <div id="nav-modules" class="nav-scroll flex items-center gap-2 text-sm overflow-x-auto flex-1 scroll-smooth">
+        {% for m in modules_nav_auto %}
+        <a href="{{ m.url }}"
+           class="px-4 py-2 rounded-lg whitespace-nowrap transition-all duration-200 {% if module_actif and m.cle == module_actif.cle %}bg-[#C81E6E] text-white font-semibold shadow-md shadow-[#C81E6E]/20{% else %}text-slate-300 hover:text-white hover:bg-white/10{% endif %}">
+          {{ m.icone }} <span class="ml-1">{{ m.nom }}</span>
+        </a>
+        {% endfor %}
+      </div>
+
+      <button id="nav-right" onclick="scrollNav(200)" class="shrink-0 w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all text-sm" title="Défiler à droite">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
+      </button>
+
+      <div class="shrink-0 flex items-center gap-3.5 pl-4 border-l border-white/10">
+        
+        <a href="{% url 'messagerie_liste' %}" class="relative w-9 h-9 rounded-lg hover:bg-white/10 flex items-center justify-center text-slate-300 hover:text-white transition-all" title="Messagerie">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 0 1-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8Z" />
+          </svg>
+        </a>
+        
+        <a href="{% url 'pilotage_notifications' %}" class="relative w-9 h-9 rounded-lg hover:bg-white/10 flex items-center justify-center text-slate-300 hover:text-white transition-all" title="Notifications">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
+          </svg>
+          {% if nb_notifications_non_lues %}
+          <span class="absolute top-1 right-1 w-2.5 h-2.5 bg-[#C81E6E] rounded-full ring-2 ring-[#16171C]"></span>
+          {% endif %}
+        </a>
+        
+        <div class="text-right hidden md:block">
+          <p class="text-xs font-semibold leading-tight text-slate-100">Direction</p>
+          <p class="text-[10px] text-slate-400 leading-tight">Accès complet</p>
+        </div>
+        <div class="w-9 h-9 rounded-lg bg-gradient-to-tr from-[#C81E6E] to-[#FF4081] text-white flex items-center justify-center text-sm font-bold shrink-0 shadow-sm">D</div>
+        
+        <form method="post" action="{% url 'logout' %}" class="inline">
+          {% csrf_token %}
+          <button type="submit" class="w-9 h-9 rounded-lg hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 flex items-center justify-center transition-all" title="Se déconnecter">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
+            </svg>
+          </button>
+        </form>
+      </div>
+    </div>
+  </nav>
+
+  <div class="flex-1 flex relative">
+
+    <div id="sidebar-backdrop" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-30 hidden lg:hidden" onclick="toggleSidebar()"></div>
+
+    {% block sidebar %}
+      {% if sous_modules %}
+      <aside id="app-sidebar" class="no-print w-64 bg-white border-r border-slate-200 shrink-0 fixed lg:static inset-y-0 left-0 z-40 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out h-full lg:h-[calc(100vh-56px)] lg:sticky lg:top-14 overflow-y-auto">
+        
+        <div class="p-4 border-b border-slate-100 bg-slate-50/70">
+          <div class="flex items-start gap-3">
+            <div class="w-12 h-12 rounded-2xl bg-[#FCEEF3] flex items-center justify-center text-xl text-[#C81E6E] shadow-sm">
+              {{ module_actif.icone|default:'🏛️' }}
+            </div>
+            <div>
+              <h2 class="font-bold text-slate-800 text-sm leading-tight">{{ module_actif.nom|default:'Direction' }}</h2>
+              <p class="text-xs text-slate-500">{{ module_actif.description|default:'Pilotage stratégique du cabinet.' }}</p>
+            </div>
+          </div>
+        </div>
+
+        <nav class="p-3 space-y-4">
+          {% regroup sous_modules by groupe as groupes_liste %}
+          {% for groupe in groupes_liste %}
+          <div>
+            {% if groupe.grouper %}
+            <p class="px-3 pt-2 pb-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">{{ groupe.grouper }}</p>
+            {% endif %}
+            <div class="space-y-0.5">
+              {% for s in groupe.list %}
+              <a href="{{ s.url }}"
+                 class="group flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm transition-all duration-200
+                        {% if request.path == s.url %}
+                        bg-[#FCEEF3] text-[#C81E6E] font-semibold border-l-4 border-[#C81E6E] shadow-sm -ml-0.5
+                        {% else %}
+                        text-slate-600 hover:bg-slate-50 hover:text-[#C81E6E]{% endif %}">
+                <span class="w-1.5 h-1.5 rounded-full shrink-0 transition-all duration-200 {% if request.path == s.url %}bg-[#C81E6E] scale-125{% else %}bg-slate-300 group-hover:bg-[#C81E6E] group-hover:scale-125{% endif %}"></span>
+                <span>{{ s.nom }}</span>
+              </a>
+              {% endfor %}
+            </div>
+          </div>
+          {% endfor %}
+        </nav>
+      </aside>
+      {% endif %}
+    {% endblock %}
+
+    <main class="flex-1 min-w-0 flex flex-col">
+      
+      {% if messages %}
+      <div class="max-w-6xl w-full mx-auto px-4 pt-6">
+        {% for message in messages %}
+          {% if 'success' in message.tags %}
+            <div class="flex items-center gap-3 rounded-xl bg-emerald-50 border border-emerald-200/60 p-4 text-sm text-emerald-800 shadow-sm mb-4 animate-fade-in">
+              <svg class="w-5 h-5 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+              <span class="font-medium">{{ message }}</span>
+            </div>
+          {% elif 'error' in message.tags or 'danger' in message.tags %}
+            <div class="flex items-center gap-3 rounded-xl bg-rose-50 border border-rose-200/60 p-4 text-sm text-rose-800 shadow-sm mb-4 animate-fade-in">
+              <svg class="w-5 h-5 text-rose-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+              <span class="font-medium">{{ message }}</span>
+            </div>
+          {% elif 'warning' in message.tags %}
+            <div class="flex items-center gap-3 rounded-xl bg-amber-50 border border-amber-200/60 p-4 text-sm text-amber-800 shadow-sm mb-4 animate-fade-in">
+              <svg class="w-5 h-5 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" /></svg>
+              <span class="font-medium">{{ message }}</span>
+            </div>
+          {% else %}
+            <div class="flex items-center gap-3 rounded-xl bg-sky-50 border border-sky-200/60 p-4 text-sm text-sky-800 shadow-sm mb-4 animate-fade-in">
+              <svg class="w-5 h-5 text-sky-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25.041-.02a.75.75 0 1 1 1.055.94l-.504.5a.75.75 0 0 1-1.07-.02a.75.75 0 0 1-.006-1.01l.505-.51Zm.041-3.185a.75.75 0 1 1 1.5 0 .75.75 0 0 1-1.5 0Z" /></svg>
+              <span class="font-medium">{{ message }}</span>
+            </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <div class="flex-1">
+        {% block contenu %}{% endblock %}
+      </div>
+    </main>
+
+  </div>
+
+  <script>
+    // Amélioration 7 : Logique d'affichage responsive du tiroir (drawer) de la Sidebar
+    function toggleSidebar() {
+      const sidebar = document.getElementById("app-sidebar");
+      const backdrop = document.getElementById("sidebar-backdrop");
+      if (sidebar && backdrop) {
+        sidebar.classList.toggle("-translate-x-full");
+        backdrop.classList.toggle("hidden");
+      }
+    }
+
+    // Défilement horizontal des modules d'en-tête
+    function scrollNav(px) {
+      const c = document.getElementById("nav-modules");
+      if (c) c.scrollBy({ left: px, behavior: "smooth" });
+    }
+
+    // Gestion de l'affichage intelligent des flèches de défilement
+    function majFleches() {
+      const c = document.getElementById("nav-modules");
+      const gauche = document.getElementById("nav-left");
+      const droite = document.getElementById("nav-right");
+      if (!c || !gauche || !droite) return;
+      const debut = c.scrollLeft <= 2;
+      const fin = c.scrollLeft + c.clientWidth >= c.scrollWidth - 2;
+      gauche.style.visibility = debut ? "hidden" : "visible";
+      droite.style.visibility = fin ? "hidden" : "visible";
+    }
+
+    const navC = document.getElementById("nav-modules");
+    if (navC) {
+      navC.addEventListener("scroll", majFleches);
+      window.addEventListener("resize", majFleches);
+      // Exécution initiale
+      setTimeout(majFleches, 100);
+    }
+  </script>
+
+  {% if debug %}
+  <script>
+    // Reconnexion automatique en développement : si le serveur devient
+    // injoignable (ex. Copilot sauvegarde un fichier, l'auto-reload de Django
+    // redémarre le serveur), la page se recharge seule dès qu'il revient --
+    // jamais actif en production sur ce site, seulement quand DEBUG est activé.
+    (function () {
+      let etaitDeconnecte = false;
+
+      function verifierConnexion() {
+        fetch(window.location.href, { method: "HEAD", cache: "no-store" })
+          .then(() => {
+            if (etaitDeconnecte) {
+              window.location.reload();
+            }
+          })
+          .catch(() => {
+            etaitDeconnecte = true;
+          });
+      }
+
+      setInterval(verifierConnexion, 2000);
+    })();
+  </script>
+  {% endif %}
+
+</body>
+</html>

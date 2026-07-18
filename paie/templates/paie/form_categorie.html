@@ -1,0 +1,60 @@
+{% extends "pilotage/base_pilotage.html" %}
+{% block titre %}Modifier la catégorie{% endblock %}
+
+{% block contenu %}
+<div class="max-w-4xl mx-auto py-8 px-6">
+    <a href="{% url 'paie_grille' %}" class="inline-flex items-center text-sm text-slate-500 hover:text-[#C81E6E] mb-6 transition">
+        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        Retour à la grille
+    </a>
+
+    <form method="post">
+        {% csrf_token %}
+        
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-900 flex items-center gap-3">
+                    <span class="p-2 bg-pink-50 rounded-lg text-[#C81E6E]">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                    </span>
+                    Modifier une catégorie
+                </h1>
+                <p class="text-slate-500 mt-1 ml-14">Ajustez les paramètres de la grille salariale. Ces changements impactent les futurs calculs de paie.</p>
+            </div>
+            <button type="submit" class="bg-[#C81E6E] text-white font-semibold px-5 py-2.5 rounded-lg hover:bg-[#a81759] shadow-sm transition">
+                Enregistrer les modifications
+            </button>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Secteur d'activité</label>
+                    <div class="mt-1">{{ form.secteur }}</div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Code Catégorie</label>
+                    <div class="mt-1">{{ form.code }}</div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Salaire catégoriel (FCFA)</label>
+                    <div class="mt-1">{{ form.salaire_minimum }}</div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Ordre d'affichage</label>
+                    <div class="mt-1">{{ form.ordre }}</div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-4 mt-6">
+            <a href="{% url 'paie_grille' %}" class="text-slate-600 hover:text-slate-900 font-medium px-4 py-2">Annuler</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

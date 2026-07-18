@@ -1,0 +1,68 @@
+{% extends "pilotage/base_recouvrement.html" %}
+{% block titre %}Certifier — {{ facture.numero_facture }}{% endblock %}
+{% block style %}
+<style>
+  input[type=text], input[type=email], select { width:100%; border:1px solid #d1d5db; border-radius:6px; padding:8px 10px; font-size:14px; margin-top:4px; }
+  label { font-size:13px; font-weight:600; color:#374151; }
+  .chk-item { display:flex; align-items:center; gap:8px; }
+  .chk-item input { width:auto; }
+</style>
+{% endblock %}
+{% block contenu %}
+<div class="max-w-2xl mx-auto p-6">
+    <a href="{% url 'apercu_facture' facture.id %}" class="text-sm text-gray-500 hover:text-[#C81E6E]">← Retour à la facture</a>
+
+    <div class="mt-3 mb-6">
+        <h1 class="text-xl font-bold text-gray-800">Certification FNE — {{ facture.numero_facture }}</h1>
+        <p class="text-gray-500 text-sm">{{ facture.client_nom }} — {{ facture.montant_ttc|floatformat:0 }} F CFA TTC</p>
+    </div>
+
+    {% if messages %}{% for m in messages %}<div class="{% if m.tags == 'success' %}bg-emerald-50 border-emerald-200 text-emerald-700{% else %}bg-red-50 border-red-200 text-red-700{% endif %} border text-sm rounded-lg px-4 py-3 mb-4">{{ m }}</div>{% endfor %}{% endif %}
+
+    {% if facture.fne_statut == "CERTIFIEE" %}
+    <div class="bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-lg px-4 py-4 mb-6">
+        <p class="font-bold mb-1">✓ Facture certifiée</p>
+        <p>Référence FNE : {{ facture.fne_reference }}</p>
+        {% if facture.fne_balance_sticker is not None %}<p>Solde de stickers restants : {{ facture.fne_balance_sticker }}</p>{% endif %}
+    </div>
+    {% elif not fne_configure %}
+    <div class="bg-amber-50 border border-amber-200 text-amber-700 text-sm rounded-lg px-4 py-3 mb-6">
+        La clé API FNE n'est pas encore configurée. <a href="{% url 'parametres_fne' %}" class="underline font-medium">Configurer maintenant →</a>
+    </div>
+    {% endif %}
+
+    {% if erreurs and facture.fne_statut != "CERTIFIEE" %}
+    <div class="bg-amber-50 border border-amber-200 text-amber-700 text-xs rounded-lg px-4 py-3 mb-6">
+        <p class="font-bold mb-1">Champs encore manquants avant certification :</p>
+        <ul class="list-disc list-inside">
+            {% for e in erreurs %}<li>{{ e }}</li>{% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <form method="post" class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+        {% csrf_token %}
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div><label>{{ form.payment_method.label }}</label>{{ form.payment_method }}</div>
+            <div><label>{{ form.template.label }}</label>{{ form.template }}</div>
+            <div><label>{{ form.client_telephone.label }}</label>{{ form.client_telephone }}</div>
+            <div><label>{{ form.client_email.label }}</label>{{ form.client_email }}</div>
+            <div><label>{{ form.point_de_vente.label }}</label>{{ form.point_de_vente }}</div>
+            <div><label>{{ form.etablissement.label }}</label>{{ form.etablissement }}</div>
+        </div>
+
+        <div class="chk-item">{{ form.is_rne }}<label for="{{ form.is_rne.id_for_label }}">{{ form.is_rne.label }}</label></div>
+        <div><label>{{ form.rne_numero.label }}</label>{{ form.rne_numero }}</div>
+
+        <div class="flex gap-3 pt-3 border-t">
+            <button type="submit" name="action" value="enregistrer" class="flex-1 bg-white border border-gray-300 text-gray-700 font-medium py-2.5 rounded-lg hover:bg-gray-50">
+                Enregistrer sans certifier
+            </button>
+            <button type="submit" name="action" value="certifier" class="flex-1 bg-[#C81E6E] text-white font-medium py-2.5 rounded-lg hover:bg-[#a81759]" {% if facture.fne_statut == "CERTIFIEE" %}disabled{% endif %}>
+                {% if facture.fne_statut == "CERTIFIEE" %}Déjà certifiée{% else %}Enregistrer et certifier →{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

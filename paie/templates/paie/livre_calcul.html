@@ -1,0 +1,141 @@
+{% extends "pilotage/base_pilotage.html" %}
+{% block titre %}Livre de calcul — Paie/RH{% endblock %}
+{% block contenu %}
+<div class="p-6 max-w-4xl mx-auto">
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Livre de calcul — Paie/RH</h1>
+        <p class="text-gray-500 mt-1">Comment le système calcule chaque élément de paie, avec les sources légales. Document interne, pour le cabinet.</p>
+    </div>
+
+    <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 text-sm text-amber-800">
+        ⚠️ Ce document explique la logique implémentée dans le système. Il ne remplace pas un avis juridique. Certaines limites connues sont signalées dans chaque section — à faire valider par l'expertise du cabinet avant tout usage contentieux.
+    </div>
+
+    <!-- SOMMAIRE -->
+    <div class="bg-white rounded-xl border border-gray-200 p-5 mb-6">
+        <h2 class="font-bold text-gray-800 mb-3 text-sm uppercase tracking-wide">Sommaire</h2>
+        <ol class="text-sm text-[#C81E6E] space-y-1.5 list-decimal list-inside">
+            <li><a href="#salaire-base" class="hover:underline">Salaire de base et sursalaire</a></li>
+            <li><a href="#anciennete" class="hover:underline">Prime d'ancienneté</a></li>
+            <li><a href="#transport" class="hover:underline">Prime de transport</a></li>
+            <li><a href="#its" class="hover:underline">ITS — Impôt sur les Traitements et Salaires</a></li>
+            <li><a href="#cnps" class="hover:underline">CNPS — cotisations sociales</a></li>
+            <li><a href="#cmu" class="hover:underline">CMU — Couverture Maladie Universelle</a></li>
+            <li><a href="#fdfp" class="hover:underline">FDFP — taxes de formation</a></li>
+            <li><a href="#charges-patronales" class="hover:underline">Charges patronales et brut fiscal employeur</a></li>
+            <li><a href="#conge" class="hover:underline">Congé payé</a></li>
+            <li><a href="#fin-contrat" class="hover:underline">Fin de contrat</a></li>
+            <li><a href="#essai-cdd" class="hover:underline">Périodes d'essai et durées légales</a></li>
+            <li><a href="#absences" class="hover:underline">Pointage et absences</a></li>
+        </ol>
+    </div>
+
+    <div class="space-y-6">
+
+        <section id="salaire-base" class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="font-bold text-gray-800 mb-3">1. Salaire de base et sursalaire</h2>
+            <p class="text-sm text-gray-700 mb-2"><strong>Règle :</strong> le salaire de base d'un salarié est le salaire minimum de sa catégorie professionnelle, tel que fixé dans la grille de la convention collective applicable à l'entreprise. Le sursalaire est un complément librement fixé par l'employeur, au-delà de ce minimum.</p>
+            <p class="text-sm text-gray-700 mb-2"><strong>Calcul dans le système :</strong> <code class="bg-gray-100 px-1 rounded">salaire_base = salaire minimum de la catégorie (grille) + sursalaire</code>. La grille est saisie par le cabinet pour chaque convention (menu Grille des salaires).</p>
+            <p class="text-xs text-gray-400">Source : Code du travail, art. 31 et suivants (fixation du SMIG et des salaires catégoriels par convention collective).</p>
+        </section>
+
+        <section id="anciennete" class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="font-bold text-gray-800 mb-3">2. Prime d'ancienneté</h2>
+            <p class="text-sm text-gray-700 mb-2"><strong>Règle :</strong> à partir de 2 ans d'ancienneté, le salarié a droit à une prime de 2 % du salaire catégoriel, augmentée de 1 point par année supplémentaire, plafonnée à 30 %.</p>
+            <p class="text-sm text-gray-700 mb-2"><strong>Calcul :</strong> <code class="bg-gray-100 px-1 rounded">prime_anciennete = salaire_categoriel × taux_anciennete / 100</code>, où le taux suit le barème : 0 % avant 2 ans, 2 % à 2 ans, +1 %/an ensuite, plafonné à 30 %.</p>
+            <p class="text-xs text-gray-400">Source : barème de la Convention Collective Interprofessionnelle (CCI) de Côte d'Ivoire.</p>
+        </section>
+
+        <section id="transport" class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="font-bold text-gray-800 mb-3">3. Prime de transport</h2>
+            <p class="text-sm text-gray-700 mb-2"><strong>Règle :</strong> la prime de transport est un remboursement de frais, exonérée d'impôt et de cotisations jusqu'à un plafond (30 000 F par défaut, configurable par entreprise). Au-delà, la fraction excédentaire redevient du salaire imposable et cotisable.</p>
+            <p class="text-sm text-gray-700 mb-2"><strong>Calcul :</strong> <code class="bg-gray-100 px-1 rounded">transport_imposable = max(prime_transport − plafond, 0)</code>. Cette fraction imposable entre dans le brut fiscal (base ITS) et dans le brut social (base CNPS).</p>
+            <p class="text-xs text-gray-400">Note : le plafond de 30 000 F est la valeur par défaut usuelle ; il est paramétrable par entreprise dans le système.</p>
+        </section>
+
+        <section id="its" class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="font-bold text-gray-800 mb-3">4. ITS — Impôt sur les Traitements et Salaires</h2>
+            <p class="text-sm text-gray-700 mb-2"><strong>Règle :</strong> depuis la réforme fiscale (Ordonnance n° 2023-719), l'ITS est calculé selon un barème progressif par tranches sur le revenu mensuel imposable (brut fiscal), avec un abattement de 10 % pour frais professionnels intégré au calcul, puis une réduction pour charges de famille (RICF) selon le nombre de parts IGR du salarié.</p>
+            <p class="text-sm text-gray-700 mb-2"><strong>Barème par tranches mensuelles :</strong></p>
+            <table class="w-full text-xs text-gray-700 mb-2 border border-gray-200 rounded overflow-hidden">
+                <thead class="bg-gray-50"><tr><th class="px-3 py-2 text-left">Tranche</th><th class="px-3 py-2 text-right">Taux</th></tr></thead>
+                <tbody class="divide-y divide-gray-100">
+                    <tr><td class="px-3 py-1.5">0 à 75 000 F</td><td class="px-3 py-1.5 text-right">0 %</td></tr>
+                    <tr><td class="px-3 py-1.5">75 000 à 240 000 F</td><td class="px-3 py-1.5 text-right">16 %</td></tr>
+                    <tr><td class="px-3 py-1.5">240 000 à 800 000 F</td><td class="px-3 py-1.5 text-right">21 %</td></tr>
+                    <tr><td class="px-3 py-1.5">800 000 à 2 400 000 F</td><td class="px-3 py-1.5 text-right">24 %</td></tr>
+                    <tr><td class="px-3 py-1.5">2 400 000 à 8 000 000 F</td><td class="px-3 py-1.5 text-right">28 %</td></tr>
+                    <tr><td class="px-3 py-1.5">Au-delà de 8 000 000 F</td><td class="px-3 py-1.5 text-right">32 %</td></tr>
+                </tbody>
+            </table>
+            <p class="text-sm text-gray-700 mb-2"><strong>RICF (Réduction pour Charges de Famille) :</strong> si le brut fiscal dépasse 75 000 F, <code class="bg-gray-100 px-1 rounded">RICF = (parts_igr − 1) × 2 × 5 500</code>. Les parts IGR dépendent de la situation matrimoniale et du nombre d'enfants (plafonné à 5 parts).</p>
+            <p class="text-sm text-gray-700 mb-2"><strong>ITS final</strong> = (ITS brut − RICF, jamais négatif) × jours travaillés / 30.</p>
+            <p class="text-xs text-gray-400">Source : Ordonnance n° 2023-719 du 22 septembre 2023 portant réforme de la fiscalité des revenus. Un ITS à 0 F pour un salaire modeste est normal : la première tranche est exonérée.</p>
+        </section>
+
+        <section id="cnps" class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="font-bold text-gray-800 mb-3">5. CNPS — cotisations sociales</h2>
+            <p class="text-sm text-gray-700 mb-2"><strong>Base :</strong> le brut social, plafonné mensuellement (3 375 000 F par défaut, configurable).</p>
+            <table class="w-full text-xs text-gray-700 mb-2 border border-gray-200 rounded overflow-hidden">
+                <thead class="bg-gray-50"><tr><th class="px-3 py-2 text-left">Cotisation</th><th class="px-3 py-2 text-right">Part salarié</th><th class="px-3 py-2 text-right">Part employeur</th></tr></thead>
+                <tbody class="divide-y divide-gray-100">
+                    <tr><td class="px-3 py-1.5">Retraite</td><td class="px-3 py-1.5 text-right">6,3 %</td><td class="px-3 py-1.5 text-right">7,7 %</td></tr>
+                    <tr><td class="px-3 py-1.5">Prestations familiales</td><td class="px-3 py-1.5 text-right">—</td><td class="px-3 py-1.5 text-right">5,0 %</td></tr>
+                    <tr><td class="px-3 py-1.5">Accident du travail</td><td class="px-3 py-1.5 text-right">—</td><td class="px-3 py-1.5 text-right">selon le secteur (taux de la convention)</td></tr>
+                    <tr><td class="px-3 py-1.5">Assurance maternité</td><td class="px-3 py-1.5 text-right">—</td><td class="px-3 py-1.5 text-right">0,75 %</td></tr>
+                </tbody>
+            </table>
+            <p class="text-xs text-gray-400">⚠️ Limite connue : le brut social actuel n'intègre pas encore systématiquement toutes les primes soumises hors transport imposable dans certains cas particuliers de rubriques configurées « plafonnées ». À vérifier au cas par cas pour des primes atypiques.</p>
+        </section>
+
+        <section id="cmu" class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="font-bold text-gray-800 mb-3">6. CMU — Couverture Maladie Universelle</h2>
+            <p class="text-sm text-gray-700 mb-2"><strong>Règle :</strong> forfait de 1 000 F par personne couverte (salarié, conjoint à charge, jusqu'à 6 enfants), réparti à parts égales entre salarié et employeur. Au-delà de 6 enfants, le forfait supplémentaire est à la charge du salarié.</p>
+        </section>
+
+        <section id="fdfp" class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="font-bold text-gray-800 mb-3">7. FDFP — taxes de formation</h2>
+            <p class="text-sm text-gray-700 mb-2">Taxe d'Apprentissage (TA) : 0,4 % du brut social, à la charge de l'employeur.</p>
+            <p class="text-sm text-gray-700 mb-2">Formation Professionnelle Continue (FPC) : deux modes possibles — 0,6 % mensuel avec régularisation en fin d'année, ou 1,2 % mensuel sans régularisation. Le cabinet privilégie le second pour éviter les régularisations, et c'est la valeur par défaut du système.</p>
+        </section>
+
+        <section id="charges-patronales" class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="font-bold text-gray-800 mb-3">8. Charges patronales et brut fiscal employeur</h2>
+            <p class="text-sm text-gray-700 mb-2"><strong>Contribution Employeur (CE) :</strong> 0 % pour un salarié local, 9,2 % pour un expatrié.</p>
+            <p class="text-sm text-gray-700 mb-2"><strong>Contribution Nationale (CN) :</strong> 1,2 %, pour tous les régimes.</p>
+            <p class="text-sm text-gray-700 mb-2"><strong>Base :</strong> le « brut fiscal employeur », distinct du brut fiscal du salarié sur un point précis — l'indemnité de licenciement y est comptée en entier (sans l'abattement de 50 000 F + 50 % applicable côté salarié), et l'indemnité transactionnelle de rupture y est incluse, alors qu'elle est exclue de la base ITS du salarié. Sur un bulletin mensuel normal (sans rupture), les deux bases sont identiques.</p>
+            <p class="text-xs text-gray-400">Cette distinction a été vérifiée par comparaison avec un cas réel de référence (LOGIPAIE) en cours de développement du système.</p>
+        </section>
+
+        <section id="conge" class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="font-bold text-gray-800 mb-3">9. Congé payé</h2>
+            <p class="text-sm text-gray-700 mb-2"><strong>Acquisition :</strong> 2,2 jours ouvrables par mois de service effectif (barème CCI ; 2 jours si l'entreprise n'est pas couverte par la CCI), proratisés selon les jours réellement travaillés dans le mois. Majoration selon l'ancienneté (barème CCI, +1 à +8 jours selon les paliers de 5 ans).</p>
+            <p class="text-sm text-gray-700 mb-2"><strong>Cycle :</strong> 12 mois glissants depuis la date d'entrée ou le dernier congé pris. Le solde non pris n'est pas cumulable au-delà, sauf accord de report.</p>
+            <p class="text-sm text-gray-700 mb-2"><strong>Jours ouvrables :</strong> tous les jours sauf dimanches et jours fériés chômés (saisis dans le système), sur la période du congé.</p>
+            <p class="text-sm text-gray-700 mb-2"><strong>Indemnité :</strong> salaire moyen des 12 derniers mois (base cotisable, hors transport exonéré) ÷ 30 × jours ouvrables de congé, répartie sur les bulletins des mois effectivement concernés si le congé chevauche plusieurs mois.</p>
+            <p class="text-xs text-gray-400">Source : Code du travail, art. 25.1 et suivants ; art. 69 de la CCI pour le taux de 2,2 jours/mois.</p>
+        </section>
+
+        <section id="fin-contrat" class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="font-bold text-gray-800 mb-3">10. Fin de contrat</h2>
+            <p class="text-sm text-gray-700 mb-2">Le solde de tout compte comprend, selon le motif de rupture : le préavis (ou son indemnité compensatrice), l'indemnité de licenciement (barème selon l'ancienneté), la gratification proratisée sur l'année, la prime de précarité pour un CDD (10 % du total des salaires versés), et le solde de congé non pris.</p>
+            <p class="text-xs text-gray-400">Source : Décret n° 96-200 (préavis) et Décret n° 96-201 (indemnité de licenciement).</p>
+        </section>
+
+        <section id="essai-cdd" class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="font-bold text-gray-800 mb-3">11. Périodes d'essai et durées légales</h2>
+            <p class="text-sm text-gray-700 mb-2"><strong>Période d'essai :</strong> 8 jours (salarié payé à l'heure/journée), 1 mois (payé au mois), 2 mois (agent de maîtrise/technicien), 3 mois (ingénieur/cadre). Renouvelable une fois.</p>
+            <p class="text-sm text-gray-700 mb-2"><strong>CDD :</strong> durée maximale de 2 ans, renouvellements compris (terme précis). Le terme imprécis est réservé à 4 cas légaux stricts (remplacement, saison, surcroît occasionnel, activité inhabituelle).</p>
+            <p class="text-sm text-gray-700 mb-2"><strong>Stage :</strong> durée maximale de 12 mois, renouvellements compris. Le stage de qualification est obligatoirement rémunéré (au moins la moitié du salaire minimum catégoriel) ; le stage-école ne l'est pas obligatoirement.</p>
+            <p class="text-xs text-gray-400">Source : Décret n° 2024-900 (essai) ; art. 15.2 à 15.6 (CDD) ; art. 13.11 à 13.20 (stage) du Code du travail.</p>
+        </section>
+
+        <section id="absences" class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="font-bold text-gray-800 mb-3">12. Pointage et absences</h2>
+            <p class="text-sm text-gray-700 mb-2">Une absence pour maladie justifiée n'impacte pas le salaire (jours travaillés maintenus à 30). Une absence injustifiée ou autorisée non payée réduit les jours travaillés du mois d'autant, sauf si le cabinet choisit explicitement de ne pas l'imputer (option disponible à la saisie).</p>
+            <p class="text-xs text-gray-400">⚠️ Limite connue : le maintien de salaire en cas de maladie n'est pas plafonné dans le système actuel, alors que certains régimes limitent ce maintien selon l'ancienneté avant relais des indemnités journalières CNPS.</p>
+        </section>
+
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "pilotage/base_pilotage.html" %}
+{% block titre %}Signature par délégation de pouvoir{% endblock %}
+{% block contenu %}
+<div class="max-w-2xl mx-auto p-6">
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Signature par délégation de pouvoir</h1>
+        <p class="text-gray-500 mt-1">Documents que vous pouvez signer avec votre propre signature, en vertu d'un pouvoir qui vous a été délégué.</p>
+    </div>
+
+    {% if delegations %}
+    {% for d in delegations %}
+    <div class="bg-white border border-gray-200 rounded-xl p-5 mb-4">
+        <div class="flex justify-between items-start">
+            <div>
+                <p class="font-semibold text-gray-800">Délégation de {{ d.delegant.get_full_name|default:d.delegant.username }}</p>
+                <p class="text-sm text-gray-500 mt-1">{{ d.perimetre }}</p>
+                <p class="text-xs text-gray-400 mt-2">Valide du {{ d.date_debut|date:"d/m/Y" }} au {{ d.date_fin|date:"d/m/Y" }}</p>
+            </div>
+            <span class="bg-emerald-50 text-emerald-700 text-xs font-medium px-2.5 py-1 rounded-full">Active</span>
+        </div>
+        {% if d.document_preuve %}
+        <a href="{{ d.document_preuve.url }}" target="_blank" class="text-[#C81E6E] text-xs font-medium hover:underline mt-3 inline-block">📄 Voir l'acte de délégation →</a>
+        {% endif %}
+        {% if not request.user.signatures.exists %}
+        <div class="bg-amber-50 border border-amber-200 text-amber-700 text-xs rounded-lg px-3 py-2 mt-3">
+            Vous signerez avec votre propre signature — <a href="{% url 'comptes_signature' %}" class="underline font-medium">créez-la d'abord</a> si ce n'est pas fait.
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="bg-gray-50 border border-gray-200 rounded-xl p-8 text-center text-gray-400">
+        Aucune délégation de pouvoir active vous concernant pour le moment.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

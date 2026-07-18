@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="utf-8">
+<style>
+    @page { size: A4; margin: 2cm 2.2cm; @bottom-center { content: "© Cabinet Smart-Hub — Page " counter(page) " / " counter(pages); font-size: 7px; color: #9ca3af; } }
+    body { font-family: "Helvetica Neue", Arial, sans-serif; color: #1f2937; font-size: 10.5px; line-height: 1.65; }
+    .entete { display: flex; align-items: center; border-bottom: 3px solid {{ employeur.couleur_documents|default:"#111827" }}; padding-bottom: 12px; margin-bottom: 20px; }
+    .entete .logo { width: 50px; height: 50px; object-fit: contain; margin-right: 14px; }
+    .entete .rs { font-size: 13px; font-weight: 700; color: #111827; }
+    h1 { text-align: center; font-size: 15px; letter-spacing: 2px; margin: 20px 0 25px; color: {{ employeur.couleur_documents|default:"#111827" }}; }
+    h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: {{ employeur.couleur_documents|default:"#111827" }}; margin: 16px 0 6px; border-bottom: 1px solid #e5e7eb; padding-bottom: 3px; }
+    p { margin: 4px 0; text-align: justify; }
+    .parties { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px; margin-bottom: 10px; }
+    .recap { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px; }
+    .recap .lab { font-size: 8.5px; color: #9ca3af; text-transform: uppercase; }
+    .recap .val { font-size: 11px; font-weight: 600; color: #1f2937; }
+    .alerte { background: #fef2f2; border: 1px solid #fca5a5; border-radius: 8px; padding: 10px 14px; margin: 12px 0; font-size: 9.5px; color: #991b1b; }
+    .pied { display: flex; justify-content: space-between; margin-top: 50px; }
+    .pied .sign { width: 45%; text-align: center; }
+    .pied .line { border-top: 1px solid #9ca3af; margin-top: 50px; padding-top: 4px; font-size: 9px; color: #6b7280; }
+    .mention { text-align: center; font-size: 8px; color: #9ca3af; margin-top: 24px; }
+</style>
+</head>
+<body>
+
+<div class="entete">
+    {% if employeur.logo %}<img class="logo" src="{{ employeur.logo.url }}" alt="logo">{% endif %}
+    <div class="rs">{{ employeur.raison_sociale }}</div>
+</div>
+
+<h1>AVENANT DE {% if est_stage %}PROLONGATION DE STAGE{% else %}RECONDUCTION{% endif %}</h1>
+
+<div class="parties">
+    <p><strong>ENTRE LES SOUSSIGNÉS :</strong></p>
+    <p>La société <strong>{{ employeur.raison_sociale }}</strong>, représentée par {{ employeur.signataire_nom|default:"le représentant légal" }}{% if employeur.signataire_qualite %}, {{ employeur.signataire_qualite }}{% endif %}, ci-après dénommée « <strong>l'Employeur</strong> »,</p>
+    <p><strong>ET :</strong></p>
+    <p>{{ employe.get_civilite_display }} <strong>{{ employe.nom_prenoms }}</strong>, {% if est_stage %}Stagiaire{% else %}Travailleur{% endif %} au sein de l'Entreprise depuis le {{ employe.date_entree|date:"d/m/Y" }}, ci-après dénommé(e) « le {% if est_stage %}Stagiaire{% else %}Travailleur{% endif %} »,</p>
+    <p>IL A ÉTÉ CONVENU CE QUI SUIT :</p>
+</div>
+
+<h2>Objet de l'avenant</h2>
+<p>Le présent avenant a pour objet de {% if est_stage %}prolonger la durée du stage{% else %}reconduire le contrat à durée déterminée{% endif %} liant les parties, initialement conclu le {{ employe.date_entree|date:"d/m/Y" }}.</p>
+
+<h2>Récapitulatif</h2>
+<div class="recap">
+    <div><div class="lab">Date d'entrée initiale</div><div class="val">{{ employe.date_entree|date:"d/m/Y" }}</div></div>
+    <div><div class="lab">Ancienne date de fin</div><div class="val">{{ ancienne_date_fin|date:"d/m/Y"|default:"—" }}</div></div>
+    <div><div class="lab">Nouvelle date de fin</div><div class="val">{{ nouvelle_date_fin|date:"d/m/Y" }}</div></div>
+    <div><div class="lab">Durée cumulée</div><div class="val">{{ duree_cumulee_mois }} mois</div></div>
+</div>
+
+{% if depassement %}
+<div class="alerte">⚠️ ATTENTION : la durée cumulée de {{ duree_cumulee_mois }} mois dépasse la limite légale de {{ limite_texte }} fixée par l'article {{ article_limite }} du Code du travail. Ce dépassement expose à une requalification en contrat à durée indéterminée. À faire valider par le cabinet avant signature.</div>
+{% endif %}
+
+{% if motif_reconduction %}
+<h2>Motif</h2>
+<p>{{ motif_reconduction|linebreaks }}</p>
+{% endif %}
+
+<h2>Autres dispositions</h2>
+<p>Toutes les autres clauses et conditions du contrat initial demeurent inchangées et continuent de produire leurs effets.</p>
+
+<div class="pied">
+    <div class="sign">
+        {% if signature_data_uri %}
+        <img src="{{ signature_data_uri }}" style="max-height:45px;max-width:150px;margin:0 auto 4px;display:block;">
+        {% if mention_signature %}<p style="font-size:8px;color:#6b7280;margin:0 0 4px;">{{ mention_signature }}</p>{% endif %}
+        {% endif %}
+        <div class="line">L'Employeur</div>
+    </div>
+    <div class="sign"><div class="line">Le {% if est_stage %}Stagiaire{% else %}Travailleur{% endif %}<br>(lu et approuvé, bon pour accord)</div></div>
+</div>
+
+<div class="mention">Avenant établi en application du Code du travail ivoirien (Loi n° 2015-532 du 20 juillet 2015).</div>
+
+{% include "paie/_pied_smarthub.html" %}
+
+</body>
+</html>

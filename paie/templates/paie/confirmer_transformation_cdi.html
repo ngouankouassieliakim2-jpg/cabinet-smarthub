@@ -1,0 +1,25 @@
+{% extends "pilotage/base_pilotage.html" %}
+{% block titre %}Passer en CDI — {{ employe.nom_prenoms }}{% endblock %}
+{% block contenu %}
+<div class="p-6 max-w-xl">
+    <a href="{% url 'paie_employes_liste' employeur.id %}" class="text-sm text-gray-500 hover:text-[#C81E6E]">← Retour au personnel</a>
+    <div class="mt-4 mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Transformer le CDD en CDI</h1>
+        <p class="text-gray-500 mt-1">{{ employe.matricule }} — {{ employe.nom_prenoms }}</p>
+    </div>
+
+    <div class="bg-white rounded-xl border border-gray-200 p-6">
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800 mb-5">
+            Le contrat passera de <strong>CDD</strong> à <strong>CDI</strong>. La durée et la date de sortie prévue seront effacées.
+            Le matricule et tout l'historique de paie restent inchangés.
+        </div>
+        <form method="post">
+            {% csrf_token %}
+            <div class="flex items-center gap-3">
+                <button type="submit" class="bg-[#C81E6E] text-white font-medium px-6 py-2.5 rounded-lg hover:bg-[#a81759] transition">Confirmer le passage en CDI</button>
+                <a href="{% url 'paie_employes_liste' employeur.id %}" class="text-gray-500 hover:text-gray-700">Annuler</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

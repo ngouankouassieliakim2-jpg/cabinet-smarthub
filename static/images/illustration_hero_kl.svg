@@ -1,0 +1,73 @@
+<svg width="600" height="480" viewBox="0 0 600 480" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illustration finance et entreprise Cabinet K and L">
+  <defs>
+    <linearGradient id="klRose" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#C81E6E"/>
+      <stop offset="1" stop-color="#8E1450"/>
+    </linearGradient>
+    <linearGradient id="klRoseLight" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F4C0D1"/>
+      <stop offset="1" stop-color="#ED93B1"/>
+    </linearGradient>
+    <linearGradient id="klDark" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1F2128"/>
+      <stop offset="1" stop-color="#16171C"/>
+    </linearGradient>
+  </defs>
+
+  <circle cx="300" cy="230" r="210" fill="#FCEEF3"/>
+  <circle cx="300" cy="230" r="150" fill="#FBE0EB"/>
+
+  <ellipse cx="300" cy="410" rx="240" ry="26" fill="#F4C0D1" opacity="0.5"/>
+
+  <g transform="translate(120 150)">
+    <rect x="0" y="0" width="200" height="180" rx="14" fill="url(#klDark)"/>
+    <circle cx="22" cy="24" r="6" fill="#C81E6E"/>
+    <rect x="36" y="20" width="80" height="8" rx="4" fill="#3A3D47"/>
+    <line x1="24" y1="150" x2="180" y2="150" stroke="#3A3D47" stroke-width="2"/>
+    <rect x="36"  y="110" width="22" height="40" rx="4" fill="url(#klRoseLight)"/>
+    <rect x="70"  y="88"  width="22" height="62" rx="4" fill="#ED93B1"/>
+    <rect x="104" y="64"  width="22" height="86" rx="4" fill="#C81E6E"/>
+    <rect x="138" y="40"  width="22" height="110" rx="4" fill="url(#klRose)"/>
+    <path d="M40 120 L78 96 L112 72 L150 48" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <circle cx="150" cy="48" r="5" fill="#FFFFFF"/>
+  </g>
+
+  <g transform="translate(360 250)">
+    <circle cx="60" cy="60" r="62" fill="#FFFFFF"/>
+    <circle cx="60" cy="60" r="62" fill="none" stroke="#FBE0EB" stroke-width="2"/>
+    <path d="M60 60 L60 4 A56 56 0 0 1 113 78 Z" fill="url(#klRose)"/>
+    <path d="M60 60 L113 78 A56 56 0 0 1 30 110 Z" fill="#ED93B1"/>
+    <path d="M60 60 L30 110 A56 56 0 0 1 60 4 Z" fill="#F4C0D1"/>
+    <circle cx="60" cy="60" r="26" fill="#FFFFFF"/>
+    <text x="60" y="66" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#C81E6E" text-anchor="middle">KL</text>
+  </g>
+
+  <g transform="translate(70 270)">
+    <rect x="0" y="0" width="110" height="140" rx="10" fill="#FFFFFF" stroke="#FBE0EB" stroke-width="2"/>
+    <rect x="16" y="20" width="60" height="9" rx="4" fill="#C81E6E"/>
+    <rect x="16" y="42" width="78" height="6" rx="3" fill="#E2E8F0"/>
+    <rect x="16" y="56" width="78" height="6" rx="3" fill="#E2E8F0"/>
+    <rect x="16" y="70" width="60" height="6" rx="3" fill="#E2E8F0"/>
+    <circle cx="28" cy="104" r="12" fill="#FCEEF3"/>
+    <path d="M22 104 l4 4 l8 -9" stroke="#C81E6E" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="48" y="98" width="46" height="6" rx="3" fill="#E2E8F0"/>
+    <rect x="48" y="110" width="36" height="6" rx="3" fill="#E2E8F0"/>
+  </g>
+
+  <g>
+    <circle cx="470" cy="140" r="30" fill="url(#klRose)"/>
+    <circle cx="470" cy="140" r="30" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-dasharray="3 4"/>
+    <text x="470" y="148" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#FFFFFF" text-anchor="middle">€</text>
+
+    <circle cx="150" cy="110" r="20" fill="#ED93B1"/>
+    <text x="150" y="117" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#FFFFFF" text-anchor="middle">%</text>
+
+    <circle cx="500" cy="330" r="22" fill="#FFFFFF" stroke="#F4C0D1" stroke-width="2"/>
+    <path d="M500 320 v20 M493 326 h14 M493 334 h14" stroke="#C81E6E" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+
+  <circle cx="430" cy="90" r="4" fill="#C81E6E"/>
+  <circle cx="540" cy="200" r="5" fill="#ED93B1"/>
+  <circle cx="100" cy="200" r="4" fill="#C81E6E"/>
+  <circle cx="320" cy="120" r="4" fill="#F4C0D1"/>
+</svg>

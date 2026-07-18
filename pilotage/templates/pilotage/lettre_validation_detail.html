@@ -1,0 +1,76 @@
+{% extends "pilotage/base_pilotage.html" %}
+{% load form_extras %}
+
+{% block titre %}Validation de la lettre de mission — Direction{% endblock %}
+
+{% block contenu %}
+<div class="p-6 sm:p-8 max-w-5xl mx-auto space-y-8 animate-fade-in">
+    {% include 'components/page_header.html' with title="Validation de la lettre de mission" description="Validez ou renvoyez la lettre de mission avec un commentaire." %}
+
+    <div class="grid gap-6 lg:grid-cols-[1.5fr_0.9fr]">
+        <section class="space-y-6 bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+            <div class="space-y-3">
+                <p class="text-sm text-slate-500">Devis <strong>{{ devis.numero_devis }}</strong></p>
+                <h2 class="text-2xl font-semibold text-slate-900">{{ devis.pp_nom_prenoms }} — {{ devis.pm_raison_sociale }}</h2>
+                <p class="text-sm text-slate-600">Statut actuel : <span class="font-semibold text-slate-900">{{ devis.get_lettre_statut_display }}</span></p>
+            </div>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+                <div class="rounded-3xl bg-slate-50 p-4">
+                    <p class="text-xs uppercase tracking-wide text-slate-500">Date d'envoi</p>
+                    <p class="mt-2 text-sm text-slate-700">{{ devis.date_envoi|date:"d/m/Y H:i" }}</p>
+                </div>
+                <div class="rounded-3xl bg-slate-50 p-4">
+                    <p class="text-xs uppercase tracking-wide text-slate-500">Soumis par</p>
+                    <p class="mt-2 text-sm text-slate-700">
+                        {% if devis.lettre_soumise_par %}
+                            {{ devis.lettre_soumise_par.get_full_name|default:devis.lettre_soumise_par.username }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <h3 class="text-lg font-semibold text-slate-900">Décision</h3>
+                <form method="post" class="space-y-4">
+                    {% csrf_token %}
+                    <div class="grid gap-3 sm:grid-cols-2">
+                        <button type="submit" name="action" value="valider" class="w-full rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 transition">Valider et signer</button>
+                        <button type="submit" name="action" value="refuser" class="w-full rounded-2xl bg-rose-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-rose-700 transition">Renvoyer pour correction</button>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700">Motif de renvoi (optionnel)</label>
+                        <textarea name="motif_refus" rows="4" class="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm focus:border-[#C81E6E] focus:ring-[#C81E6E]/30">{{ devis.lettre_motif_refus }}</textarea>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <aside class="space-y-4">
+            <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                <h3 class="text-sm font-semibold uppercase tracking-wide text-slate-500">Informations rapides</h3>
+                <dl class="mt-4 space-y-3 text-sm text-slate-700">
+                    <div class="flex justify-between gap-2">
+                        <dt class="font-medium">Client</dt>
+                        <dd>{{ devis.pp_nom_prenoms }}</dd>
+                    </div>
+                    <div class="flex justify-between gap-2">
+                        <dt class="font-medium">Raison sociale</dt>
+                        <dd>{{ devis.pm_raison_sociale }}</dd>
+                    </div>
+                    <div class="flex justify-between gap-2">
+                        <dt class="font-medium">Statut lettre</dt>
+                        <dd>{{ devis.get_lettre_statut_display }}</dd>
+                    </div>
+                    <div class="flex justify-between gap-2">
+                        <dt class="font-medium">Pièce jointe</dt>
+                        <dd>{% if devis.lettre_mission_pdf %}<a href="{{ devis.lettre_mission_pdf.url }}" class="text-[#C81E6E] hover:underline">Télécharger</a>{% else %}-{% endif %}</dd>
+                    </div>
+                </dl>
+            </div>
+        </aside>
+    </div>
+</div>
+{% endblock %}

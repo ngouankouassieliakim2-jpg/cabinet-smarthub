@@ -1,0 +1,57 @@
+{% extends "pilotage/base_pilotage.html" %}
+{% block titre %}Rubriques — {{ employeur.raison_sociale }}{% endblock %}
+{% block contenu %}
+<div class="p-6">
+    <a href="{% url 'liste_employeurs' %}" class="text-sm text-gray-500 hover:text-[#C81E6E]">← Retour aux employeurs</a>
+    <div class="flex items-center justify-between mt-4 mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800">Rubriques de paie</h1>
+            <p class="text-gray-500 mt-1">{{ employeur.raison_sociale }} — primes et retenues réutilisables</p>
+        </div>
+        <a href="{% url 'paie_rubrique_creer' employeur.id %}" class="bg-[#C81E6E] text-white font-medium px-4 py-2 rounded-lg hover:bg-[#a81759] transition">+ Nouvelle rubrique</a>
+    </div>
+
+    {% if rubriques %}
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50 text-gray-600 text-left">
+                <tr>
+                    <th class="px-4 py-3 font-medium">Type</th>
+                    <th class="px-4 py-3 font-medium">Libellé</th>
+                    <th class="px-4 py-3 font-medium">Nature fiscale (ITS)</th>
+                    <th class="px-4 py-3 font-medium">Plafond exo.</th>
+                    <th class="px-4 py-3 font-medium">CNPS</th>
+                    <th class="px-4 py-3 font-medium text-right">Montant défaut</th>
+                    <th class="px-4 py-3 font-medium text-right"></th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for r in rubriques %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3">
+                        {% if r.type_rubrique == "RETENUE" %}<span class="text-xs bg-orange-50 text-orange-700 px-2 py-0.5 rounded-full">Retenue</span>
+                        {% else %}<span class="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded-full">Gain</span>{% endif %}
+                    </td>
+                    <td class="px-4 py-3 font-medium text-gray-800">{{ r.libelle }}</td>
+                    <td class="px-4 py-3 text-gray-600">{% if r.type_rubrique == "RETENUE" %}—{% else %}{{ r.get_traitement_fiscal_display }}{% endif %}</td>
+                    <td class="px-4 py-3 text-gray-600">{% if r.type_rubrique != "RETENUE" and r.traitement_fiscal == "plafonne" %}{{ r.plafond_exoneration|floatformat:0 }} F{% else %}—{% endif %}</td>
+                    <td class="px-4 py-3 text-gray-600">{% if r.type_rubrique == "RETENUE" %}—{% elif r.soumis_cnps %}Oui{% else %}Non{% endif %}</td>
+                    <td class="px-4 py-3 text-right text-gray-600">{{ r.montant_par_defaut|floatformat:0 }} F</td>
+                    <td class="px-4 py-3 text-right whitespace-nowrap">
+                        <a href="{% url 'paie_rubrique_modifier' employeur.id r.id %}" class="text-gray-500 hover:underline mr-3">Modifier</a>
+                        <form method="post" action="{% url 'paie_rubrique_supprimer' employeur.id r.id %}" class="inline" onsubmit="return confirm('Supprimer la rubrique « {{ r.libelle }} » ?');">{% csrf_token %}<button type="submit" class="text-red-500 hover:underline">Supprimer</button></form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="bg-white rounded-xl border border-gray-200 p-12 text-center">
+        <div class="text-5xl mb-4">🧩</div>
+        <p class="text-gray-500 mb-4">Aucune rubrique pour cette entreprise.</p>
+        <a href="{% url 'paie_rubrique_creer' employeur.id %}" class="bg-[#C81E6E] text-white font-medium px-4 py-2 rounded-lg hover:bg-[#a81759] transition">+ Créer la première rubrique</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

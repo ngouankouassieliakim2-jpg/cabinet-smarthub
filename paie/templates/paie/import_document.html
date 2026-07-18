@@ -1,0 +1,79 @@
+{% extends "pilotage/base_pilotage.html" %}
+{% block titre %}Imports — Paie{% endblock %}
+{% block contenu %}
+<div class="p-6 max-w-xl">
+    <div class="mt-4 mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Imports de documents</h1>
+        <p class="text-gray-500 mt-1">Déposer un document externe (contrat signé, avenant, pièce...) dans les archives.</p>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" class="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+        <div class="rounded-lg bg-red-50 border border-red-200 p-4 text-red-700">
+            {{ form.non_field_errors }}
+        </div>
+        {% endif %}
+
+        <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">{{ form.nature.label }}</label>
+            {{ form.nature }}
+            {{ form.nature.errors }}
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">{{ form.employeur.label }}</label>
+            {{ form.employeur }}
+            {{ form.employeur.errors }}
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">{{ form.employe.label }}</label>
+            {{ form.employe }}
+            {{ form.employe.errors }}
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">{{ form.libelle.label }}</label>
+            {{ form.libelle }}
+            <p class="text-xs text-gray-400 mt-1">{{ form.libelle.help_text }}</p>
+            {{ form.libelle.errors }}
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">{{ form.fichier.label }}</label>
+            {{ form.fichier }}
+            {{ form.fichier.errors }}
+        </div>
+        <div class="pt-2">
+            <button type="submit" class="bg-[#C81E6E] text-white font-medium px-6 py-2.5 rounded-lg hover:bg-[#a81759]">Importer</button>
+        </div>
+    </form>
+</div>
+
+<script>
+(function(){
+    const selEmployeur = document.getElementById('id_employeur');
+    const selEmploye = document.getElementById('id_employe');
+    if (!selEmployeur || !selEmploye) return;
+
+    function majSalaries(){
+        const empId = selEmployeur.value;
+        selEmploye.innerHTML = '<option value="">— Chargement... —</option>';
+        if (!empId) {
+            selEmploye.innerHTML = '<option value="">— Choisir une entreprise d\'abord —</option>';
+            return;
+        }
+        fetch(`/paie/imports/salaries/${empId}/`)
+            .then(r => r.json())
+            .then(data => {
+                selEmploye.innerHTML = '<option value="">— Choisir un salarié —</option>';
+                data.salaries.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s.id;
+                    opt.textContent = s.nom;
+                    selEmploye.appendChild(opt);
+                });
+            });
+    }
+    selEmployeur.addEventListener('change', majSalaries);
+    if (selEmployeur.value) majSalaries();
+})();
+</script>
+{% endblock %}

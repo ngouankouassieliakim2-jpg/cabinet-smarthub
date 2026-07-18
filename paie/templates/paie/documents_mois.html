@@ -1,0 +1,60 @@
+{% extends "pilotage/base_pilotage.html" %}
+{% block titre %}{{ mois_nom }} {{ annee }} — {{ employeur.raison_sociale }}{% endblock %}
+{% block contenu %}
+<div class="p-6">
+    <a href="{% url 'paie_documents_periodes' employeur.id %}" class="text-sm text-gray-500 hover:text-[#C81E6E]">← Périodes</a>
+    <div class="mt-4 mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">{{ mois_nom }} {{ annee }}</h1>
+        <p class="text-gray-500 mt-1">{{ employeur.raison_sociale }} — documents du mois</p>
+    </div>
+
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden mb-6">
+        <div class="px-4 py-3 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+            <span class="font-medium text-gray-700 text-sm">Bulletins de paie</span>
+            {% if bulletins %}<a href="{% url 'paie_bulletins_groupes' employeur.id %}?mois={{ mois }}&annee={{ annee }}" target="_blank" class="text-[#C81E6E] text-sm font-medium hover:underline">📄 Tous en un PDF</a>{% endif %}
+        </div>
+        {% if bulletins %}
+        <table class="w-full text-sm">
+            <tbody class="divide-y divide-gray-100">
+                {% for b in bulletins %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3 text-gray-500">{{ b.employe.matricule }}</td>
+                    <td class="px-4 py-3 font-medium text-gray-800">{{ b.employe.nom_prenoms }}</td>
+                    <td class="px-4 py-3 text-right">
+                        <a href="{% url 'paie_bulletin_pdf' employeur.id b.employe.id %}?mois={{ mois }}&annee={{ annee }}" target="_blank" class="text-[#C81E6E] font-medium hover:underline">Bulletin PDF →</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="p-8 text-center text-gray-400 text-sm">Aucun bulletin pour ce mois.</div>
+        {% endif %}
+    </div>
+
+    {% if bulletins %}
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden mb-6">
+        <div class="px-4 py-3 border-b border-gray-100 bg-gray-50 font-medium text-gray-700 text-sm">Synthèses du mois</div>
+        <div class="divide-y divide-gray-100">
+            <a href="{% url 'paie_livre_mensuel' employeur.id %}?mois={{ mois }}&annee={{ annee }}" target="_blank" class="flex items-center justify-between px-4 py-3 hover:bg-gray-50">
+                <span class="text-gray-800 font-medium">📗 Livre de paie du mois</span>
+                <span class="text-[#C81E6E] text-sm">Ouvrir le PDF →</span>
+            </a>
+            <a href="{% url 'paie_edi_its' employeur.id %}?mois={{ mois }}&annee={{ annee }}" class="flex items-center justify-between px-4 py-3 hover:bg-gray-50">
+                <span class="text-gray-800 font-medium">📄 EDI ITS (fichier XML pour e-impot)</span>
+                <span class="text-[#C81E6E] text-sm">Télécharger →</span>
+            </a>
+            <a href="{% url 'paie_cnps_nominative' employeur.id %}?mois={{ mois }}&annee={{ annee }}" class="flex items-center justify-between px-4 py-3 hover:bg-gray-50">
+                <span class="text-gray-800 font-medium">📊 Cotisation nominative CNPS (Excel pour e-cnps)</span>
+                <span class="text-[#C81E6E] text-sm">Télécharger →</span>
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="bg-gray-50 rounded-xl border border-dashed border-gray-300 p-6 text-center">
+        <p class="text-sm text-gray-500 font-medium">Autres documents à venir</p>
+        <p class="text-xs text-gray-400 mt-1">Déclaration CNPS nominative, EDI ITS, DISA… viendront s'ajouter ici automatiquement une fois construits.</p>
+    </div>
+</div>
+{% endblock %}

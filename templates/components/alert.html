@@ -1,0 +1,14 @@
+{% comment %}Notification alert for status messages{% endcomment %}
+<div class="rounded-3xl border px-4 py-4 shadow-sm {{ extra_classes|default:"" }} {% if variant == 'success' %}border-emerald-200 bg-emerald-50 text-emerald-900{% elif variant == 'danger' %}border-rose-200 bg-rose-50 text-rose-900{% elif variant == 'warning' %}border-amber-200 bg-amber-50 text-amber-900{% else %}border-slate-200 bg-slate-50 text-slate-900{% endif %}">
+  <div class="flex items-start gap-3">
+    {% if icon %}
+    <div class="mt-0.5 text-xl">{{ icon }}</div>
+    {% endif %}
+    <div>
+      <p class="font-semibold">{{ title }}</p>
+      {% if message %}
+      <p class="mt-1 text-sm text-slate-600">{{ message }}</p>
+      {% endif %}
+    </div>
+  </div>
+</div>

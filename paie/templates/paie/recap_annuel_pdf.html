@@ -1,0 +1,99 @@
+{% load paie_extras %}
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="utf-8">
+<style>
+    @page { size: A4; margin: 1.5cm; @bottom-center { content: "© Cabinet Smart-Hub — Page " counter(page) " / " counter(pages); font-size: 7px; color: #9ca3af; } }
+    * { box-sizing: border-box; }
+    body { font-family: "Helvetica Neue", Arial, sans-serif; color: #1f2937; font-size: 9.5px; margin: 0; }
+    .entete { display: flex; align-items: center; border-bottom: 3px solid {{ employeur.couleur_documents|default:"#111827" }}; padding-bottom: 10px; margin-bottom: 14px; }
+    .entete .logo-wrap { width: 46px; height: 46px; border-radius: 50%; background: {{ employeur.couleur_documents|default:"#111827" }}1a; display: flex; align-items: center; justify-content: center; margin-right: 12px; overflow: hidden; flex-shrink: 0; }
+    .entete .logo { width: 38px; height: 38px; object-fit: contain; }
+    .entete .rs { font-size: 13px; font-weight: 700; }
+    .titre { text-align: center; margin: 10px 0 16px; }
+    .titre h1 { font-size: 14px; letter-spacing: 1.5px; color: {{ employeur.couleur_documents|default:"#111827" }}; margin: 0; }
+    .titre .sub { font-size: 10px; color: #6b7280; margin-top: 3px; }
+    h2.bloc { font-size: 10px; margin: 18px 0 6px; color: {{ employeur.couleur_documents|default:"#111827" }}; text-transform: uppercase; letter-spacing: .5px; border-left: 3px solid {{ employeur.couleur_documents|default:"#C81E6E" }}; padding-left: 6px; }
+    table { width: 100%; border-collapse: collapse; }
+    thead th { background: {{ employeur.couleur_documents|default:"#111827" }}; color: #fff; font-size: 8.5px; padding: 5px 6px; text-align: right; }
+    thead th.l { text-align: left; }
+    tbody td { padding: 4px 6px; border-bottom: 1px solid #eee; text-align: right; }
+    tbody td.l { text-align: left; }
+    tfoot td { padding: 6px; font-weight: 700; border-top: 2px solid #111827; background: #f3f4f6; text-align: right; }
+    tfoot td.l { text-align: left; }
+    .net { background: {{ employeur.couleur_documents|default:"#C81E6E" }}1a !important; color: {{ employeur.couleur_documents|default:"#C81E6E" }}; font-weight: 700; }
+    .vide { color: #9ca3af; font-size: 9px; padding: 8px 0; }
+</style>
+</head>
+<body>
+    <div class="entete">
+        <div class="logo-wrap">{% if employeur.logo %}<img class="logo" src="{{ employeur.logo.url }}" alt="logo">{% endif %}</div>
+        <div class="rs">{{ employeur.raison_sociale }}</div>
+    </div>
+
+    <div class="titre">
+        <h1>RÉCAPITULATIF ANNUEL — {{ annee }}</h1>
+        <div class="sub">{{ employe.nom_prenoms }} — Matricule {{ employe.matricule }} — {{ employe.poste|default:"—" }}</div>
+    </div>
+
+    <h2 class="bloc">Détail mensuel</h2>
+    <table>
+        <thead><tr>
+            <th class="l">Mois</th><th>Brut</th><th>ITS</th><th>CNPS</th><th>CMU</th><th class="net">Net</th>
+        </tr></thead>
+        <tbody>
+            {% for l in lignes %}
+            <tr>
+                <td class="l">{{ l.mois_nom }}</td>
+                <td>{{ l.brut|espace }}</td><td>{{ l.its|espace }}</td>
+                <td>{{ l.cnps|espace }}</td><td>{{ l.cmu|espace }}</td>
+                <td class="net">{{ l.net|espace }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot><tr>
+            <td class="l">TOTAL {{ annee }} ({{ lignes|length }} mois)</td>
+            <td>{{ totaux.brut|espace }}</td><td>{{ totaux.its|espace }}</td>
+            <td>{{ totaux.cnps|espace }}</td><td>{{ totaux.cmu|espace }}</td>
+            <td class="net">{{ totaux.net|espace }}</td>
+        </tr></tfoot>
+    </table>
+
+    <h2 class="bloc">Congés pris en {{ annee }}</h2>
+    {% if conges %}
+    <table>
+        <thead><tr><th class="l">Type</th><th class="l">Période</th><th>Jours</th><th>Indemnité</th></tr></thead>
+        <tbody>
+            {% for c in conges %}
+            <tr>
+                <td class="l">{{ c.get_type_conge_display }}</td>
+                <td class="l">{{ c.date_depart|date:"d/m/Y" }} → {{ c.date_retour|date:"d/m/Y" }}</td>
+                <td>{{ c.jours_ouvrables }}</td>
+                <td>{{ c.montant_total|espace }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="vide">Aucun congé pris sur l'année {{ annee }}.</p>
+    {% endif %}
+
+    <h2 class="bloc">Prêts en {{ annee }}</h2>
+    {% if prets %}
+    <table>
+        <thead><tr><th class="l">Motif</th><th>Montant</th><th>Mensualité</th><th>Remboursé</th><th>Restant</th></tr></thead>
+        <tbody>
+            {% for p in prets %}
+            <tr>
+                <td class="l">{{ p.motif|default:"—" }}</td>
+                <td>{{ p.montant|espace }}</td><td>{{ p.mensualite|espace }}</td>
+                <td>{{ p.total_rembourse|espace }}</td><td>{{ p.capital_restant|espace }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="vide">Aucun prêt sur l'année {{ annee }}.</p>
+    {% endif %}
+</body>
+</html>

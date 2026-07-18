@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<style>
+    @page { size: A4; margin: 2cm; }
+    body { font-family: "Helvetica Neue", Arial, sans-serif; color: #1f2937; font-size: 13px; line-height: 1.6; }
+    
+    /* Header & Ref */
+    .header-container { display: flex; justify-content: space-between; border-bottom: 2px solid #111827; padding-bottom: 12px; margin-bottom: 20px; }
+    .logo { width: 72px; height: 72px; object-fit: contain; }
+    .ref-block { text-align: right; font-size: 11px; color: #374151; }
+    
+    /* Titre */
+    h1 { text-align: center; font-size: 18px; letter-spacing: 1px; margin: 40px 0; text-decoration: underline; text-transform: uppercase; }
+    
+    /* Signature & Cachet */
+    .signature-grid { display: flex; justify-content: space-between; margin-top: 50px; }
+    .signature-box { border: 1px solid #e5e7eb; padding: 15px; width: 250px; height: 120px; text-align: center; }
+    
+    /* Footer */
+    .footer { margin-top: 60px; border-top: 1px solid #e5e7eb; padding-top: 20px; font-size: 10px; color: #6b7280; display: flex; justify-content: space-between; align-items: center; }
+    .qr-placeholder { width: 60px; height: 60px; border: 1px dashed #9ca3af; display: flex; align-items: center; justify-content: center; font-size: 8px; color: #9ca3af; }
+</style>
+</head>
+<body>
+    <div class="header-container">
+        <div style="display: flex; align-items: center;">
+            {% if employeur.logo %}<img class="logo" src="{{ employeur.logo.url }}" alt="logo">{% endif %}
+            <div style="margin-left: 15px;">
+                <div style="font-weight: 700; font-size: 16px;">{{ employeur.raison_sociale }}</div>
+                <div style="font-size: 11px; color: #6b7280;">
+                    {{ employeur.adresse|default:"Adresse non définie" }}<br>
+                    NCC : {{ employeur.ncc }} | CNPS : {{ employeur.numero_cnps }}
+                </div>
+            </div>
+        </div>
+        <div class="ref-block">
+            <strong>Réf:</strong> {{ doc_ref }}<br>
+            <strong>Date:</strong> {{ date_jour_longue }}
+        </div>
+    </div>
+
+    <h1>{{ titre }}</h1>
+
+    <div class="corps">
+        <p>Je soussigné(e), représentant légal de la société <strong>{{ employeur.raison_sociale }}</strong>, atteste que :</p>
+        <p><strong>{{ civilite }} {{ nom }}</strong>, employé(e) en qualité de <strong>{{ emploi }}</strong>, est en activité au sein de notre structure depuis le <strong>{{ date_entree_longue }}</strong>.</p>
+        <p>La présente attestation est délivrée à l'intéressé(e) pour servir et valoir ce que de droit.</p>
+    </div>
+
+    <div class="signature-grid">
+        <div></div>
+        <div class="signature-box">
+            {% if signature_data_uri %}
+            <img src="{{ signature_data_uri }}" style="max-height:50px;max-width:150px;margin:0 auto 4px;display:block;">
+            {% if mention_signature %}<p style="font-size:8px;color:#6b7280;margin:0 0 2px;">{{ mention_signature }}</p>{% endif %}
+            {% endif %}
+            <p style="margin: 0; font-size: 10px; color: #9ca3af;">Signature & Cachet</p>
+        </div>
+    </div>
+
+    {% include "paie/_pied_smarthub.html" %}
+</body>
+</html>

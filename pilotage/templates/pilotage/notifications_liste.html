@@ -1,0 +1,103 @@
+{% extends "pilotage/base_pilotage.html" %}
+{% block titre %}Notifications — Direction{% endblock %}
+
+{% block contenu %}
+<div class="p-6 sm:p-8 max-w-4xl mx-auto space-y-8 animate-fade-in">
+    
+    {% include 'components/page_header.html' with title="Notifications" description="Gérez vos alertes d'activité et les événements système." %}
+
+    <div class="bg-white rounded-2xl border border-slate-200/60 shadow-sm p-5">
+        <form method="get" class="flex flex-col sm:flex-row gap-4 items-end">
+            <div class="w-full sm:w-auto flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="space-y-1.5">
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">Type de notification</label>
+                    <div class="relative">
+                        <select name="type" class="w-full pl-3 pr-10 py-2.5 bg-slate-50/50 border border-slate-200 hover:border-slate-300 focus:border-[#C81E6E] focus:ring-1 focus:ring-[#C81E6E] rounded-xl text-sm font-medium text-slate-700 transition appearance-none">
+                            <option value="">Tous les types</option>
+                            {% for code, label in types_disponibles %}
+                            <option value="{{ code }}" {% if filtre_type == code %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-1.5">
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">Statut de lecture</label>
+                    <div class="relative">
+                        <select name="statut" class="w-full pl-3 pr-10 py-2.5 bg-slate-50/50 border border-slate-200 hover:border-slate-300 focus:border-[#C81E6E] focus:ring-1 focus:ring-[#C81E6E] rounded-xl text-sm font-medium text-slate-700 transition appearance-none">
+                            <option value="">Tous les statuts</option>
+                            <option value="non_lues" {% if filtre_statut == 'non_lues' %}selected{% endif %}>Non lues</option>
+                            <option value="lues" {% if filtre_statut == 'lues' %}selected{% endif %}>Lues</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex gap-2.5 w-full sm:w-auto shrink-0">
+                {% include 'components/button.html' with label='Filtrer' type='submit' variant='primary' extra_classes='flex-1 sm:flex-none' %}
+                {% include 'components/button.html' with label='Réinitialiser' href=refresh_url variant='secondary' extra_classes='flex-1 sm:flex-none text-center' %}
+            </div>
+        </form>
+    </div>
+    
+    {% if notifications %}
+    <div class="bg-white rounded-3xl border border-slate-200/60 shadow-sm overflow-hidden divide-y divide-slate-100">
+        {% for n in notifications %}
+        <div class="p-5 hover:bg-slate-50/70 flex items-start gap-4 transition-all duration-150 {% if not n.lue %}bg-[#FCEEF3]/20 border-l-4 border-l-[#C81E6E]{% else %}border-l-4 border-l-transparent{% endif %}">
+            
+            <span class="w-2.5 h-2.5 rounded-full mt-1.5 shrink-0 transition-transform duration-300 group-hover:scale-125 {% if not n.lue %}bg-[#C81E6E] animate-pulse{% else %}bg-slate-300{% endif %}"></span>
+            
+            <div class="flex-1 space-y-1">
+                <div class="flex items-center gap-2 flex-wrap">
+                    <p class="text-sm font-bold text-slate-800 leading-tight">{{ n.titre }}</p>
+                    {% if not n.lue %}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FCEEF3] text-[#C81E6E]">Nouveau</span>
+                    {% endif %}
+                </div>
+                <p class="text-sm text-slate-600 leading-relaxed max-w-2xl">{{ n.message }}</p>
+                
+                <div class="flex items-center gap-1.5 text-xs text-slate-400 pt-1">
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0" /></svg>
+                    <span>{{ n.cree_le|date:"d M Y • H:i" }}</span>
+                </div>
+            </div>
+            
+            <div class="flex gap-2 shrink-0 self-center">
+                {% if not n.lue %}
+                <form method="post" action="{% url 'pilotage_notification_lue' n.id %}" class="inline">
+                    {% csrf_token %}
+                    <button type="submit" class="p-2 bg-[#FCEEF3] text-[#C81E6E] hover:bg-[#C81E6E] hover:text-white rounded-xl transition duration-150 flex items-center justify-center border border-[#C81E6E]/10" title="Marquer comme lue">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                        </svg>
+                    </button>
+                </form>
+                {% endif %}
+                
+                <form method="post" action="{% url 'pilotage_notification_supprimer' n.id %}" class="inline" onsubmit="return confirm('Supprimer définitivement cette notification ?');">
+                    {% csrf_token %}
+                    <button type="submit" class="p-2 bg-slate-50 text-slate-400 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 rounded-xl transition duration-150 flex items-center justify-center border border-slate-200" title="Supprimer">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                        </svg>
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    {% else %}
+    <div class="max-w-xl mx-auto">
+      {% include 'components/empty_state.html' with title="Boîte de réception vide" description="Vous êtes à jour ! Aucune notification ne nécessite votre attention pour le moment." %}
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

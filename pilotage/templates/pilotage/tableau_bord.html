@@ -1,0 +1,138 @@
+{% extends "pilotage/base_pilotage.html" %}
+{% block titre %}Tableau de bord — Direction{% endblock %}
+
+{% block contenu %}
+<div class="max-w-6xl mx-auto p-4 sm:p-8">
+
+  {% include 'components/page_header.html' with title="Tableau de bord" description="Direction & Cadres — pilotage du cabinet" %}
+
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8">
+    {% include 'components/stat_card.html' with title="CA du mois" value=chiffres.ca_mois icon='<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c1.657 0 3 1.343 3 3s-1.343 3-3 3-3-1.343-3-3 1.343-3 3-3Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 21v-2.25a4.5 4.5 0 0 0-9 0V21m9 0h4.5a2.25 2.25 0 0 0 2.25-2.25V14.25a2.25 2.25 0 0 0-2.25-2.25H15" /></svg>' extra_classes='min-h-[8rem]' %}
+    {% include 'components/stat_card.html' with title="Devis en cours" value=chiffres.devis_en_cours icon='<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 3.75h9a2.25 2.25 0 0 1 2.25 2.25v12a2.25 2.25 0 0 1-2.25 2.25h-9A2.25 2.25 0 0 1 5.25 18V6A2.25 2.25 0 0 1 7.5 3.75Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75h4.5M9.75 12.75h4.5M9.75 15.75h2.25" /></svg>' extra_classes='min-h-[8rem]' %}
+    {% include 'components/stat_card.html' with title="Dossiers actifs" value=chiffres.dossiers_actifs icon='<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 6.75h15m-15 5.25h15M7.5 18.75h9" /></svg>' extra_classes='min-h-[8rem]' %}
+    {% include 'components/stat_card.html' with title="Taux recouvrement" value=chiffres.taux_recouvrement unit="%" icon='<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75h15" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v8.25m0 0-3.75-3.75m3.75 3.75 3.75-3.75" /></svg>' extra_classes='min-h-[8rem]' %}
+  </div>
+
+  <!-- ACCÈS AUX MODULES -->
+  <h2 class="text-lg font-semibold text-gray-800 mb-3">Les modules</h2>
+  <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-8">
+    {% for m in modules %}
+    <a href="{{ m.url }}" class="group bg-white rounded-xl shadow-sm border border-gray-100 p-4 hover:border-[#C81E6E] hover:shadow-md transition relative {% if not m.actif %}opacity-70{% endif %}">
+      <div class="text-3xl mb-2">{{ m.icone }}</div>
+      <p class="font-semibold text-sm text-gray-800 leading-tight">{{ m.nom }}</p>
+      <p class="text-xs text-gray-400 mt-1 leading-snug">{{ m.desc }}</p>
+      {% if m.branche %}
+        <span class="inline-block mt-2 text-[10px] font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">Branché</span>
+      {% else %}
+        <span class="inline-block mt-2 text-[10px] font-medium text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">À venir</span>
+      {% endif %}
+    </a>
+    {% endfor %}
+  </div>
+
+  <!-- 2 COLONNES : Alertes + Stats vitrine -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-8">
+
+    <!-- ALERTES / À FAIRE -->
+    <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-5">
+      <h2 class="text-lg font-semibold text-slate-900 mb-3">Alertes &amp; à faire</h2>
+      <ul class="space-y-3">
+        {% for a in alertes %}
+        <li class="flex items-start gap-3 text-sm p-4 rounded-3xl {% if a.niveau == 'warning' %}bg-amber-50 text-amber-900{% else %}bg-sky-50 text-sky-900{% endif %}">
+          <span class="mt-1 inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-white shadow-sm {% if a.niveau == 'warning' %}text-amber-600{% else %}text-sky-600{% endif %}">
+            {% if a.niveau == 'warning' %}
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.054 0 1.715-1.136 1.18-2.08L13.18 4.72c-.534-.944-1.92-.944-2.454 0L3.88 16.92c-.535.944.126 2.08 1.18 2.08Z" /></svg>
+            {% else %}
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8.25h.008v.008H12V8.25Zm0 3.75h.008v.008H12V12Zm.75-3.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5a7.5 7.5 0 1 0 7.5 7.5A7.508 7.508 0 0 0 12 4.5Z" /></svg>
+            {% endif %}
+          </span>
+          <span class="flex-1 leading-6">{{ a.texte }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <!-- STATS VITRINE -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+      <h2 class="text-lg font-semibold text-gray-800 mb-3">Statistiques vitrine</h2>
+      <div class="grid grid-cols-2 gap-3 mb-4">
+        <div class="bg-gray-50 rounded-lg p-3">
+          <p class="text-xs text-gray-500">Visiteurs</p>
+          <p class="text-xl font-bold text-gray-800">{{ stats_vitrine.visiteurs }}</p>
+        </div>
+        <div class="bg-gray-50 rounded-lg p-3">
+          <p class="text-xs text-gray-500">Bouton le + cliqué</p>
+          <p class="text-sm font-semibold text-gray-800 leading-tight mt-1">{{ stats_vitrine.bouton_top }}</p>
+          <p class="text-xs text-[#C81E6E]">{{ stats_vitrine.bouton_top_clics }} clics</p>
+        </div>
+      </div>
+      <p class="text-xs text-gray-500 uppercase tracking-wide mb-2">Articles les plus lus</p>
+      <ul class="space-y-1.5">
+        {% for art in stats_vitrine.articles_top %}
+        <li class="flex justify-between items-center text-sm gap-2">
+          <span class="text-gray-700 truncate">{{ art.titre }}</span>
+          <span class="text-xs text-gray-400 shrink-0">{{ art.lectures }} lectures</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+
+  </div>
+
+  <!-- GESTION DES TÂCHES -->
+  <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-5">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
+      <div>
+        <h2 class="text-lg font-semibold text-slate-900">Tâches transmises</h2>
+        <p class="text-sm text-slate-500">Suivi des actions internes et des échéances du pilotage.</p>
+      </div>
+      {% include 'components/button.html' with label='+ Nouvelle tâche' variant='primary' extra_classes='self-start' %}
+    </div>
+    <div class="hidden md:block overflow-x-auto rounded-3xl border border-slate-100">
+      <table class="w-full text-sm text-left border-collapse">
+        <thead class="bg-slate-50 text-slate-500">
+          <tr>
+            <th class="py-3 pr-4 font-medium">Tâche</th>
+            <th class="py-3 pr-4 font-medium">Assignée à</th>
+            <th class="py-3 pr-4 font-medium">Échéance</th>
+            <th class="py-3 font-medium">Statut</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in taches %}
+          <tr class="border-b last:border-0 hover:bg-[#FCEEF3]/40 transition-colors">
+            <td class="py-3 pr-4 font-medium text-slate-900">{{ t.titre }}</td>
+            <td class="py-3 pr-4 text-slate-600">{{ t.assignee }}</td>
+            <td class="py-3 pr-4 text-slate-600">{{ t.echeance }}</td>
+            <td class="py-3">
+              <span class="px-2 py-1 rounded-full text-xs {% if t.statut == 'En cours' %}bg-[#FCEEF3] text-[#C81E6E] font-semibold{% else %}bg-slate-100 text-slate-600{% endif %}">{{ t.statut }}</span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Cartes (mobile) -->
+    <div class="md:hidden space-y-3">
+      {% for t in taches %}
+      <div class="border border-slate-200 rounded-3xl p-4 bg-white shadow-sm">
+        <p class="font-semibold text-slate-900 text-sm">{{ t.titre }}</p>
+        <div class="mt-3 grid grid-cols-2 gap-3 text-xs text-slate-500">
+          <div class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6.75a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 21.75c0-3.166 2.61-5.75 5.833-5.75h3.334c3.223 0 5.833 2.584 5.833 5.75" /></svg>
+            <span>{{ t.assignee }}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 7.5V6.75a.75.75 0 0 1 .75-.75h1.5a.75.75 0 0 1 .75.75V7.5m6 0V6.75a.75.75 0 0 0-.75-.75h-1.5a.75.75 0 0 0-.75.75V7.5M5.25 9.75h13.5M5.25 19.5h13.5a2.25 2.25 0 0 0 2.25-2.25V7.5a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 7.5v9.75A2.25 2.25 0 0 0 5.25 19.5Z" /></svg>
+            <span>{{ t.echeance }}</span>
+          </div>
+        </div>
+        <span class="inline-block mt-3 px-3 py-2 rounded-full text-xs {% if t.statut == 'En cours' %}bg-[#FCEEF3] text-[#C81E6E] font-semibold{% else %}bg-slate-100 text-slate-600{% endif %}">{{ t.statut }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

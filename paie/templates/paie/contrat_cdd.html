@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="utf-8">
+<style>
+    @page { size: A4; margin: 2cm 2.2cm; 
+            @bottom-center { content: "© Cabinet Smart-Hub — Page " counter(page) " / " counter(pages); font-size: 7px; color: #9ca3af; } 
+    }
+    body { font-family: "Helvetica Neue", Arial, sans-serif; color: #1f2937; font-size: 10.5px; line-height: 1.65; }
+    
+    .garde { page-break-after: always; text-align: center; padding-top: 80px; }
+    .logo-wrap { width: 130px; height: 130px; border-radius: 50%; background: {{ employeur.couleur_documents|default:"#111827" }}1a; display: flex; align-items: center; justify-content: center; margin: 0 auto 30px; }
+    .logo { width: 110px; height: 110px; object-fit: contain; }
+    .rs { font-size: 24px; font-weight: 700; color: #111827; margin-bottom: 6px; }
+    .secteur { font-size: 11px; color: {{ employeur.couleur_documents|default:"#111827" }}; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 30px; }
+    .infos { font-size: 10px; color: #6b7280; line-height: 1.8; margin-bottom: 50px; }
+    
+    .sommaire { page-break-after: always; padding-top: 40px; }
+    .sommaire h2 { border-bottom: 2px solid {{ employeur.couleur_documents|default:"#111827" }}; padding-bottom: 10px; }
+    .sommaire-item { display: flex; justify-content: space-between; border-bottom: 1px dotted #d1d5db; padding: 8px 0; }
+    
+    h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: {{ employeur.couleur_documents|default:"#111827" }}; margin: 20px 0 10px; border-bottom: 1px solid #e5e7eb; padding-bottom: 4px; }
+    .entete { display: flex; align-items: center; border-bottom: 2px solid #f3f4f6; padding-bottom: 10px; margin-bottom: 20px; justify-content: space-between; }
+    
+    .ref-tag { font-size: 10px; font-weight: bold; background: #f3f4f6; padding: 4px 8px; border-radius: 4px; color: #374151; }
+    .parties { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px; margin-bottom: 15px; }
+    .alerte { background: #fef3c7; border: 1px solid #fbbf24; border-radius: 8px; padding: 10px 14px; margin: 10px 0; font-size: 9.5px; color: #92400e; font-style: italic; }
+    
+    .pied { display: flex; justify-content: space-between; margin-top: 60px; }
+    .sign { width: 45%; text-align: center; }
+    .line { border-top: 1px solid #9ca3af; margin-top: 60px; padding-top: 4px; font-size: 9px; color: #6b7280; }
+    .meta-sign { font-size: 8px; color: #6b7280; margin-top: 5px; }
+    
+    .footer { margin-top: 40px; border-top: 1px solid #e5e7eb; padding-top: 15px; display: flex; justify-content: space-between; align-items: center; }
+    .qr-box { width: 50px; height: 50px; border: 1px solid #e5e7eb; display: flex; align-items: center; justify-content: center; font-size: 7px; color: #9ca3af; }
+</style>
+</head>
+<body>
+
+<div class="garde">
+    <div class="logo-wrap">{% if employeur.logo %}<img class="logo" src="{{ employeur.logo.url }}" alt="logo">{% endif %}</div>
+    <div class="rs">{{ employeur.raison_sociale }}</div>
+    <div class="secteur">{{ employeur.secteur.nom|default:"Contrat de Travail" }}</div>
+    <div class="infos">
+        {{ employeur.adresse|default:"Adresse non définie" }}<br>
+        RCCM : {{ employeur.rccm|default:"—" }} | NCC : {{ employeur.ncc|default:"—" }}<br>
+        N° CNPS : {{ employeur.numero_cnps|default:"—" }}
+    </div>
+    <h1 style="color:{{ employeur.couleur_documents|default:"#111827" }};">CONTRAT DE TRAVAIL<br>À DURÉE DÉTERMINÉE</h1>
+    <div class="salarie">{{ employe.nom_prenoms }}</div>
+</div>
+
+<div class="sommaire">
+    <h2>Sommaire</h2>
+    <div class="sommaire-item"><span>Article 1 : Définitions</span><span>2</span></div>
+    <div class="sommaire-item"><span>Article 2 : Engagement et fonction</span><span>2</span></div>
+    <div class="sommaire-item"><span>Article 3 : Période d'essai</span><span>2</span></div>
+    <div class="sommaire-item"><span>Article 4 : Durée du contrat</span><span>3</span></div>
+    <div class="sommaire-item"><span>Article 5 : Rémunération</span><span>3</span></div>
+    <div class="sommaire-item"><span>Article 6 : Dispositions finales</span><span>4</span></div>
+</div>
+
+<div class="entete">
+    <div class="rs" style="font-size: 10px;">{{ employeur.raison_sociale }}</div>
+    <div class="ref-tag">Réf: {{ contrat.numero|default:"CDD-2026-XXXX" }}</div>
+</div>
+
+<div class="parties">
+    <p><strong>ENTRE LES SOUSSIGNÉS :</strong></p>
+    <p>La société <strong>{{ employeur.raison_sociale }}</strong>, représentée par {{ employeur.signataire_nom|default:"le représentant légal" }}, {{ employeur.signataire_qualite|default:"le Gérant" }}, ci-après « <strong>l'Employeur</strong> ».</p>
+    <p><strong>ET :</strong></p>
+    <p>{{ employe.get_civilite_display }} <strong>{{ employe.nom_prenoms }}</strong>, demeurant à {{ employe.adresse|default:employe.lieu_habitation }}, ci-après « <strong>le Travailleur</strong> ».</p>
+</div>
+
+<h2>Article 1 : Définitions préliminaires</h2>
+<p>Dans le présent contrat, les termes « l'Employeur » désignent la société {{ employeur.raison_sociale }}, « le Travailleur » désigne la personne physique engagée aux présentes.</p>
+
+<h2>Article 2 : Engagement et fonction</h2>
+<p>L'Employeur engage le Travailleur en qualité de <strong>{{ employe.poste|default:"—" }}</strong>, catégorie <strong>{{ employe.categorie|default:"—" }}</strong>, à compter du <strong>{{ employe.date_entree|date:"d/m/Y" }}</strong>. La description détaillée du poste figure en Annexe 1.</p>
+
+<h2>Article 3 : Période d'essai</h2>
+<p>Le contrat comporte une période d'essai de <strong>{{ duree_essai }}</strong>, renouvelable une fois par accord écrit, conformément au Décret n° 2024-900.</p>
+
+<h2>Article 4 : Durée du contrat</h2>
+<p>Le contrat est conclu {% if est_imprecis %}à terme imprécis jusqu'à {{ evenement_terme }}{% else %}pour une durée déterminée de {{ employe.duree_cdd_mois }} mois{% endif %}.</p>
+<div class="alerte">⚠️ Conformément à l'article 15.4 du Code du travail, la durée totale ne peut excéder deux (2) ans.</div>
+
+<h2>Article 5 : Rémunération</h2>
+<p>Salaire mensuel brut : <strong>{{ employe.salaire_base|floatformat:0 }} FCFA</strong>. Payable mensuellement, à terme échu.</p>
+
+<h2>Article 6 : Confidentialité et Dispositions finales</h2>
+<p>Le Travailleur s'engage à la discrétion professionnelle. Le présent contrat est régi par le Code du travail ivoirien.</p>
+
+<div class="pied">
+    <div class="sign">
+        {% if signature_data_uri %}
+        <img src="{{ signature_data_uri }}" style="max-height:50px;max-width:160px;margin:0 auto 4px;display:block;">
+        {% if mention_signature %}<p style="font-size:8px;color:#6b7280;margin:0 0 4px;">{{ mention_signature }}</p>{% endif %}
+        {% endif %}
+        <div class="line">Signature de l'Employeur</div>
+        <div class="meta-sign">Cachet de l'entreprise</div>
+    </div>
+    <div class="sign">
+        <div class="line">Signature du Travailleur</div>
+        <div class="meta-sign">"Lu et approuvé"</div>
+    </div>
+</div>
+
+{% include "paie/_pied_smarthub.html" %}
+</body>
+</html>

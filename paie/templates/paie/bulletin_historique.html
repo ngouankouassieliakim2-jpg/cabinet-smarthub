@@ -1,0 +1,39 @@
+{% extends "pilotage/base_pilotage.html" %}
+{% block titre %}Reprise d'historique — {{ employe.nom_prenoms }}{% endblock %}
+{% block contenu %}
+<div class="p-6 max-w-xl">
+    <a href="{% url 'paie_actions_rh_salarie' employeur.id employe.id %}" class="text-sm text-gray-500 hover:text-[#C81E6E]">← Retour aux actions RH</a>
+    <div class="mt-4 mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Reprise d'historique</h1>
+        <p class="text-gray-500 mt-1">{{ employe.nom_prenoms }} — {{ employeur.raison_sociale }}</p>
+        <p class="text-xs text-gray-400 mt-1">Saisis les mois déjà payés par l'ancien système (montants figés, non recalculés).</p>
+    </div>
+    <form method="post" class="bg-white rounded-xl border border-gray-200 p-6 space-y-4 mb-6">
+        {% csrf_token %}
+        <div class="grid grid-cols-2 gap-4">
+            <div><label class="block text-sm font-medium text-gray-600 mb-1">Mois</label>{{ form.mois }}</div>
+            <div><label class="block text-sm font-medium text-gray-600 mb-1">Année</label>{{ form.annee }}</div>
+        </div>
+        <div><label class="block text-sm font-medium text-gray-600 mb-1">Net payé <span class="text-red-500">*</span></label>{{ form.net_historique }}</div>
+        <div class="grid grid-cols-3 gap-4">
+            <div><label class="block text-sm font-medium text-gray-600 mb-1">ITS</label>{{ form.its_historique }}</div>
+            <div><label class="block text-sm font-medium text-gray-600 mb-1">CNPS salarié</label>{{ form.cnps_salarie_historique }}</div>
+            <div><label class="block text-sm font-medium text-gray-600 mb-1">CMU</label>{{ form.cmu_salarie_historique }}</div>
+        </div>
+        <button type="submit" class="bg-[#C81E6E] text-white font-medium px-6 py-2.5 rounded-lg hover:bg-[#a81759]">Enregistrer ce mois</button>
+    </form>
+
+    {% if bulletins_historiques %}
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50 text-gray-600 text-left"><tr><th class="px-4 py-3">Période</th><th class="px-4 py-3 text-right">Net</th></tr></thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for b in bulletins_historiques %}
+                <tr><td class="px-4 py-3">{{ b.get_mois_display }} {{ b.annee }}</td><td class="px-4 py-3 text-right">{{ b.net_historique|floatformat:0 }} F</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

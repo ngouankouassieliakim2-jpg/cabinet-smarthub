@@ -1,0 +1,103 @@
+{% extends "pilotage/base_pilotage.html" %}
+{% block titre %}{{ employe.nom_prenoms }} — Fiche Salarié{% endblock %}
+
+{% block contenu %}
+<div class="p-6 max-w-5xl mx-auto">
+    <!-- Navigation -->
+    <a href="{% url 'paie_actions_rh_liste' employeur.id %}" class="text-sm text-gray-500 hover:text-[#C81E6E] flex items-center mb-6">
+        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+        Retour à la liste
+    </a>
+
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:justify-between md:items-end mb-8 gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900 tracking-tight">{{ employe.nom_prenoms }}</h1>
+            <p class="text-gray-500 mt-1 font-medium">{{ employe.matricule }} • {{ employe.poste|default:"Aucun poste" }} • {{ employeur.raison_sociale }}</p>
+        </div>
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-[#FCEEF3] text-[#C81E6E]">{{ employe.get_contrat_display }}</span>
+    </div>
+
+    <!-- Alertes -->
+    {% if employe.echeance_proche %}
+    <div class="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-800 mb-6 flex items-center">
+        ⚠️ Contrat à échéance le {{ employe.date_sortie|date:"d/m/Y" }} ({{ employe.jours_avant_echeance }} j restants)
+    </div>
+    {% endif %}
+
+    <!-- Onglets -->
+    <div class="border-b border-gray-200 mb-6">
+        <nav class="flex gap-1 overflow-x-auto" id="rh-tabs">
+            <button data-tab="conges" class="tab-btn px-4 py-3 text-sm font-semibold border-b-2 border-[#C81E6E] text-[#C81E6E]">Congés</button>
+            <button data-tab="prets" class="tab-btn px-4 py-3 text-sm font-semibold border-b-2 border-transparent text-gray-500">Prêts</button>
+            <button data-tab="documents" class="tab-btn px-4 py-3 text-sm font-semibold border-b-2 border-transparent text-gray-500">Documents</button>
+            <button data-tab="absences" class="tab-btn px-4 py-3 text-sm font-semibold border-b-2 border-transparent text-gray-500">Absences</button>
+            <button data-tab="historique" class="tab-btn px-4 py-3 text-sm font-semibold border-b-2 border-transparent text-gray-500">Historique</button>
+        </nav>
+    </div>
+
+    <!-- Conteneur des panneaux -->
+    <div id="panels-container">
+        <!-- PANNEAU CONGÉS -->
+        <div id="panel-conges" class="tab-panel">
+            <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="font-bold text-gray-800">Solde de congés</h2>
+                    <div class="flex gap-2">
+                        <a href="{% url 'paie_conge_exceptionnel' employeur.id employe.id %}" class="text-sm text-gray-600 px-4 py-2 border rounded-lg">Congé exceptionnel</a>
+                        <a href="{% url 'paie_conge_poser' employeur.id employe.id %}" class="bg-[#C81E6E] text-white text-sm px-4 py-2 rounded-lg">Poser un congé</a>
+                    </div>
+                </div>
+                <!-- Barre de progression -->
+                <div class="mb-6">
+                    <div class="flex justify-between text-sm mb-2 font-medium"><span>Consommation</span><span>{{ solde.pris }} / {{ solde.acquis }} jours</span></div>
+                    <div class="w-full bg-gray-100 rounded-full h-3"><div class="bg-[#C81E6E] h-3 rounded-full" style="width: {% widthratio solde.pris solde.acquis 100 %}%"></div></div>
+                </div>
+                <!-- ... suite du code congé ... -->
+            </div>
+        </div>
+
+        <!-- PANNEAU PRÊTS -->
+        <div id="panel-prets" class="tab-panel hidden">
+            <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+                <h2 class="font-bold text-gray-800 mb-4">Prêts & avances</h2>
+                {% if pret_actif %}
+                <div class="bg-gray-50 p-4 rounded-lg">Prêt en cours : <strong>{{ pret_actif.montant|floatformat:0 }} F</strong></div>
+                {% else %}
+                <p class="text-gray-400">Aucun prêt actif.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- PANNEAU DOCUMENTS -->
+        <div id="panel-documents" class="tab-panel hidden">
+            <div class="grid grid-cols-2 gap-4">
+                <!-- Tu remets ici tes blocs documents existants -->
+            </div>
+        </div>
+
+        <!-- PANNEAU ABSENCES -->
+        <div id="panel-absences" class="tab-panel hidden">
+            <!-- Tu remets ici ton panneau absences -->
+        </div>
+
+        <!-- PANNEAU HISTORIQUE -->
+        <div id="panel-historique" class="tab-panel hidden">
+            <!-- Tu remets ici ton panneau historique -->
+        </div>
+    </div>
+</div>
+
+<script>
+    // Logique JS simplifiée qui gère tous les panneaux
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.replace('border-[#C81E6E]', 'border-transparent') || b.classList.replace('text-[#C81E6E]', 'text-gray-500'));
+            btn.classList.replace('border-transparent', 'border-[#C81E6E]');
+            btn.classList.replace('text-gray-500', 'text-[#C81E6E]');
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+            document.getElementById('panel-' + btn.dataset.tab).classList.remove('hidden');
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,149 @@
+{% load paie_extras %}
+<style>
+    @page { size: A4; margin: 1.4cm 1.5cm; @bottom-center { content: "© Cabinet Smart-Hub — Document généré automatiquement, tous droits réservés."; font-size: 7px; color: #9ca3af; } }
+    * { box-sizing: border-box; }
+    body { font-family: "Helvetica Neue", Arial, sans-serif; color: #1f2937; font-size: 11px; margin: 0; }
+    .entete { display: flex; align-items: center; border-bottom: 3px solid {{ employeur.couleur_documents|default:"#111827" }}; padding-bottom: 12px; margin-bottom: 4px; }
+    .entete .logo-wrap { width: 72px; height: 72px; border-radius: 50%; background: {{ employeur.couleur_documents|default:"#111827" }}1a; display: flex; align-items: center; justify-content: center; margin-right: 16px; overflow: hidden; flex-shrink: 0; }
+    .entete .logo { width: 60px; height: 60px; object-fit: contain; }
+    .entete .infos { flex: 1; }
+    .entete .rs { font-size: 17px; font-weight: 700; color: #111827; letter-spacing: .3px; }
+    .entete .sub { font-size: 9.5px; color: #6b7280; margin-top: 2px; line-height: 1.5; }
+    .titre-band { display: flex; justify-content: space-between; align-items: baseline; margin: 14px 0 12px; }
+    .titre-band h1 { font-size: 15px; font-weight: 700; letter-spacing: 2px; margin: 0; color: {{ employeur.couleur_documents|default:"#111827" }}; }
+    .titre-band .periode { font-size: 11px; color: #374151; font-weight: 600; }
+    .grid-emp { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px 20px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; }
+    .grid-emp .lab { font-size: 8.5px; color: #9ca3af; text-transform: uppercase; letter-spacing: .5px; }
+    .grid-emp .val { font-size: 11px; font-weight: 600; color: #1f2937; }
+    .conge-info { background: {{ employeur.couleur_documents|default:"#111827" }}12; border: 1px solid {{ employeur.couleur_documents|default:"#111827" }}33; border-radius: 8px; padding: 8px 14px; margin-bottom: 14px; font-size: 10px; color: #374151; }
+    .conge-info strong { color: {{ employeur.couleur_documents|default:"#111827" }}; }
+    table.paie { width: 100%; border-collapse: collapse; }
+    table.paie thead th { background: {{ employeur.couleur_documents|default:"#111827" }}; color: #fff; font-size: 9px; text-transform: uppercase; letter-spacing: .5px; padding: 7px 9px; text-align: right; }
+    table.paie thead th.l { text-align: left; }
+    table.paie tbody td { padding: 6px 9px; border-bottom: 1px solid #f0f0f0; text-align: right; }
+    table.paie tbody td.l { text-align: left; }
+    table.paie tbody tr.section td { background: #f3f4f6; font-weight: 700; font-size: 9px; text-transform: uppercase; letter-spacing: .5px; color: #4b5563; }
+    table.paie tbody tr.soustotal td { font-weight: 700; border-top: 2px solid #d1d5db; }
+    .net-band { display: flex; justify-content: space-between; align-items: center; background: {{ employeur.couleur_documents|default:"#111827" }}; color: #fff; border-radius: 8px; padding: 14px 20px; margin-top: 14px; }
+    .net-band .lab { font-size: 12px; letter-spacing: 1px; text-transform: uppercase; }
+    .net-band .val { font-size: 22px; font-weight: 700; }
+    .patronal { margin-top: 16px; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 14px; }
+    .patronal h3 { font-size: 9px; text-transform: uppercase; letter-spacing: .5px; color: #9ca3af; margin: 0 0 8px; }
+    .patronal table { width: 100%; border-collapse: collapse; font-size: 9.5px; color: #6b7280; }
+    .patronal table td { padding: 3px 6px; text-align: right; }
+    .patronal table td.l { text-align: left; }
+    .pied { display: flex; justify-content: space-between; margin-top: 34px; font-size: 10px; color: #374151; }
+    .pied .sign { width: 45%; }
+    .pied .line { border-top: 1px solid #9ca3af; margin-top: 40px; padding-top: 4px; text-align: center; color: #6b7280; font-size: 9px; }
+    .mention { text-align: center; font-size: 8px; color: #9ca3af; margin-top: 18px; }
+</style>
+
+<div class="entete">
+    <div class="logo-wrap">
+        {% if employeur.logo %}<img class="logo" src="{{ employeur.logo.url }}" alt="logo">{% endif %}
+    </div>
+    <div class="infos">
+        <div class="rs">{{ employeur.raison_sociale }}</div>
+        <div class="sub">
+            {% if employeur.adresse %}{{ employeur.adresse }}{% if employeur.commune %}, {{ employeur.commune }}{% endif %}<br>{% endif %}
+            {% if employeur.rccm %}RCCM : {{ employeur.rccm }} &nbsp;•&nbsp; {% endif %}{% if employeur.ncc %}NCC : {{ employeur.ncc }}{% endif %}<br>
+            {% if employeur.numero_cnps %}N° CNPS employeur : {{ employeur.numero_cnps }}{% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="titre-band">
+    <h1>{% if bulletin.est_solde_tout_compte %}SOLDE DE TOUT COMPTE{% else %}BULLETIN DE PAIE{% endif %}</h1>
+    <div class="periode">Période : {{ mois_nom }} {{ annee }}</div>
+</div>
+
+<div class="grid-emp">
+    <div><div class="lab">Matricule</div><div class="val">{{ employe.matricule|default:"—" }}</div></div>
+    <div><div class="lab">Nom & Prénoms</div><div class="val">{{ employe.nom_prenoms }}</div></div>
+    <div><div class="lab">Emploi</div><div class="val">{{ employe.emploi|default:"—" }}</div></div>
+    <div><div class="lab">Catégorie</div><div class="val">{{ employe.categorie|default:"—" }}</div></div>
+    <div><div class="lab">N° CNPS</div><div class="val">{{ employe.numero_cnps|default:"—" }}</div></div>
+    <div><div class="lab">Parts IGR</div><div class="val">{{ c.parts_igr }}</div></div>
+    <div><div class="lab">Date d'entrée</div><div class="val">{{ employe.date_entree|date:"d/m/Y"|default:"—" }}</div></div>
+    <div><div class="lab">Jours travaillés</div><div class="val">{{ bulletin.jours_travailles|floatformat:"-1" }}</div></div>
+    <div><div class="lab">Situation</div><div class="val">{{ employe.get_situation_matrimoniale_display }}</div></div>
+</div>
+
+{% if bulletin.conge_date_debut and bulletin.conge_date_fin %}
+<div class="conge-info">
+    🌴 Congé sur cette période : <strong>du {{ bulletin.conge_date_debut|date:"d/m/Y" }} au {{ bulletin.conge_date_fin|date:"d/m/Y" }}</strong>
+</div>
+{% endif %}
+
+<table class="paie">
+    <thead>
+        <tr><th class="l">Désignation</th><th>Base</th><th>Gains</th><th>Retenues</th></tr>
+    </thead>
+    <tbody>
+        <tr class="section"><td class="l" colspan="4">Gains</td></tr>
+        <tr><td class="l">Salaire de base</td><td>{{ bulletin.jours_travailles|floatformat:"-1" }} j</td><td>{{ bulletin.salaire_base|espace }}</td><td></td></tr>
+        {% if c.prime_anciennete %}<tr><td class="l">Prime d'ancienneté</td><td>{{ c.salaire_categoriel|espace }}</td><td>{{ c.prime_anciennete|espace }}</td><td></td></tr>{% endif %}
+        {% if bulletin.prime_transport %}<tr><td class="l">Prime de transport</td><td></td><td>{{ bulletin.prime_transport|espace }}</td><td></td></tr>{% endif %}
+        {% if bulletin.heures_sup %}<tr><td class="l">Heures supplémentaires</td><td></td><td>{{ bulletin.heures_sup|espace }}</td><td></td></tr>{% endif %}
+        {% for r in gains_rub %}<tr><td class="l">{{ r.rubrique.libelle }}</td><td></td><td>{{ r.montant|espace }}</td><td></td></tr>{% endfor %}
+        {% if bulletin.conge_paye %}<tr><td class="l">Congé payé</td><td></td><td>{{ bulletin.conge_paye|espace }}</td><td></td></tr>{% endif %}
+        {% if bulletin.gratification %}<tr><td class="l">Gratification (13e mois)</td><td></td><td>{{ bulletin.gratification|espace }}</td><td></td></tr>{% endif %}
+        {% if bulletin.preavis %}<tr><td class="l">Préavis</td><td></td><td>{{ bulletin.preavis|espace }}</td><td></td></tr>{% endif %}
+        {% if bulletin.indemnite_licenciement %}<tr><td class="l">Indemnité de licenciement</td><td></td><td>{{ bulletin.indemnite_licenciement|espace }}</td><td></td></tr>{% endif %}
+        {% if bulletin.prime_precarite %}<tr><td class="l">Prime de précarité (fin de CDD)</td><td></td><td>{{ bulletin.prime_precarite|espace }}</td><td></td></tr>{% endif %}
+        {% if bulletin.indemnite_transactionnelle %}<tr><td class="l">Indemnité transactionnelle</td><td></td><td>{{ bulletin.indemnite_transactionnelle|espace }}</td><td></td></tr>{% endif %}
+
+        <tr class="soustotal"><td class="l">Total brut</td><td></td><td>{{ c.total_gains|espace }}</td><td></td></tr>
+
+        <tr class="section"><td class="l" colspan="4">Retenues</td></tr>
+        <tr><td class="l">ITS (impôt sur salaires)</td><td>{{ c.brut_fiscal|espace }}</td><td></td><td>{{ c.its_final|espace }}</td></tr>
+        <tr><td class="l">CNPS — Retraite (6,3 %)</td><td>{{ c.brut_social|espace }}</td><td></td><td>{{ c.cnps_retraite_salarie|espace }}</td></tr>
+        <tr><td class="l">CMU</td><td></td><td></td><td>{{ c.cmu_salarie|espace }}</td></tr>
+        {% for r in retenues_rub %}<tr><td class="l">{{ r.rubrique.libelle }}</td><td></td><td></td><td>{{ r.montant|espace }}</td></tr>{% endfor %}
+        {% if bulletin.avance_acompte %}<tr><td class="l">Avance / Acompte</td><td></td><td></td><td>{{ bulletin.avance_acompte|espace }}</td></tr>{% endif %}
+        {% if bulletin.montant_pret %}<tr><td class="l">Remboursement de prêt</td><td></td><td></td><td>{{ bulletin.montant_pret|espace }}</td></tr>{% endif %}
+        {% if bulletin.autres_retenues %}<tr><td class="l">Autres retenues</td><td></td><td></td><td>{{ bulletin.autres_retenues|espace }}</td></tr>{% endif %}
+
+        <tr class="soustotal"><td class="l">Total des retenues</td><td></td><td></td><td>{{ c.total_retenues|espace }}</td></tr>
+    </tbody>
+</table>
+
+<div class="net-band">
+    <div class="lab">Net à payer</div>
+    <div class="val">{{ c.net_arrondi|espace }} FCFA</div>
+</div>
+
+<div class="patronal">
+    <h3>Charges patronales (à titre indicatif)</h3>
+    <table>
+        <tr>
+            <td class="l">CNPS retraite (7,7 %)</td><td>{{ c.cnps_retraite_employeur|espace }}</td>
+            <td class="l">Prestations familiales</td><td>{{ c.cnps_prestations_familiales|espace }}</td>
+            <td class="l">Accident travail</td><td>{{ c.cnps_accident_travail|espace }}</td>
+        </tr>
+        <tr>
+            <td class="l">Assurance maternité</td><td>{{ c.cnps_maternite|espace }}</td>
+            <td class="l">FDFP (TA + FPC)</td><td>{{ c.fdfp_ta|add:c.fdfp_fpc|espace }}</td>
+            <td class="l">CMU (part employeur)</td><td>{{ c.cmu_employeur|espace }}</td>
+        </tr>
+        <tr>
+            <td class="l">Contribution nationale</td><td>{{ c.contribution_nationale|espace }}</td>
+            {% if c.contribution_employeur %}<td class="l">Contribution employeur</td><td>{{ c.contribution_employeur|espace }}</td>{% else %}<td colspan="2"></td>{% endif %}
+            <td colspan="2"></td>
+        </tr>
+        <tr>
+            <td class="l" style="font-weight:700;color:#374151;">Total charges patronales</td>
+            <td style="font-weight:700;color:#374151;">{{ c.total_charges_patronales|espace }}</td>
+            <td colspan="4"></td>
+        </tr>
+    </table>
+</div>
+
+<div class="pied">
+    <div class="sign"><div class="line">L'Employeur</div></div>
+    <div class="sign"><div class="line">L'Employé(e) (pour acquit)</div></div>
+</div>
+
+<div class="mention">Bulletin de paie établi conformément à la réglementation en vigueur — à conserver sans limitation de durée.</div>
+
+{% include "paie/_pied_smarthub.html" %}

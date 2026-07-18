@@ -1,0 +1,59 @@
+{% extends "base_parametres.html" %}
+{% block titre %}Paramètres email{% endblock %}
+
+{% block para_contenu %}
+<div class="p-6 max-w-2xl">
+    {% if messages %}
+    {% for m in messages %}
+    <div class="mb-4 p-3 rounded text-sm {% if m.tags == 'success' %}bg-emerald-50 text-emerald-700 border border-emerald-200{% else %}bg-red-50 text-red-700 border border-red-200{% endif %}">{{ m }}</div>
+    {% endfor %}
+  {% endif %}
+  <h1 class="text-2xl font-bold text-gray-800 mb-1">Paramètres d'envoi des emails</h1>
+  <p class="text-gray-500 text-sm mb-6">Ces réglages serviront à tous les envois d'emails de l'application (devis, lettres, etc.).</p>
+
+  {% if params.est_configure %}
+  <div class="bg-emerald-50 border border-emerald-200 rounded p-3 mb-5 text-sm text-emerald-700">✓ L'envoi d'emails est configuré.</div>
+  {% else %}
+  <div class="bg-amber-50 border border-amber-200 rounded p-3 mb-5 text-sm text-amber-700">⚠️ L'envoi d'emails n'est pas encore configuré.</div>
+  {% endif %}
+
+  <form method="post" class="bg-white rounded-lg shadow p-6 space-y-5">
+    {% csrf_token %}
+
+    <div>
+      <label class="block text-sm font-semibold text-gray-700 mb-1">{{ form.adresse_envoi.label }}</label>
+      {{ form.adresse_envoi }}
+      <span class="text-xs text-gray-400">{{ form.adresse_envoi.help_text }}</span>
+    </div>
+
+    <div>
+      <label class="block text-sm font-semibold text-gray-700 mb-1">{{ form.mot_de_passe_app.label }}</label>
+      <input type="password" name="mot_de_passe_app" value="{{ form.mot_de_passe_app.value|default:'' }}"
+             class="w-full border border-gray-300 rounded px-3 py-2 text-sm" placeholder="••••••••••••••••">
+      <span class="text-xs text-gray-400">{{ form.mot_de_passe_app.help_text }}</span>
+    </div>
+
+    <div>
+      <label class="block text-sm font-semibold text-gray-700 mb-1">{{ form.nom_expediteur.label }}</label>
+      {{ form.nom_expediteur }}
+      <span class="text-xs text-gray-400">{{ form.nom_expediteur.help_text }}</span>
+    </div>
+
+    <div class="pt-3 border-t">
+      <button type="submit" class="bg-[#C81E6E] text-white px-6 py-2 rounded font-medium hover:bg-[#a81659]">Enregistrer</button>
+      <a href="{% url 'tester_email' %}" class="ml-3 inline-block bg-[#16171C] text-white px-5 py-2 rounded font-medium hover:bg-black">Tester l'envoi</a>
+    </div>
+  </form>
+
+  <div class="mt-4 bg-gray-50 border rounded p-4 text-xs text-gray-600">
+    <p class="font-semibold mb-1">Comment obtenir le mot de passe d'application ?</p>
+    <p>Compte Google → Sécurité → activez la Validation en deux étapes → Mots de passe des applications → créez-en un (16 caractères).</p>
+  </div>
+</div>
+
+<style>
+  input[type=text], input[type=email], input[type=password] {
+    width:100%; border:1px solid #d1d5db; border-radius:6px; padding:8px 10px; font-size:14px;
+  }
+</style>
+{% endblock %}

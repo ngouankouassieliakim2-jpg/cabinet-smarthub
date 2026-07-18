@@ -1,0 +1,10 @@
+<div style="margin-top:24px;border-top:1px solid #e5e7eb;padding-top:10px;display:flex;justify-content:space-between;align-items:center;">
+    <div style="text-align:left;font-size:8px;color:#9ca3af;line-height:1.6;">
+        Document généré par <strong style="color:#6b7280;">Cabinet Smart-Hub</strong> le {% now "d/m/Y à H:i" %}.<br>
+        {% if reference %}Référence : <strong style="color:#6b7280;">{{ reference }}</strong><br>{% endif %}
+        Toute altération de ce document le rend invalide.
+    </div>
+    {% if qr_data_uri %}
+    <img src="{{ qr_data_uri }}" style="width:52px;height:52px;flex-shrink:0;" alt="QR de vérification">
+    {% endif %}
+</div>

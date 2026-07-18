@@ -1,0 +1,192 @@
+{% extends "pilotage/base_pilotage.html" %}
+{% load form_extras %}
+
+{% block titre %}Porte d'entrée — {{ devis.numero_devis }}{% endblock %}
+
+{% block contenu %}
+<div class="p-6">
+    <div class="mb-6">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+                <h1 class="text-3xl font-extrabold text-slate-900">Porte d'entrée — {{ devis.numero_devis }}</h1>
+                <p class="text-slate-500 mt-2">Complétez les informations d'identification et gérez les pièces du dossier.</p>
+            </div>
+            <a href="{% url 'secretariat_porte_entree' %}" class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 transition">← Retour à la liste</a>
+        </div>
+    </div>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-[1.4fr_0.6fr]">
+            <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+                <div class="space-y-5">
+                    {% for field in form %}
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700">
+                            {{ field.label }}
+                            {% if field.field.required %} <span class="text-red-600">*</span>{% endif %}
+                        </label>
+                        {{ field }}
+                        {% if field.help_text %}
+                        <p class="text-xs text-slate-500 mt-1">{{ field.help_text }}</p>
+                        {% endif %}
+                        {% for error in field.errors %}
+                        <p class="text-sm text-rose-600 mt-1">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="mt-6 flex flex-wrap gap-3">
+                    <button type="submit" class="inline-flex items-center justify-center rounded-2xl bg-[#C81E6E] px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#a81759] transition">Enregistrer</button>
+                    <a href="{% url 'secretariat_porte_entree' %}" class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 transition">Retour à la liste des devis</a>
+                </div>
+            </div>
+
+            <aside class="space-y-6">
+                <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+                    <h2 class="text-lg font-semibold text-slate-900 mb-4">Modalités de la mission</h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {% with champs="regime_mission date_effet_mission duree_mission_mois exercice_concerne jour_emission_facture lieu_signature" %}
+                        {% for nom in champs.split %}
+                            {% with f=form|field:nom %}
+                                {% if f %}
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700">{{ f.label }}{% if f.field.required %} <span class="text-red-600">*</span>{% endif %}</label>
+                                    {{ f }}
+                                    {% if f.help_text %}<p class="text-xs text-slate-500 mt-1">{{ f.help_text }}</p>{% endif %}
+                                </div>
+                                {% endif %}
+                            {% endwith %}
+                        {% endfor %}
+                        {% endwith %}
+                    </div>
+                    <div class="mt-4 text-xs text-slate-500">Si le régime est « Récurrente », ces informations pilotent directement la génération automatique des factures.</div>
+                </div>
+
+                <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+                    <h2 class="text-lg font-semibold text-slate-900 mb-4">Documents associés</h2>
+                    {% if documents %}
+                    <div class="space-y-4">
+                        {% for document in documents %}
+                        <div class="rounded-3xl border border-slate-100 p-4 bg-slate-50">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="min-w-0">
+                                    <p class="font-semibold text-slate-900">{{ document.get_type_document_display }}</p>
+                                    {% if document.libelle_libre %}
+                                    <p class="text-sm text-slate-600">{{ document.libelle_libre }}</p>
+                                    {% endif %}
+                                </div>
+                                <span class="inline-flex items-center rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm">{{ document.get_statut_display }}</span>
+                            </div>
+
+                            <div class="mt-4 space-y-4">
+                                <div>
+                                    <label for="doc_{{ document.id }}_statut" class="block text-sm font-medium text-slate-700">Statut</label>
+                                    <select id="doc_{{ document.id }}_statut" name="doc_{{ document.id }}_statut" data-document-id="{{ document.id }}" class="mt-1 block w-full rounded-2xl border border-slate-300 bg-white py-2.5 px-3 text-sm text-slate-700 shadow-sm focus:border-[#C81E6E] focus:ring-[#C81E6E]/30">
+                                        <option value="IGNORE" {% if document.statut == 'IGNORE' %}selected{% endif %}>Ignoré</option>
+                                        <option value="FOURNI" {% if document.statut == 'FOURNI' %}selected{% endif %}>Fourni</option>
+                                        <option value="ABSENT" {% if document.statut == 'ABSENT' %}selected{% endif %}>Absent — à établir par le cabinet (facturable)</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label for="doc_{{ document.id }}_commentaire" class="block text-sm font-medium text-slate-700">Commentaire</label>
+                                    <input id="doc_{{ document.id }}_commentaire" name="doc_{{ document.id }}_commentaire" value="{{ document.commentaire }}" class="mt-1 block w-full rounded-2xl border border-slate-300 bg-white py-2.5 px-3 text-sm text-slate-700 shadow-sm focus:border-[#C81E6E] focus:ring-[#C81E6E]/30" />
+                                </div>
+
+                                <div id="doc_{{ document.id }}_upload" class="space-y-2" style="display: {% if document.statut == 'FOURNI' %}block{% else %}none{% endif %};">
+                                    <label for="doc_{{ document.id }}_fichier" class="block text-sm font-medium text-slate-700">Fichier</label>
+                                    <input id="doc_{{ document.id }}_fichier" type="file" name="doc_{{ document.id }}_fichier" class="mt-1 block w-full text-sm text-slate-700" />
+                                    {% if document.fichier %}
+                                    <p class="text-xs text-slate-500">Fichier déjà attaché : <a href="{{ document.fichier.url }}" class="underline text-slate-700">Télécharger</a></p>
+                                    {% endif %}
+                                </div>
+
+                                {% if document_errors|get_item:document.id %}
+                                <p class="text-sm text-rose-600">{{ document_errors|get_item:document.id }}</p>
+                                {% endif %}
+
+                                {% if document_requires_fourniture(document.type_document) %}
+                                <p class="text-xs text-slate-500">Ce document est requis pour finaliser l'identification.</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-slate-500">Aucun document initialisé pour ce devis.</p>
+                    {% endif %}
+                </div>
+
+                {% if documents_bloquants %}
+                <div class="bg-white rounded-3xl border border-red-200 p-6 shadow-sm">
+                    <h2 class="text-lg font-semibold text-red-700 mb-3">Documents bloquants</h2>
+                    <ul class="list-disc list-inside text-sm text-red-700 space-y-2">
+                        {% for document in documents_bloquants %}
+                        <li>{{ document.get_type_document_display }} — {{ document.get_statut_display }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                {% if documents_a_facturer_non_traites %}
+                <div class="bg-white rounded-3xl border border-yellow-200 p-6 shadow-sm">
+                    <h2 class="text-lg font-semibold text-amber-700 mb-3">À facturer</h2>
+                    <ul class="list-disc list-inside text-sm text-slate-700 space-y-2">
+                        {% for document in documents_a_facturer_non_traites %}
+                        <li>{{ document.get_type_document_display }} — {{ document.get_statut_display }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+                    <h2 class="text-lg font-semibold text-slate-900 mb-4">Statut de la lettre de mission</h2>
+                    <p class="text-sm text-slate-600 mb-4">{{ devis.get_lettre_statut_display }}</p>
+
+                    {% if devis.lettre_statut == 'BROUILLON' %}
+                    <form method="post" action="{% url 'secretariat_porte_entree_soumettre' devis.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="w-full inline-flex items-center justify-center rounded-2xl bg-[#C81E6E] px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#a81759] transition">Soumettre à la Direction</button>
+                    </form>
+                    {% elif devis.lettre_statut == 'EN_VALIDATION_DIRECTION' %}
+                    <p class="text-sm text-emerald-700">Soumis le {{ devis.lettre_soumise_le|date:"d/m/Y H:i" }}{% if devis.lettre_soumise_par %} par {{ devis.lettre_soumise_par.get_full_name|default:devis.lettre_soumise_par.username }}{% endif %}</p>
+                    {% elif devis.lettre_statut == 'VALIDEE_DIRECTION' %}
+                    <p class="text-sm text-slate-700">Validée le {{ devis.lettre_validee_le|date:"d/m/Y H:i" }}{% if devis.lettre_validee_par %} par {{ devis.lettre_validee_par.get_full_name|default:devis.lettre_validee_par.username }}{% endif %}</p>
+                    {% endif %}
+
+                    {% if devis.lettre_motif_refus %}
+                    <div class="mt-4 rounded-2xl bg-rose-50 border border-rose-100 p-4 text-sm text-rose-700">
+                        <strong>Motif renvoi :</strong>
+                        <p class="mt-2">{{ devis.lettre_motif_refus }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </aside>
+        </div>
+    </form>
+</div>
+
+<script>
+    function toggleDocumentUpload(documentId) {
+        const statut = document.querySelector(`#doc_${documentId}_statut`);
+        const uploadContainer = document.querySelector(`#doc_${documentId}_upload`);
+        if (!statut || !uploadContainer) {
+            return;
+        }
+        uploadContainer.style.display = statut.value === 'FOURNI' ? 'block' : 'none';
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('select[id^="doc_"][id$="_statut"]').forEach(function (select) {
+            toggleDocumentUpload(select.dataset.documentId);
+            select.addEventListener('change', function () {
+                toggleDocumentUpload(this.dataset.documentId);
+            });
+        });
+    });
+</script>
+{% endblock %}

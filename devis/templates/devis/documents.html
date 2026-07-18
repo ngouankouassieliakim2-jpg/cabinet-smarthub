@@ -1,0 +1,110 @@
+{% extends "pilotage/base_recouvrement.html" %}
+{% block titre %}Documents — Recouvrement{% endblock %}
+
+{% block contenu %}
+<div class="max-w-6xl mx-auto p-4 sm:p-8">
+
+  <!-- En-tête + recherche -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-800">Documents</h1>
+      <p class="text-gray-500 text-sm mt-1">Tous les documents générés (devis, notes, lettres, factures)</p>
+    </div>
+  </div>
+
+  <!-- Barre de recherche -->
+  <form method="get" class="mb-5">
+    <div class="relative max-w-md">
+      <input type="text" name="q" value="{{ q }}" placeholder="Rechercher un document ou un client..."
+             class="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:border-[#C81E6E] focus:outline-none">
+      <span class="absolute left-3 top-3 text-gray-400">🔍</span>
+    </div>
+  </form>
+
+  <!-- Liste des documents -->
+  {% if documents %}
+  <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+    <!-- Tableau (ordi) -->
+    <div class="hidden md:block overflow-x-auto">
+      <table class="w-full text-sm text-left">
+        <thead class="bg-gray-50 text-gray-500 border-b">
+          <tr>
+            <th class="px-4 py-3">Document</th>
+            <th class="px-4 py-3">Type</th>
+            <th class="px-4 py-3">Client</th>
+            <th class="px-4 py-3">Date</th>
+            <th class="px-4 py-3 text-center">Partager</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for doc in documents %}
+          <tr class="border-b last:border-0 hover:bg-gray-50">
+            <td class="px-4 py-3">
+              <div class="flex items-center gap-2">
+                <span class="text-lg">📄</span>
+                <div>
+                  <p class="font-medium text-gray-800 text-xs">{{ doc.nom }}</p>
+                  <p class="text-[11px] text-gray-400">{{ doc.taille }}</p>
+                </div>
+              </div>
+            </td>
+            <td class="px-4 py-3">
+              <span class="px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-600">{{ doc.type }}</span>
+            </td>
+            <td class="px-4 py-3 text-gray-700">{{ doc.client }}</td>
+            <td class="px-4 py-3 text-gray-500 text-xs">{{ doc.date }}</td>
+            <td class="px-4 py-3">
+              <div class="flex items-center justify-center gap-1">
+                <button title="Envoyer par email" class="w-8 h-8 rounded-lg hover:bg-blue-50 flex items-center justify-center transition">📧</button>
+                <button title="Envoyer par WhatsApp" class="w-8 h-8 rounded-lg hover:bg-green-50 flex items-center justify-center transition">💬</button>
+                <button title="Envoyer au client via l'app" class="w-8 h-8 rounded-lg hover:bg-pink-50 flex items-center justify-center transition">📲</button>
+                <button title="Télécharger" class="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center transition">⬇️</button>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Cartes (mobile) -->
+    <div class="md:hidden divide-y divide-gray-100">
+      {% for doc in documents %}
+      <div class="p-4">
+        <div class="flex items-start gap-2">
+          <span class="text-lg mt-0.5">📄</span>
+          <div class="flex-1 min-w-0">
+            <p class="font-medium text-gray-800 text-xs break-all">{{ doc.nom }}</p>
+            <div class="flex flex-wrap gap-2 mt-1.5">
+              <span class="px-2 py-0.5 rounded-full text-[11px] bg-gray-100 text-gray-600">{{ doc.type }}</span>
+              <span class="text-[11px] text-gray-500">{{ doc.client }}</span>
+            </div>
+            <p class="text-[11px] text-gray-400 mt-1">{{ doc.date }} · {{ doc.taille }}</p>
+            <div class="flex items-center gap-1 mt-2">
+              <button title="Email" class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">📧</button>
+              <button title="WhatsApp" class="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center">💬</button>
+              <button title="App client" class="w-8 h-8 rounded-lg bg-pink-50 flex items-center justify-center">📲</button>
+              <button title="Télécharger" class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">⬇️</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% else %}
+  <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-10 text-center">
+    <div class="text-5xl mb-3">📂</div>
+    <p class="text-gray-600 font-medium">Aucun document trouvé</p>
+    <p class="text-gray-400 text-sm mt-1">{% if q %}Essayez une autre recherche.{% else %}Les documents générés apparaîtront ici.{% endif %}</p>
+  </div>
+  {% endif %}
+
+  <!-- Note maquette -->
+  <p class="text-xs text-gray-400 italic mt-4">
+    🔧 Maquette : les documents affichés sont des exemples. L'archivage réel des fichiers
+    et le partage (email, WhatsApp, app) seront branchés prochainement.
+  </p>
+
+</div>
+{% endblock %}

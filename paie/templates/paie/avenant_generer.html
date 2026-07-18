@@ -1,0 +1,27 @@
+{% extends "pilotage/base_pilotage.html" %}
+{% block titre %}Avenant — {{ employe.nom_prenoms }}{% endblock %}
+{% block contenu %}
+<div class="p-6 max-w-xl">
+    <a href="{% url 'paie_actions_rh_salarie' employeur.id employe.id %}" class="text-sm text-gray-500 hover:text-[#C81E6E]">← Retour aux actions RH</a>
+    <div class="mt-4 mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Générer un avenant</h1>
+        <p class="text-gray-500 mt-1">{{ employe.nom_prenoms }} — {{ employe.get_contrat_display }} — {{ employeur.raison_sociale }}</p>
+        <p class="text-xs text-gray-400 mt-1">Échéance actuelle : {{ employe.date_sortie|date:"d/m/Y"|default:"non définie" }}</p>
+    </div>
+    <form method="post" class="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+        {% csrf_token %}
+        <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">{{ form.nouvelle_date_fin.label }}</label>
+            {{ form.nouvelle_date_fin }}
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">{{ form.motif_reconduction.label }}</label>
+            {{ form.motif_reconduction }}
+        </div>
+        <div class="flex items-center gap-3 pt-2">
+            <button type="submit" class="bg-[#C81E6E] text-white font-medium px-6 py-2.5 rounded-lg hover:bg-[#a81759]">Générer l'avenant</button>
+            <a href="{% url 'paie_actions_rh_salarie' employeur.id employe.id %}" class="text-gray-500 hover:text-gray-700">Annuler</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

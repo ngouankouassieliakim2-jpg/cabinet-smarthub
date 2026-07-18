@@ -1,0 +1,85 @@
+{% extends "pilotage/base_pilotage.html" %}
+
+{% block titre %}Création des dossiers clients — Secrétariat{% endblock %}
+
+{% block contenu %}
+<div class="p-6">
+
+    <!-- En-tête -->
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Création des dossiers clients</h1>
+        <p class="text-gray-500 mt-1">Intégrez vos devis acceptés dans le portefeuille client</p>
+    </div>
+
+    <!-- Dossiers en préparation -->
+    {% if dossiers_en_cours %}
+    <div class="mb-8">
+        <h2 class="font-bold text-gray-800 mb-3">Dossiers en préparation</h2>
+        <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50 text-gray-600 text-left">
+                    <tr>
+                        <th class="px-4 py-3 font-medium">Code</th>
+                        <th class="px-4 py-3 font-medium">Nom</th>
+                        <th class="px-4 py-3 font-medium">Devis d'origine</th>
+                        <th class="px-4 py-3 font-medium"></th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {% for d in dossiers_en_cours %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-3 text-gray-500">{{ d.code_client }}</td>
+                        <td class="px-4 py-3 font-medium text-gray-800">{{ d.nom|default:"—" }}</td>
+                        <td class="px-4 py-3 text-gray-600">{{ d.devis_origine.numero_devis }}</td>
+                        <td class="px-4 py-3 text-right whitespace-nowrap">
+                            <a href="{% url 'secretariat_dossier_config' d.devis_origine.id %}" class="text-gray-500 hover:underline mr-3">Modifier</a>
+                            <a href="{% url 'secretariat_dossier_activer' d.id %}" class="bg-[#C81E6E] text-white text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-[#a81759] transition">Activer →</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Devis à intégrer -->
+    <div>
+        <h2 class="font-bold text-gray-800 mb-3">Devis envoyés à intégrer</h2>
+        {% if devis_envoyes %}
+        <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50 text-gray-600 text-left">
+                    <tr>
+                        <th class="px-4 py-3 font-medium">N° Devis</th>
+                        <th class="px-4 py-3 font-medium">Nom</th>
+                        <th class="px-4 py-3 font-medium">Type</th>
+                        <th class="px-4 py-3 font-medium">Date d'envoi</th>
+                        <th class="px-4 py-3 font-medium"></th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {% for dv in devis_envoyes %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-3 text-gray-500">{{ dv.numero_devis }}</td>
+                        <td class="px-4 py-3 font-medium text-gray-800">{{ dv.pm_raison_sociale|default:dv.pp_nom_prenoms|default:"Sans nom" }}</td>
+                        <td class="px-4 py-3 text-gray-600">{{ dv.get_type_client_display }}</td>
+                        <td class="px-4 py-3 text-gray-600 whitespace-nowrap">{{ dv.date_envoi|date:"d/m/Y"|default:"—" }}</td>
+                        <td class="px-4 py-3 text-right">
+                            <a href="{% url 'secretariat_dossier_config' dv.id %}" class="bg-[#C81E6E] text-white text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-[#a81759] transition whitespace-nowrap">Intégrer →</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="bg-white rounded-xl border border-gray-200 p-12 text-center">
+            <div class="text-5xl mb-4">📁</div>
+            <p class="text-gray-500">Aucun devis envoyé en attente d'intégration.</p>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

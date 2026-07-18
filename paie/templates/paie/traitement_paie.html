@@ -1,0 +1,359 @@
+{% extends "pilotage/base_pilotage.html" %}
+{% block titre %}Traitement de la paie — {{ employeur.raison_sociale }}{% endblock %}
+
+{% block contenu %}
+<style>
+  #table-paie th, #table-paie td { padding: 8px 12px; white-space: nowrap; }
+  #table-paie input.cellnum { width: 100px; padding: 6px 8px; text-align: right; font-size: 13px; border: 1px solid #d1d5db; border-radius: 6px; transition: all 0.2s; }
+  #table-paie input.cellnum:focus { border-color: #C81E6E; outline: none; box-shadow: 0 0 0 2px rgba(200,30,110,.12); }
+  #table-paie .col-jours input.cellnum { width: 70px; }
+  
+  /* Indicateur visuel lors de la mise à jour asynchrone d'une ligne */
+  .row-updating { background-color: #f0fdf4 !important; transition: background-color 0.3s ease; }
+  .row-error { border: 2px solid #ef4444 !important; background-color: #fef2f2 !important; }
+</style>
+
+<div class="p-6" id="paie-app" data-url-calcul="{% url 'paie_traitement_calcul' employeur.id %}">
+
+    <a href="{% url 'liste_employeurs' %}" class="inline-flex items-center text-sm font-medium text-gray-500 hover:text-[#C81E6E] gap-1 transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        Retour aux employeurs
+    </a>
+
+    <div class="mt-4 mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900 tracking-tight">Traitement de la paie</h1>
+            <p class="text-gray-500 mt-1 font-medium">{{ employeur.raison_sociale }}</p>
+        </div>
+        
+        <div class="flex flex-wrap gap-2">
+            <a href="{% url 'paie_heures_sup' employeur.id %}?mois={{ mois }}&annee={{ annee }}" class="inline-flex items-center gap-1.5 bg-white border border-gray-300 text-gray-700 font-medium px-4 py-2 rounded-lg text-sm hover:bg-gray-50 shadow-sm transition">
+                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                Heures supplémentaires
+            </a>
+            <a href="{% url 'paie_reglage_generation' employeur.id %}" class="inline-flex items-center gap-1.5 bg-white border border-gray-300 text-gray-700 font-medium px-4 py-2 rounded-lg text-sm hover:bg-gray-50 shadow-sm transition">
+                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                Génération auto
+            </a>
+        </div>
+    </div>
+
+    <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
+        <form method="get" class="flex flex-wrap items-end gap-3 m-0">
+            <div>
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Mois de traitement</label>
+                <select name="mois" class="border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 bg-gray-50 focus:ring-2 focus:ring-[#C81E6E]/20 focus:border-[#C81E6E]">
+                    {% for num, nom in mois_liste %}
+                    <option value="{{ num }}" {% if num == mois %}selected{% endif %}>{{ nom }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Année</label>
+                <select name="annee" class="border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 bg-gray-50 focus:ring-2 focus:ring-[#C81E6E]/20 focus:border-[#C81E6E]">
+                    {% for a in annees_liste %}
+                    <option value="{{ a }}" {% if a == annee %}selected{% endif %}>{{ a }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="inline-flex items-center gap-1 bg-gray-800 text-white px-4 py-2 text-sm font-medium rounded-lg hover:bg-gray-900 shadow-sm transition">
+                Afficher
+            </button>
+        </form>
+
+        {% if lignes %}
+        <div class="relative w-full lg:w-72">
+            <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </span>
+            <input type="text" id="recherche-employe" placeholder="Rechercher un salarié, matricule..." class="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C81E6E]/20 focus:border-[#C81E6E]">
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="bg-white rounded-xl border border-gray-200 p-4 mb-6 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+        <div class="flex items-center gap-2 text-sm text-gray-600">
+            <span class="inline-flex items-center justify-center bg-gray-100 text-gray-800 font-bold px-2.5 py-1 rounded-md">{{ nb_enregistres }}</span>
+            <span class="text-gray-400 font-light">/</span>
+            <span class="font-semibold text-gray-800">{{ nb_employes }}</span>
+            <span>bulletin(s) enregistré(s) ce mois</span>
+
+            {% if nb_enregistres < nb_employes %}
+            <span class="inline-flex items-center gap-1 text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full text-xs font-medium ml-2 border border-amber-200">
+                <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span> Saisie incomplète
+            </span>
+            {% elif nb_employes > 0 %}
+            <span class="inline-flex items-center gap-1 text-green-700 bg-green-50 px-2.5 py-1 rounded-full text-xs font-medium ml-2 border border-green-200">
+                <svg class="w-3.5 h-3.5 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                Tous les salariés sont traités
+            </span>
+            {% endif %}
+        </div>
+
+        <form method="post" class="m-0">
+            {% csrf_token %}
+            <input type="hidden" name="mois" value="{{ mois }}">
+            <input type="hidden" name="annee" value="{{ annee }}">
+            <input type="hidden" name="action" value="generer">
+            <button type="submit" class="inline-flex items-center gap-1.5 bg-gray-900 text-white font-medium px-4 py-2 text-sm rounded-lg hover:bg-black shadow transition">
+                <svg class="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 7.89H17.51"></path></svg>
+                Générer / Compléter la paie du mois
+            </button>
+        </form>
+    </div>
+
+    {% if lignes %}
+    <form method="post" id="form-paie">
+        {% csrf_token %}
+        <input type="hidden" name="mois" value="{{ mois }}">
+        <input type="hidden" name="annee" value="{{ annee }}">
+
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden overflow-x-auto">
+            <table id="table-paie" class="w-full text-sm text-left">
+                <thead class="bg-gray-50 text-gray-700 font-semibold border-b border-gray-200">
+                    <tr>
+                        <th class="w-24">Matricule</th>
+                        <th>Nom & Prénoms</th>
+                        <th class="col-jours text-center">Jours</th>
+                        <th class="text-right">Base <span class="font-normal text-gray-400 lowercase">(auto)</span></th>
+                        <th class="text-right">Pr. Transport</th>
+                        <th class="text-right">Heures Sup</th>
+                        <th class="text-right">Avance</th>
+                        <th class="text-right bg-gray-50 font-semibold">Total Gains</th>
+                        <th class="text-right bg-gray-50 text-amber-700">ITS</th>
+                        <th class="text-right bg-gray-50 text-amber-700">CNPS</th>
+                        <th class="text-right bg-[#FDF2F7] text-[#C81E6E] font-bold">NET À PAYER</th>
+                        <th class="text-center w-12">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {% for ligne in lignes %}
+                    {% with e=ligne.employe b=ligne.bulletin c=ligne.calcul %}
+                    <tr data-employe="{{ e.id }}" class="hover:bg-gray-50/70 transition-colors duration-150 align-middle">
+                        <td class="font-mono text-xs text-gray-500 font-semibold">
+                            {{ e.matricule }}
+                            {% if not ligne.enregistre %}
+                            <span class="ml-1 inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-medium bg-amber-100 text-amber-800">Nouveau</span>
+                            {% endif %}
+                        </td>
+                        <td class="font-medium text-gray-900">{{ e.nom_prenoms }}</td>
+                        <td class="col-jours text-center">
+                            <input type="number" step="0.5" min="0" max="31" class="cellnum saisie" data-champ="jours_travailles"
+                                   name="emp_{{ e.id }}_jours_travailles" value="{{ b.jours_travailles|floatformat:'-1' }}">
+                        </td>
+                        <td class="text-right text-gray-500 font-medium bg-gray-50/50" title="Vient de la catégorie du salarié">
+                            {{ b.salaire_base|floatformat:0 }}
+                        </td>
+                        <td class="text-right">
+                            <input type="number" min="0" class="cellnum saisie" data-champ="prime_transport"
+                                   name="emp_{{ e.id }}_prime_transport" value="{{ b.prime_transport|floatformat:0 }}">
+                        </td>
+                        <td class="text-right">
+                            <input type="number" min="0" class="cellnum saisie" data-champ="heures_sup"
+                                   name="emp_{{ e.id }}_heures_sup" value="{{ b.heures_sup|floatformat:0 }}">
+                        </td>
+                        <td class="text-right">
+                            <input type="number" min="0" class="cellnum saisie" data-champ="avance_acompte"
+                                   name="emp_{{ e.id }}_avance_acompte" value="{{ b.avance_acompte|floatformat:0 }}">
+                        </td>
+                        
+                        <td class="text-right text-gray-800 font-semibold calc-gains bg-gray-50/50" data-val="{{ c.total_gains|floatformat:0 }}">
+                            {{ c.total_gains|floatformat:0 }}
+                        </td>
+                        <td class="text-right text-amber-700 font-medium calc-its bg-gray-50/50" data-val="{{ c.its_final|floatformat:0 }}">
+                            {{ c.its_final|floatformat:0 }}
+                        </td>
+                        <td class="text-right text-amber-700 font-medium calc-cnps bg-gray-50/50" data-val="{{ c.cnps_retraite_salarie|floatformat:0 }}">
+                            {{ c.cnps_retraite_salarie|floatformat:0 }}
+                        </td>
+                        <td class="text-right font-bold text-[#C81E6E] calc-net bg-[#FDF2F7]" data-val="{{ c.net_arrondi|floatformat:0 }}">
+                            {{ c.net_arrondi|floatformat:0 }}
+                        </td>
+                        
+                        <td class="text-center">
+                            <a href="{% url 'paie_bulletin_pdf' employeur.id e.id %}?mois={{ mois }}&annee={{ annee }}" target="_blank" class="inline-flex items-center justify-center p-1.5 text-[#C81E6E] hover:bg-[#FDF2F7] rounded-lg transition" title="Télécharger le bulletin PDF">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endwith %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+            <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Masse Salariale (Brute)</p>
+                <p class="text-xl font-bold text-gray-800 mt-1"><span id="tot-gains">0</span> <span class="text-sm font-semibold text-gray-400">FCFA</span></p>
+            </div>
+            <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Impôts (ITS)</p>
+                <p class="text-xl font-bold text-amber-700 mt-1"><span id="tot-its">0</span> <span class="text-sm font-semibold text-amber-400">FCFA</span></p>
+            </div>
+            <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Charges Salariales (CNPS)</p>
+                <p class="text-xl font-bold text-amber-700 mt-1"><span id="tot-cnps">0</span> <span class="text-sm font-semibold text-amber-400">FCFA</span></p>
+            </div>
+            <div class="bg-[#FDF2F7] border border-[#fbdbe9] rounded-xl p-4 shadow-sm">
+                <p class="text-xs font-bold text-[#b51963] uppercase tracking-wider">Trésorerie / Net à Payer</p>
+                <p class="text-xl font-bold text-[#C81E6E] mt-1"><span id="tot-net">0</span> <span class="text-sm font-semibold text-[#ec95c0]">FCFA</span></p>
+            </div>
+        </div>
+
+        <div class="mt-6 flex flex-wrap items-center justify-between gap-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
+            <div class="flex items-center gap-3 flex-wrap">
+                <button type="submit" class="inline-flex items-center gap-2 bg-[#C81E6E] text-white px-6 py-3 rounded-lg hover:bg-[#b0165e] font-semibold text-sm shadow transition">
+                    <svg class="w-5 h-5 text-pink-100" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+                    Enregistrer la paie du mois
+                </button>
+                <a href="{% url 'paie_bulletins_groupes' employeur.id %}?mois={{ mois }}&annee={{ annee }}" target="_blank" class="inline-flex items-center gap-1.5 border border-gray-300 bg-white text-gray-700 px-5 py-3 rounded-lg hover:bg-gray-50 text-sm font-semibold shadow-sm transition">
+                    <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                    Bulletins groupés (PDF)
+                </a>
+                <a href="{% url 'paie_ordre_virement' employeur.id %}?mois={{ mois }}&annee={{ annee }}" target="_blank" class="inline-flex items-center gap-1.5 border border-gray-300 bg-white text-gray-700 px-5 py-3 rounded-lg hover:bg-gray-50 text-sm font-semibold shadow-sm transition">
+                    <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+                    Ordre de virement
+                </a>
+            </div>
+            <div class="flex items-center gap-1.5 text-xs text-gray-400">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                Enregistrez toujours les modifications avant d'extraire les rapports PDF ou bancaires.
+            </div>
+        </div>
+    </form>
+    {% else %}
+    <div class="bg-white rounded-xl border border-gray-200 p-12 text-center shadow-sm">
+        <div class="inline-flex items-center justify-center w-16 h-16 bg-gray-50 text-gray-400 rounded-full mb-4">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+        </div>
+        <p class="text-gray-700 font-semibold text-lg">Aucun employé actif pour cette entreprise.</p>
+        <p class="text-gray-400 text-sm mt-1">Configurez les fiches des salariés (avec leur catégorie réglementaire) pour initier un traitement.</p>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+(function(){
+    const app = document.getElementById('paie-app');
+    if (!app) return;
+    const urlCalcul = app.dataset.urlCalcul;
+    const form = document.getElementById('form-paie');
+    if (!form) return;
+    const csrf = form.querySelector('[name=csrfmiddlewaretoken]').value;
+    const mois = form.querySelector('[name=mois]').value;
+    const annee = form.querySelector('[name=annee]').value;
+
+    // Formatage des nombres en normes bancaires/comptables (ex: 250 000)
+    function fmt(n){ 
+        return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' '); 
+    }
+
+    // Recalcul des totaux des pieds de grille
+    function recalcTotaux(){
+        let g=0, its=0, cnps=0, net=0;
+        document.querySelectorAll('#table-paie tbody tr[data-employe]').forEach(function(tr){
+            if (tr.style.display !== 'none') { // Seuls les salariés affichés entrent dans le total dynamique
+                g    += parseFloat(tr.querySelector('.calc-gains').dataset.val || 0);
+                its  += parseFloat(tr.querySelector('.calc-its').dataset.val || 0);
+                cnps += parseFloat(tr.querySelector('.calc-cnps').dataset.val || 0);
+                net  += parseFloat(tr.querySelector('.calc-net').dataset.val || 0);
+            }
+        });
+        document.getElementById('tot-gains').textContent = fmt(g);
+        document.getElementById('tot-its').textContent   = fmt(its);
+        document.getElementById('tot-cnps').textContent  = fmt(cnps);
+        document.getElementById('tot-net').textContent   = fmt(net);
+    }
+
+    // Envoi des variables modifiées et retour dynamique des calculs légaux (ITS / CNPS / Net)
+    function majLigne(tr){
+        tr.classList.add('row-updating'); // Effet visuel "Calcul en cours..."
+        
+        const data = new FormData();
+        data.append('csrfmiddlewaretoken', csrf);
+        data.append('employe_id', tr.dataset.employe);
+        data.append('mois', mois);
+        data.append('annee', annee);
+        
+        let estValide = true;
+
+        // Validation métier simple en amont de l'appel
+        tr.querySelectorAll('.saisie').forEach(function(inp){
+            const val = parseFloat(inp.value) || 0;
+            if (inp.dataset.champ === 'jours_travailles' && (val < 0 || val > 31)) {
+                inp.classList.add('border-red-500', 'bg-red-50');
+                estValide = false;
+            } else {
+                inp.classList.remove('border-red-500', 'bg-red-50');
+            }
+            data.append(inp.dataset.champ, inp.value || '0');
+        });
+
+        if (!estValide) {
+            tr.classList.remove('row-updating');
+            tr.classList.add('row-error');
+            return;
+        }
+
+        tr.classList.remove('row-error');
+
+        fetch(urlCalcul, { method:'POST', body:data })
+            .then(function(r){ 
+                if (!r.ok) throw new Error('Erreur de calcul serveur');
+                return r.json(); 
+            })
+            .then(function(d){
+                function set(cls, val){ 
+                    const c = tr.querySelector(cls); 
+                    c.dataset.val = val; 
+                    c.textContent = fmt(val); 
+                }
+                set('.calc-gains', d.total_gains);
+                set('.calc-its', d.its_final);
+                set('.calc-cnps', d.cnps_retraite_salarie);
+                set('.calc-net', d.net_arrondi);
+                recalcTotaux();
+                
+                // Retrait progressif de l'effet de surbrillance verte de mise à jour réussie
+                setTimeout(function(){ 
+                    tr.classList.remove('row-updating'); 
+                }, 400);
+            }).catch(err => {
+                console.error(err);
+                tr.classList.remove('row-updating');
+                tr.classList.add('row-error');
+            });
+    }
+
+    // Debounce de saisie pour éviter d'inonder le serveur d'appels à chaque frappe de touche
+    let timer;
+    document.querySelectorAll('#table-paie .saisie').forEach(function(inp){
+        inp.addEventListener('input', function(e){
+            clearTimeout(timer);
+            const tr = e.target.closest('tr');
+            timer = setTimeout(function(){ majLigne(tr); }, 350);
+        });
+    });
+
+    // Module 2 : Recherche dynamique instantanée côté client
+    const rechercheInput = document.getElementById('recherche-employe');
+    if (rechercheInput) {
+        rechercheInput.addEventListener('input', function(e){
+            const recherche = e.target.value.toLowerCase().trim();
+            document.querySelectorAll('#table-paie tbody tr[data-employe]').forEach(function(tr){
+                const texteLigne = tr.textContent.toLowerCase();
+                if (texteLigne.includes(recherche)) {
+                    tr.style.display = '';
+                } else {
+                    tr.style.display = 'none';
+                }
+            });
+            recalcTotaux(); // Recalcul des indicateurs en phase avec le filtrage
+        });
+    }
+
+    recalcTotaux();
+})();
+</script>
+{% endblock %}

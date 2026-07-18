@@ -1,0 +1,2 @@
+{% comment %}Badge pill for status and categories{% endcomment %}
+<span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-widest {{ extra_classes|default:"" }} {% if variant == 'success' %}bg-emerald-100 text-emerald-700{% elif variant == 'danger' %}bg-rose-100 text-rose-700{% elif variant == 'warning' %}bg-amber-100 text-amber-700{% elif variant == 'info' %}bg-sky-100 text-sky-700{% else %}bg-slate-100 text-slate-700{% endif %}">{{ label }}</span>

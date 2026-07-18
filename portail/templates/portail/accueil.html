@@ -1,0 +1,31 @@
+{% extends "portail/base_portail.html" %}
+
+{% block titre %}Accueil — Espace Client{% endblock %}
+
+{% block contenu %}
+<div class="p-6">
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-800">Bienvenue {{ user.username }} 👋</h1>
+    <p class="text-gray-500 mt-1">Votre espace client — suivez vos dossiers en toute simplicité</p>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+      <p class="text-sm font-medium text-gray-700">Suivi de mon dossier</p>
+      <p class="text-xs text-gray-400 mt-1">(bientôt)</p>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+      <p class="text-sm font-medium text-gray-700">Mes documents</p>
+      <p class="text-xs text-gray-400 mt-1">(bientôt)</p>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+      <p class="text-sm font-medium text-gray-700">Messages</p>
+      <p class="text-xs text-gray-400 mt-1">(bientôt)</p>
+    </div>
+  </div>
+
+  <p class="text-sm text-gray-400 mt-8">
+    Les différentes rubriques seront activées progressivement.
+  </p>
+</div>
+{% endblock %}

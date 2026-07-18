@@ -1,0 +1,10 @@
+{% comment %}Button component for K&L Design System{% endcomment %}
+{% if href %}
+<a href="{{ href }}" class="inline-flex items-center justify-center gap-2 rounded-2xl font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#C81E6E]/40 {{ extra_classes|default:'' }} {% if variant == 'primary' %}bg-[#C81E6E] text-white hover:bg-[#A81759]{% elif variant == 'secondary' %}bg-slate-100 text-slate-700 hover:bg-slate-200{% elif variant == 'success' %}bg-emerald-600 text-white hover:bg-emerald-700{% elif variant == 'danger' %}bg-rose-600 text-white hover:bg-rose-700{% elif variant == 'ghost' %}bg-transparent text-slate-700 hover:bg-slate-100 border border-transparent{% else %}bg-[#F8FAFC] text-slate-800 hover:bg-slate-100{% endif %} {% if size == 'small' %}px-3 py-2 text-xs{% elif size == 'large' %}px-5 py-3 text-base{% else %}px-4 py-2.5 text-sm{% endif %}">
+  {{ label }}
+</a>
+{% else %}
+<button type="{{ type|default:'button' }}" class="inline-flex items-center justify-center gap-2 rounded-2xl font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#C81E6E]/40 {{ extra_classes|default:'' }} {% if variant == 'primary' %}bg-[#C81E6E] text-white hover:bg-[#A81759]{% elif variant == 'secondary' %}bg-slate-100 text-slate-700 hover:bg-slate-200{% elif variant == 'success' %}bg-emerald-600 text-white hover:bg-emerald-700{% elif variant == 'danger' %}bg-rose-600 text-white hover:bg-rose-700{% elif variant == 'ghost' %}bg-transparent text-slate-700 hover:bg-slate-100 border border-transparent{% else %}bg-[#F8FAFC] text-slate-800 hover:bg-slate-100{% endif %} {% if size == 'small' %}px-3 py-2 text-xs{% elif size == 'large' %}px-5 py-3 text-base{% else %}px-4 py-2.5 text-sm{% endif %}">
+  {{ label }}
+</button>
+{% endif %}

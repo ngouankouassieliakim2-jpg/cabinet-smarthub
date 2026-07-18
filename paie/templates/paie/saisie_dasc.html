@@ -1,0 +1,63 @@
+{% extends "pilotage/base_pilotage.html" %}
+{% block titre %}Saisie DASC — {{ employeur.raison_sociale }}{% endblock %}
+{% block contenu %}
+<div class="p-6 max-w-3xl">
+    <a href="{% url 'paie_declarations_annuelles' employeur.id %}?annee={{ annee }}" class="text-sm text-gray-500 hover:text-[#C81E6E]">← Retour aux déclarations annuelles</a>
+    <div class="mt-4 mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Saisie DASC — montants par trimestre</h1>
+        <p class="text-gray-500 mt-1">{{ employeur.raison_sociale }} — exercice {{ annee }}</p>
+    </div>
+
+    <form method="get" class="flex items-end gap-3 mb-5 bg-white p-4 rounded-xl border border-gray-200">
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">Exercice</label>
+            <select name="annee" class="border border-gray-300 rounded-lg px-3 py-2" onchange="this.form.submit()">
+                {% for a in annees %}<option value="{{ a }}" {% if a == annee %}selected{% endif %}>{{ a }}</option>{% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800">Afficher</button>
+    </form>
+
+    {% if ok %}<div class="bg-green-50 border border-green-200 text-green-800 rounded-lg p-3 mb-4 text-sm">✓ Montants enregistrés.</div>{% endif %}
+
+    <form method="post" class="bg-white rounded-xl border border-gray-200 p-6">
+        {% csrf_token %}
+        <p class="text-xs text-gray-400 mb-4">Saisis, pour chaque trimestre, le montant des cotisations déclarées et le montant effectivement payé à la CNPS. Le reste du DASC (cotisations par régime, totaux, écarts) est calculé automatiquement.</p>
+        <table class="w-full text-sm">
+            <thead class="text-gray-600 text-left">
+                <tr>
+                    <th class="py-2">Trimestre</th>
+                    <th class="py-2 text-right">Cotisations déclarées (FCFA)</th>
+                    <th class="py-2 text-right">Paiements effectués (FCFA)</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                <tr>
+                    <td class="py-2 font-medium text-gray-700">1er trimestre</td>
+                    <td class="py-2 text-right"><input type="number" name="cot_t1" value="{{ dasc.cotisations_t1|floatformat:'-2' }}" class="w-40 text-right border border-gray-300 rounded px-2 py-1"></td>
+                    <td class="py-2 text-right"><input type="number" name="pai_t1" value="{{ dasc.paiements_t1|floatformat:'-2' }}" class="w-40 text-right border border-gray-300 rounded px-2 py-1"></td>
+                </tr>
+                <tr>
+                    <td class="py-2 font-medium text-gray-700">2e trimestre</td>
+                    <td class="py-2 text-right"><input type="number" name="cot_t2" value="{{ dasc.cotisations_t2|floatformat:'-2' }}" class="w-40 text-right border border-gray-300 rounded px-2 py-1"></td>
+                    <td class="py-2 text-right"><input type="number" name="pai_t2" value="{{ dasc.paiements_t2|floatformat:'-2' }}" class="w-40 text-right border border-gray-300 rounded px-2 py-1"></td>
+                </tr>
+                <tr>
+                    <td class="py-2 font-medium text-gray-700">3e trimestre</td>
+                    <td class="py-2 text-right"><input type="number" name="cot_t3" value="{{ dasc.cotisations_t3|floatformat:'-2' }}" class="w-40 text-right border border-gray-300 rounded px-2 py-1"></td>
+                    <td class="py-2 text-right"><input type="number" name="pai_t3" value="{{ dasc.paiements_t3|floatformat:'-2' }}" class="w-40 text-right border border-gray-300 rounded px-2 py-1"></td>
+                </tr>
+                <tr>
+                    <td class="py-2 font-medium text-gray-700">4e trimestre</td>
+                    <td class="py-2 text-right"><input type="number" name="cot_t4" value="{{ dasc.cotisations_t4|floatformat:'-2' }}" class="w-40 text-right border border-gray-300 rounded px-2 py-1"></td>
+                    <td class="py-2 text-right"><input type="number" name="pai_t4" value="{{ dasc.paiements_t4|floatformat:'-2' }}" class="w-40 text-right border border-gray-300 rounded px-2 py-1"></td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="mt-5 flex items-center gap-3">
+            <button type="submit" class="bg-[#C81E6E] text-white font-medium px-6 py-2.5 rounded-lg hover:bg-[#a81759] transition">Enregistrer</button>
+            <a href="{% url 'paie_disa' employeur.id %}?annee={{ annee }}" class="text-[#C81E6E] hover:underline text-sm">📋 Télécharger la DISA/DASC (Excel)</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

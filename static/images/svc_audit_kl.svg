@@ -1,0 +1,11 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Audit">
+  <rect x="8" y="8" width="104" height="104" rx="24" fill="#FCEEF3"/>
+  <!-- Barres -->
+  <rect x="34" y="62" width="9" height="20" rx="2" fill="#ED93B1"/>
+  <rect x="47" y="52" width="9" height="30" rx="2" fill="#C81E6E"/>
+  <rect x="60" y="44" width="9" height="38" rx="2" fill="#8E1450"/>
+  <!-- Loupe -->
+  <circle cx="74" cy="50" r="18" fill="#FFFFFF" stroke="#16171C" stroke-width="3"/>
+  <circle cx="74" cy="50" r="10" fill="none" stroke="#C81E6E" stroke-width="2.5"/>
+  <line x1="87" y1="63" x2="98" y2="74" stroke="#16171C" stroke-width="5" stroke-linecap="round"/>
+</svg>

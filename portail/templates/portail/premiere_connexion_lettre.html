@@ -1,0 +1,64 @@
+{% extends "portail/base_portail.html" %}
+
+{% block titre %}Lettre de mission{% endblock %}
+
+{% block contenu %}
+<div class="min-h-[70vh] flex items-center justify-center p-6">
+    <div class="w-full max-w-lg">
+
+        <div class="text-center mb-6">
+            <h1 class="text-2xl font-bold text-gray-800">Lettre de mission</h1>
+            <p class="text-gray-500 mt-2">Veuillez consulter la lettre de mission qui vous lie au cabinet, puis confirmez votre accord.</p>
+        </div>
+
+        <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+
+            {% if erreur %}
+            <div class="bg-red-50 border border-red-200 rounded-lg px-4 py-3 mb-4 text-sm text-red-700">
+                {{ erreur }}
+            </div>
+            {% endif %}
+
+            <!-- Consultation du document -->
+            {% if lettre_document %}
+            <a href="{{ lettre_document.url }}" target="_blank" class="flex items-center gap-3 bg-[#F0F6FC] border border-[#185FA5]/20 rounded-lg px-4 py-3 mb-5 hover:bg-[#e4eff9] transition">
+                <span class="text-2xl">📄</span>
+                <div>
+                    <p class="font-medium text-[#185FA5]">Consulter la lettre de mission</p>
+                    <p class="text-xs text-gray-500">Cliquez pour ouvrir le document dans un nouvel onglet</p>
+                </div>
+            </a>
+            {% else %}
+            <div class="bg-orange-50 border border-orange-200 rounded-lg px-4 py-3 mb-5 text-sm text-orange-700">
+                La lettre de mission n'est pas encore disponible. Veuillez contacter le cabinet.
+            </div>
+            {% endif %}
+
+            <form method="post" class="space-y-4">
+                {% csrf_token %}
+                <label class="flex items-start gap-3 cursor-pointer">
+                    <input type="checkbox" name="confirme_lettre" class="mt-1" style="width:auto;">
+                    <span class="text-sm text-gray-700">Je confirme avoir pris connaissance de la lettre de mission et l'avoir acceptée.</span>
+                </label>
+                <label class="flex items-start gap-3 cursor-pointer">
+                    <input type="checkbox" name="consentement_signature" class="mt-1" style="width:auto;">
+                    <span class="text-sm text-gray-700">J'accepte que ma signature électronique soit utilisée pour signer ce document.</span>
+                </label>
+                <label class="block">
+                    <span class="text-sm font-medium text-gray-700">Nom du signataire</span>
+                    <input type="text" name="nom_signataire" value="{{ request.user.get_full_name|default:request.user.username }}" class="mt-1 block w-full border border-gray-300 rounded-lg p-2 text-sm" required>
+                </label>
+                <button type="submit" class="w-full bg-[#185FA5] text-white font-medium py-2.5 rounded-lg hover:bg-[#134d85] transition">
+                    Continuer
+                </button>
+            </form>
+
+        </div>
+
+        <p class="text-center text-xs text-gray-400 mt-4">
+            Étape 2 sur 3 — Prochaine étape : les conditions d'utilisation.
+        </p>
+
+    </div>
+</div>
+{% endblock %}

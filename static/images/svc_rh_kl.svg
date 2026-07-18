@@ -1,0 +1,9 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Ressources humaines">
+  <rect x="8" y="8" width="104" height="104" rx="24" fill="#FCEEF3"/>
+  <!-- Personne arrière -->
+  <circle cx="74" cy="48" r="13" fill="#ED93B1"/>
+  <path d="M54 92 a20 20 0 0 1 40 0 Z" fill="#ED93B1"/>
+  <!-- Personne avant -->
+  <circle cx="48" cy="52" r="15" fill="#C81E6E"/>
+  <path d="M26 96 a22 22 0 0 1 44 0 Z" fill="#C81E6E"/>
+</svg>

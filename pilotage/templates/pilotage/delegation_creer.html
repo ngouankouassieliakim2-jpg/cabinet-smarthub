@@ -1,0 +1,55 @@
+{% extends "pilotage/base_pilotage.html" %}
+{% block titre %}Nouvelle délégation de signature{% endblock %}
+{% block contenu %}
+<div class="max-w-xl mx-auto p-6">
+    <a href="{% url 'pilotage_delegations_liste' %}" class="text-sm text-gray-500 hover:text-[#C81E6E]">← Retour aux délégations</a>
+
+    <div class="mt-3 mb-6">
+        <h1 class="text-xl font-bold text-gray-800">Déléguer une signature</h1>
+        <p class="text-gray-500 text-sm">Vous accordez ce droit en votre propre nom — {{ request.user.get_full_name|default:request.user.username }}.</p>
+    </div>
+
+    {% if messages %}{% for m in messages %}<div class="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3 mb-4">{{ m }}</div>{% endfor %}{% endif %}
+
+    <form method="post" class="bg-white border border-gray-200 rounded-xl p-6 space-y-5">
+        {% csrf_token %}
+
+        <div>
+            <label class="text-sm font-semibold text-gray-700 block mb-1">À qui déléguer ?</label>
+            <select name="delegataire" class="w-full border border-gray-300 rounded-lg p-2 text-sm">
+                {% for u in delegataires_possibles %}
+                <option value="{{ u.id }}">{{ u.get_full_name|default:u.username }} ({{ u.profil.get_role_display }})</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label class="text-sm font-semibold text-gray-700 block mb-1">Régime</label>
+            <select name="mode" class="w-full border border-gray-300 rounded-lg p-2 text-sm">
+                <option value="ORDRE">Par ordre — la personne appose ma propre signature, sous mon instruction</option>
+                <option value="DELEGATION_POUVOIR">Par délégation de pouvoir — la personne signe avec sa propre signature, avec mon autorité</option>
+            </select>
+        </div>
+
+        <div>
+            <label class="text-sm font-semibold text-gray-700 block mb-1">Périmètre / motif</label>
+            <input type="text" name="perimetre" placeholder="Ex : Contrats et attestations pendant mon absence" class="w-full border border-gray-300 rounded-lg p-2 text-sm">
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="text-sm font-semibold text-gray-700 block mb-1">Début</label>
+                <input type="date" name="date_debut" class="w-full border border-gray-300 rounded-lg p-2 text-sm">
+            </div>
+            <div>
+                <label class="text-sm font-semibold text-gray-700 block mb-1">Fin</label>
+                <input type="date" name="date_fin" class="w-full border border-gray-300 rounded-lg p-2 text-sm">
+            </div>
+        </div>
+
+        <button type="submit" class="w-full bg-[#C81E6E] text-white font-medium py-2.5 rounded-lg hover:bg-[#a81759]">
+            Créer la délégation
+        </button>
+    </form>
+</div>
+{% endblock %}

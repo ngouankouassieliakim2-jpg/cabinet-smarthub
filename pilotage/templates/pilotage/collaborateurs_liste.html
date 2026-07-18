@@ -1,0 +1,31 @@
+{% extends "pilotage/base_pilotage.html" %}
+{% block titre %}Collaborateurs{% endblock %}
+{% block contenu %}
+<div class="p-6 max-w-4xl mx-auto">
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800">Collaborateurs</h1>
+            <p class="text-gray-500 mt-1">Comptes internes du cabinet — Direction, Cadres, Collaborateurs.</p>
+        </div>
+        <a href="{% url 'pilotage_collaborateur_creer' %}" class="bg-[#C81E6E] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#a81759]">+ Nouveau collaborateur</a>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50 text-gray-600 text-left">
+                <tr><th class="px-4 py-3">Nom</th><th class="px-4 py-3">Email</th><th class="px-4 py-3">Rôle</th></tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for p in profils %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3 font-medium text-gray-800">{{ p.user.get_full_name }}</td>
+                    <td class="px-4 py-3 text-gray-600">{{ p.user.email }}</td>
+                    <td class="px-4 py-3"><span class="bg-[#FCEEF3] text-[#C81E6E] text-xs font-medium px-2.5 py-1 rounded-full">{{ p.get_role_display }}</span></td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="3" class="px-4 py-8 text-center text-gray-400">Aucun collaborateur.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

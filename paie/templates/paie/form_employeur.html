@@ -1,0 +1,31 @@
+{% extends "pilotage/base_pilotage.html" %}
+{% block titre %}{{ titre }} — {{ employeur.raison_sociale }}{% endblock %}
+{% block contenu %}
+<div class="max-w-3xl mx-auto p-4">
+  <h1 class="text-xl font-semibold mb-4">{{ titre }} — {{ employeur.raison_sociale }}</h1>
+
+  <form method="post" enctype="multipart/form-data" class="space-y-4">
+    {% csrf_token %}
+
+    {% for field in form %}
+      <div>
+        <label class="block text-sm font-medium mb-1">
+          {{ field.label }}{% if field.field.required %} <span class="text-red-600">*</span>{% endif %}
+        </label>
+        {{ field }}
+        {% if field.help_text %}
+          <p class="text-xs text-gray-500 mt-1">{{ field.help_text }}</p>
+        {% endif %}
+        {% for err in field.errors %}
+          <p class="text-xs text-red-600 mt-1">{{ err }}</p>
+        {% endfor %}
+      </div>
+    {% endfor %}
+
+    <div class="pt-2">
+      <button type="submit" class="px-4 py-2 rounded bg-pink-600 text-white">Enregistrer</button>
+      <a href="{% url 'paie_employes_liste' employeur.id %}" class="ml-2 px-4 py-2 rounded border">Annuler</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

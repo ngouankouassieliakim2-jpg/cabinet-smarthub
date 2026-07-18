@@ -1,0 +1,159 @@
+{% extends "pilotage/base_pilotage.html" %}
+
+{% block titre %}Apposer une signature{% endblock %}
+
+{% block contenu %}
+<div class="max-w-3xl mx-auto p-6">
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Signer un document PDF</h1>
+        <p class="text-gray-500 mt-1">Importez un PDF, choisissez où l'apposer, acceptez l'utilisation de votre signature électronique active.</p>
+    </div>
+
+    {% if erreur %}
+    <div class="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3 mb-4">{{ erreur }}</div>
+    {% endif %}
+    {% if messages %}{% for m in messages %}
+    <div class="bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-lg px-4 py-3 mb-4">{{ m }}</div>
+    {% endfor %}{% endif %}
+
+    {% if signature_active %}
+    <div class="bg-white border border-gray-200 rounded-xl p-6 mb-6">
+        <h2 class="font-semibold text-gray-800 mb-3">Signature active</h2>
+        <div class="inline-flex items-center gap-4">
+            <img src="{{ signature_active.image.url }}" alt="Signature" class="h-20" />
+            <div>
+                <p class="text-sm text-gray-700">Signée le {{ signature_active.date_creation|date:"d/m/Y" }}.</p>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-6 mb-6 text-yellow-700">
+        Vous devez d'abord enregistrer une signature active depuis <a href="{% url 'comptes_signature' %}" class="font-semibold text-yellow-800">Gérer ma signature</a>.
+    </div>
+    {% endif %}
+
+    <div class="bg-white border border-gray-200 rounded-xl p-6 mb-6">
+        <form method="post" enctype="multipart/form-data" class="space-y-4" id="form-signature">
+            {% csrf_token %}
+            <div>
+                <label class="text-sm font-medium text-gray-700 block mb-1">Document PDF à signer</label>
+                <input type="file" name="document" id="input-document" accept="application/pdf" class="w-full border border-gray-300 rounded-lg p-2 text-sm" required>
+            </div>
+            <div>
+                <label class="text-sm font-medium text-gray-700 block mb-1">Page à signer</label>
+                <input type="number" name="numero_page" id="input-page" value="1" class="w-32 border border-gray-300 rounded-lg p-2 text-sm">
+                <span class="text-xs text-gray-400 ml-2">1 = première page, -1 = dernière page</span>
+            </div>
+
+            <div id="zone-glisser" style="display:none; position:relative; max-width:100%; margin:0 auto; border:1px solid #e5e7eb; border-radius:8px; overflow:hidden;">
+                <img id="apercu-page" style="max-width:100%; display:block; user-select:none; pointer-events:none;">
+                <img id="signature-draggable" src="{% if signature_active %}{{ signature_active.image.url }}{% endif %}"
+                     style="position:absolute; width:110px; cursor:move; touch-action:none;">
+            </div>
+            <p id="aide-glisser" style="display:none;" class="text-xs text-gray-400">Faites glisser votre signature à l'endroit voulu sur le document.</p>
+
+            <input type="hidden" name="x_fraction" id="x_fraction">
+            <input type="hidden" name="y_fraction" id="y_fraction">
+            <input type="hidden" name="largeur_pt" id="largeur_pt">
+            <input type="hidden" name="hauteur_pt" id="hauteur_pt">
+
+            <div class="flex items-start gap-3">
+                <input type="checkbox" name="consentement_signature" class="mt-1" style="width:auto;">
+                <span class="text-sm text-gray-700">J'accepte que ma signature soit apposée sur ce document.</span>
+            </div>
+            <div>
+                <label class="text-sm font-medium text-gray-700 block mb-1">Nom du signataire</label>
+                <input type="text" name="nom_signataire" value="{{ request.user.get_full_name|default:request.user.username }}" class="mt-1 block w-full border border-gray-300 rounded-lg p-2 text-sm" required>
+            </div>
+            <button type="submit" class="bg-[#C81E6E] text-white px-5 py-2 rounded-lg font-medium hover:bg-[#a81759]">Signer le document</button>
+        </form>
+    </div>
+
+    <script>
+    (function() {
+        const inputDocument = document.getElementById('input-document');
+        const inputPage = document.getElementById('input-page');
+        const zoneGlisser = document.getElementById('zone-glisser');
+        const apercuPage = document.getElementById('apercu-page');
+        const sigDrag = document.getElementById('signature-draggable');
+        const aideGlisser = document.getElementById('aide-glisser');
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        let dimensionsPage = null;
+        let position = {x: 0.5, y: 0.5};
+
+        function chargerApercu() {
+            const fichier = inputDocument.files[0];
+            if (!fichier) return;
+            const formData = new FormData();
+            formData.append('document', fichier);
+            formData.append('numero_page', inputPage.value || 1);
+
+            fetch("{% url 'comptes_signature_apercu_page' %}", {
+                method: 'POST', body: formData,
+                headers: {'X-CSRFToken': csrfToken}
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.erreur) { alert(data.erreur); zoneGlisser.style.display = 'none'; return; }
+                apercuPage.onload = () => { zoneGlisser.style.display = 'block'; aideGlisser.style.display = 'block'; placerSignature(); };
+                apercuPage.src = data.image;
+                dimensionsPage = {largeur_pt: data.largeur_pt, hauteur_pt: data.hauteur_pt};
+            })
+            .catch(() => alert("Impossible de générer l'aperçu de ce document."));
+        }
+
+        function placerSignature() {
+            sigDrag.style.left = (position.x * apercuPage.offsetWidth - sigDrag.offsetWidth / 2) + 'px';
+            sigDrag.style.top = (position.y * apercuPage.offsetHeight - sigDrag.offsetHeight / 2) + 'px';
+        }
+
+        let enTrainDeGlisser = false;
+        sigDrag.addEventListener('pointerdown', (e) => { enTrainDeGlisser = true; e.preventDefault(); });
+        document.addEventListener('pointerup', () => { enTrainDeGlisser = false; });
+        document.addEventListener('pointermove', (e) => {
+            if (!enTrainDeGlisser) return;
+            const rect = apercuPage.getBoundingClientRect();
+            let x = (e.clientX - rect.left) / rect.width;
+            let y = (e.clientY - rect.top) / rect.height;
+            position = {x: Math.max(0, Math.min(1, x)), y: Math.max(0, Math.min(1, y))};
+            placerSignature();
+        });
+
+        inputDocument.addEventListener('change', chargerApercu);
+        inputPage.addEventListener('change', chargerApercu);
+        window.addEventListener('resize', () => { if (dimensionsPage) placerSignature(); });
+
+        document.getElementById('form-signature').addEventListener('submit', () => {
+            document.getElementById('x_fraction').value = position.x;
+            document.getElementById('y_fraction').value = position.y;
+            if (dimensionsPage) {
+                document.getElementById('largeur_pt').value = dimensionsPage.largeur_pt;
+                document.getElementById('hauteur_pt').value = dimensionsPage.hauteur_pt;
+            }
+        });
+    })();
+    </script>
+
+    <div class="bg-white border border-gray-200 rounded-xl p-6">
+        <h2 class="font-semibold text-gray-800 mb-3">Documents signés</h2>
+        {% if documents_signes %}
+        <ul class="space-y-3">
+            {% for doc in documents_signes %}
+            <li class="border border-gray-200 rounded-xl p-4">
+                <div class="flex justify-between items-start gap-4">
+                    <div>
+                        <p class="font-semibold text-gray-800">{{ doc.titre }}</p>
+                        <p class="text-xs text-gray-500">Signé le {{ doc.date_signe|date:"d/m/Y H:i" }}</p>
+                    </div>
+                    <a href="{{ doc.fichier_signe.url }}" target="_blank" class="text-sm text-[#C81E6E] hover:text-[#991745]">Télécharger</a>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-sm text-gray-500">Aucun document signé pour l'instant.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

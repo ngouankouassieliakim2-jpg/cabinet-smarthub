@@ -1,0 +1,40 @@
+{% extends "pilotage/base_pilotage.html" %}
+{% block titre %}Archives — Documents{% endblock %}
+{% block contenu %}
+<div class="p-6">
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Archives des documents</h1>
+        <p class="text-gray-500 mt-1">Tous les documents produits, classés par entreprise</p>
+    </div>
+
+    {% if employeurs %}
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50 text-gray-600 text-left">
+                <tr>
+                    <th class="px-4 py-3 font-medium">Entreprise</th>
+                    <th class="px-4 py-3 font-medium text-right">Documents archivés</th>
+                    <th class="px-4 py-3 font-medium text-right"></th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for e in employeurs %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3 font-medium text-gray-800">{{ e.raison_sociale }}</td>
+                    <td class="px-4 py-3 text-right text-gray-600">{{ e.nb_docs }}</td>
+                    <td class="px-4 py-3 text-right">
+                        <a href="{% url 'paie_archives_entreprise' e.id %}" class="text-[#C81E6E] font-medium hover:underline">Voir les documents →</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="bg-white rounded-xl border border-gray-200 p-12 text-center">
+        <div class="text-5xl mb-4">🗄️</div>
+        <p class="text-gray-500">Aucune entreprise pour le moment.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

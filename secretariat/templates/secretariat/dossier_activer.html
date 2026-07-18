@@ -1,0 +1,72 @@
+{% extends "pilotage/base_pilotage.html" %}
+
+{% block titre %}Activer le client — Secrétariat{% endblock %}
+
+{% block contenu %}
+<div class="p-6 max-w-2xl">
+
+    <a href="{% url 'secretariat_dossiers' %}" class="text-sm text-gray-500 hover:text-[#C81E6E]">← Retour à la liste</a>
+
+    <div class="mt-4 mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Activation du compte client</h1>
+        <p class="text-gray-500 mt-1">{{ client.nom }} — <span class="font-medium">{{ client.code_client }}</span></p>
+    </div>
+
+    {% if identifiants %}
+    <!-- Identifiants générés (affichés une seule fois) -->
+    <div class="bg-green-50 border border-green-200 rounded-xl p-6 mb-6">
+        <h2 class="font-bold text-green-800 mb-2">✓ Compte créé avec succès</h2>
+        <p class="text-sm text-green-700 mb-2">Notez ces identifiants — le mot de passe ne sera plus affiché par la suite.</p>
+        {% if identifiants.email_envoye %}
+        <p class="text-sm text-green-700 mb-4">📧 Un email avec ces accès a été envoyé à <span class="font-medium">{{ identifiants.email }}</span>.</p>
+        {% else %}
+        <p class="text-sm text-orange-600 mb-4">⚠️ L'email n'a pas pu être envoyé. Communiquez les identifiants au client manuellement.</p>
+        {% endif %}
+        <div class="bg-white rounded-lg border border-green-200 p-4 space-y-2 text-sm">
+            <div class="flex justify-between"><span class="text-gray-500">Email de connexion</span><span class="font-mono font-medium text-gray-800">{{ identifiants.email }}</span></div>
+            <div class="flex justify-between"><span class="text-gray-500">Mot de passe</span><span class="font-mono font-medium text-gray-800">{{ identifiants.mot_de_passe }}</span></div>
+        </div>
+        <a href="{% url 'secretariat_dossiers' %}" class="inline-block mt-4 text-[#C81E6E] font-medium hover:underline">Retour à la liste →</a>
+    </div>
+
+    {% elif deja_active %}
+    <!-- Déjà activé -->
+    <div class="bg-blue-50 border border-blue-200 rounded-xl p-6">
+        <h2 class="font-bold text-blue-800 mb-1">Ce client a déjà un compte</h2>
+        <p class="text-sm text-blue-700">Le compte de connexion a déjà été créé pour ce client. Email : <span class="font-medium">{{ client.email_acces }}</span></p>
+    </div>
+
+    {% else %}
+    <!-- Formulaire d'activation -->
+    <div class="bg-[#FCEEF3] border border-[#C81E6E]/20 rounded-lg px-4 py-3 mb-6 text-sm text-gray-700">
+        Importez la lettre de mission signée et confirmez l'email d'accès. Le compte client sera créé et le devis passera au statut « validé ».
+    </div>
+
+    <form method="post" enctype="multipart/form-data" class="space-y-5">
+        {% csrf_token %}
+
+        <div class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="font-bold text-gray-800 mb-4 pb-2 border-b border-gray-100">Lettre de mission</h2>
+            <label class="block text-sm font-medium text-gray-600 mb-1">Lettre de mission signée (des deux parties)</label>
+            <input type="file" name="lettre_mission" accept=".pdf,image/*" required>
+            <p class="text-xs text-gray-400 mt-2">Le client pourra la consulter et la confirmer à sa première connexion.</p>
+        </div>
+
+        <div class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="font-bold text-gray-800 mb-4 pb-2 border-b border-gray-100">Email d'accès</h2>
+            <label class="block text-sm font-medium text-gray-600 mb-1">Email de connexion du client</label>
+            <input type="email" name="email_acces" value="{{ client.email }}" required>
+            <p class="text-xs text-gray-400 mt-2">C'est avec cet email que le client se connectera. Un mot de passe sera généré automatiquement.</p>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <button type="submit" class="bg-[#C81E6E] text-white font-medium px-6 py-2.5 rounded-lg hover:bg-[#a81759] transition">
+                Créer le compte et valider
+            </button>
+            <a href="{% url 'secretariat_dossiers' %}" class="text-gray-500 hover:text-gray-700">Annuler</a>
+        </div>
+    </form>
+    {% endif %}
+
+</div>
+{% endblock %}

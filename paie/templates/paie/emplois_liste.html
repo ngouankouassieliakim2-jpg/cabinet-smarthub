@@ -1,0 +1,44 @@
+{% extends "pilotage/base_pilotage.html" %}
+{% block titre %}Emplois — Paie{% endblock %}
+{% block contenu %}
+<div class="p-6 max-w-3xl">
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Emplois / codes emploi</h1>
+        <p class="text-gray-500 mt-1">La liste des emplois, réutilisée sur la fiche de chaque salarié</p>
+    </div>
+
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden mb-4">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50 text-gray-600 text-left">
+                <tr><th class="px-4 py-3 font-medium">Code</th><th class="px-4 py-3 font-medium">Libellé</th><th class="px-4 py-3 font-medium">Ordre</th><th class="px-4 py-3 font-medium text-right"></th></tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for e in emplois %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3 font-medium text-gray-800">{{ e.code }}</td>
+                    <td class="px-4 py-3 text-gray-700">{{ e.libelle }}</td>
+                    <td class="px-4 py-3 text-gray-500">{{ e.ordre }}</td>
+                    <td class="px-4 py-3 text-right whitespace-nowrap">
+                        <a href="{% url 'paie_emploi_modifier' e.id %}" class="text-gray-500 hover:underline mr-3">Modifier</a>
+                        <form method="post" action="{% url 'paie_emploi_supprimer' e.id %}" class="inline" onsubmit="return confirm('Supprimer l\'emploi {{ e.code }} ?');">{% csrf_token %}<button class="text-red-500 hover:underline">Supprimer</button></form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="4" class="px-4 py-8 text-center text-gray-400">Aucun emploi. Ajoutes-en un ci-dessous.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="bg-white rounded-xl border border-gray-200 p-6">
+        <h2 class="font-bold text-gray-800 mb-4">Ajouter un emploi</h2>
+        <form method="post" action="{% url 'paie_emploi_ajouter' %}" class="flex flex-wrap items-end gap-4">
+            {% csrf_token %}
+            <div><label class="block text-sm font-medium text-gray-600 mb-1">Code</label>{{ form.code }}</div>
+            <div class="flex-1 min-w-[180px]"><label class="block text-sm font-medium text-gray-600 mb-1">Libellé</label>{{ form.libelle }}</div>
+            <div><label class="block text-sm font-medium text-gray-600 mb-1">Ordre</label>{{ form.ordre }}</div>
+            <button type="submit" class="bg-[#C81E6E] text-white font-medium px-5 py-2 rounded-lg hover:bg-[#a81759] transition">Ajouter</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

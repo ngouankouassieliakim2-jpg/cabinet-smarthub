@@ -1,0 +1,7 @@
+{% comment %}Action toolbar for page controls and filters{% endcomment %}
+<div class="flex flex-col gap-3 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+  <div class="flex flex-wrap items-center gap-2">{{ content }}</div>
+  {% if actions %}
+  <div class="flex flex-wrap items-center gap-2">{% for action in actions %}{% include 'components/button.html' with label=action.label href=action.href variant=action.variant extra_classes=action.extra_classes %}{% endfor %}</div>
+  {% endif %}
+</div>

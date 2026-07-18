@@ -1,0 +1,104 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Facture {{ facture.numero_facture }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  body{margin:0;background:#E9E9EB;font-family:'Inter',sans-serif;padding:30px 16px;}
+  .toolbar{max-width:794px;margin:0 auto 16px;display:flex;justify-content:space-between;gap:10px;}
+  .toolbar a,.toolbar button{font-size:13px;padding:10px 18px;border-radius:6px;border:none;cursor:pointer;text-decoration:none;font-weight:600;font-family:'Inter',sans-serif;}
+  .btn-back{background:#E5E7EB;color:#374151;}
+  .btn-print{background:#C81E6E;color:#fff;}
+  .invoice-sheet{max-width:794px;margin:0 auto;background:#fff;padding:32px;border-radius:16px;box-shadow:0 20px 60px rgba(15,23,42,.08);}
+  .invoice-header{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;margin-bottom:28px;}
+  .invoice-title{font-size:24px;font-weight:700;color:#111827;}
+  .invoice-meta{font-size:13px;color:#6B7280;line-height:1.8;}
+  .invoice-table{width:100%;border-collapse:collapse;margin-top:24px;}
+  .invoice-table th,.invoice-table td{padding:12px 14px;border-bottom:1px solid #E5E7EB;text-align:left;font-size:13px;}
+  .invoice-table th{background:#F9FAFB;color:#374151;font-weight:600;}
+  .invoice-summary{margin-top:22px;display:flex;justify-content:flex-end;gap:16px;}
+  .invoice-summary div{display:flex;justify-content:space-between;width:240px;font-size:14px;}
+  .invoice-note{margin-top:18px;font-size:12px;color:#6B7280;}
+  @media print {body{background:#fff;padding:0;} .toolbar{display:none;}}
+</style>
+</head>
+<body>
+  <div class="toolbar">
+    <a href="{% url 'facturation_accueil' %}" class="btn-back">&larr; Retour à la facturation</a>
+    <div style="display:flex;gap:10px;">
+      {% if facture.fne_statut != "CERTIFIEE" %}
+      <a href="{% url 'facture_certifier' facture.id %}" class="btn-back" style="background:#16171C;color:#fff;">🧾 Certifier (FNE)</a>
+      {% else %}
+      <span class="btn-back" style="background:#059669;color:#fff;">✓ Certifiée FNE</span>
+      {% endif %}
+      <button class="btn-print" onclick="window.print()">🖨️ Imprimer / PDF</button>
+    </div>
+  </div>
+
+  <div class="invoice-sheet">
+    <div class="invoice-header">
+      <div>
+        <p class="invoice-title">Facture</p>
+        <p>#{{ facture.numero_facture }}</p>
+      </div>
+      <div class="invoice-meta">
+        <div><strong>Date</strong><br>{{ facture.date_emission|default:facture.date_creation|date:'d F Y' }}</div>
+        <div><strong>Statut</strong><br>{{ facture.get_statut_display }}</div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6" style="display:grid;grid-template-columns:repeat( auto-fit, minmax(240px, 1fr) );gap:16px;">
+      <div>
+        <p class="font-semibold text-gray-900">Facturé à</p>
+        <p>{{ facture.client_nom }}</p>
+        <p>{{ facture.client_ncc|default:'—' }}</p>
+      </div>
+      <div>
+        <p class="font-semibold text-gray-900">Source</p>
+        {% if facture.devis_source %}
+          <p>{{ facture.devis_source.numero_devis }}</p>
+          <p>{{ facture.devis_source.pm_raison_sociale|default:facture.devis_source.pp_nom_prenoms|default:'—' }}</p>
+        {% else %}
+          <p>Créée manuellement</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <table class="invoice-table">
+      <thead>
+        <tr>
+          <th>Désignation</th>
+          <th>Qté</th>
+          <th>PU HT</th>
+          <th>TVA</th>
+          <th class="text-right">Total TTC</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ligne in lignes %}
+        <tr>
+          <td>{{ ligne.designation }}</td>
+          <td>{{ ligne.quantite|floatformat:0 }}</td>
+          <td>{{ ligne.prix_unitaire|floatformat:0 }} F</td>
+          <td>{{ ligne.taux_tva }}%</td>
+          <td class="text-right">{{ ligne.total_ttc|floatformat:0 }} F</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="invoice-summary">
+      <div><span>Montant HT</span><span>{{ facture.montant_ht|floatformat:0 }} F</span></div>
+      <div><span>TVA</span><span>{{ facture.montant_tva|floatformat:0 }} F</span></div>
+      <div><strong>Total TTC</strong><strong>{{ facture.montant_ttc|floatformat:0 }} F</strong></div>
+    </div>
+
+    <p class="invoice-note">Cette facture a été générée automatiquement depuis le devis source.</p>
+  </div>
+</body>
+</html>

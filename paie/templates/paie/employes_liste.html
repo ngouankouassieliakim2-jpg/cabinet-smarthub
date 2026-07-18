@@ -1,0 +1,73 @@
+{% extends "pilotage/base_pilotage.html" %}
+{% block titre %}Personnel — {{ employeur.raison_sociale }}{% endblock %}
+{% block contenu %}
+<div class="p-6">
+    <a href="{% url 'liste_employeurs' %}" class="text-sm text-gray-500 hover:text-[#C81E6E]">← Retour aux employeurs</a>
+    <div class="flex flex-col md:flex-row md:items-center justify-between mt-4 mb-6 gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800">Personnel</h1>
+            <p class="text-gray-500 mt-1">{{ employeur.raison_sociale }} — {{ employes.count }} salarié(s)</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <a href="{% url 'paie_indicateurs_rh' employeur.id %}" class="inline-flex items-center gap-1.5 bg-white border border-gray-300 text-gray-700 font-medium px-4 py-2 rounded-lg text-sm hover:bg-gray-50 shadow-sm transition">📊 Indicateurs RH</a>
+            <a href="{% url 'paie_journal_personnel' employeur.id %}" class="inline-flex items-center gap-1.5 bg-white border border-gray-300 text-gray-700 font-medium px-4 py-2 rounded-lg text-sm hover:bg-gray-50 shadow-sm transition">📋 Journal du personnel</a>
+            <a href="{% url 'paie_employe_creer' employeur.id %}" class="bg-[#C81E6E] text-white font-medium px-4 py-2 rounded-lg text-sm hover:bg-[#a81759] transition">+ Nouveau salarié</a>
+        </div>
+    </div>
+
+    {% if nb_alertes_cdd %}
+    <div class="bg-red-50 border border-red-200 rounded-xl p-4 mb-5 text-sm text-red-800">
+        ⚠️ <strong>{{ nb_alertes_cdd }} salarié(s) en CDD ont atteint ou dépassé 2 ans de cumul.</strong>
+        Selon le Code du travail (art. 15.4 &amp; 15.10), leur contrat est susceptible d'être <strong>requalifié en CDI</strong>. Pense à les régulariser via « Passer en CDI ».
+    </div>
+    {% endif %}
+
+    {% if employes %}
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50 text-gray-600 text-left">
+                <tr>
+                    <th class="px-4 py-3 font-medium">Matricule</th>
+                    <th class="px-4 py-3 font-medium">Noms & Prénoms</th>
+                    <th class="px-4 py-3 font-medium">Catégorie</th>
+                    <th class="px-4 py-3 font-medium text-right">Salaire de base</th>
+                    <th class="px-4 py-3 font-medium">Statut</th>
+                    <th class="px-4 py-3 font-medium text-right"></th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for e in employes %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3 font-medium text-gray-700">{{ e.matricule }}</td>
+                    <td class="px-4 py-3 text-gray-800">{{ e.nom_prenoms }}</td>
+                    <td class="px-4 py-3 text-gray-600">{{ e.categorie|default:"—" }}</td>
+                    <td class="px-4 py-3 text-right text-gray-700">{{ e.salaire_base|floatformat:0 }} F</td>
+                    <td class="px-4 py-3">
+                        {% if e.statut == "ACTIF" %}<span class="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded-full">Actif</span>
+                        {% else %}<span class="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{{ e.get_statut_display }}</span>{% endif %}
+                        {% if e.alerte_requalification_cdd %}<span class="ml-1 text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full" title="CDD ≥ 2 ans : requalification CDI possible">⚠️ CDD &gt; 2 ans</span>{% endif %}
+                    </td>
+                    <td class="px-4 py-3 text-right whitespace-nowrap">
+                        <a href="{% url 'paie_employe_modifier' employeur.id e.id %}" class="text-gray-500 hover:underline mr-3">Modifier</a>
+                        {% if e.statut == "ACTIF" %}
+                            <a href="{% url 'paie_actions_rh_salarie' employeur.id e.id %}" class="text-[#C81E6E] font-medium hover:underline mr-3">Actions RH →</a>
+                            {% if e.contrat == "CDD" %}<a href="{% url 'paie_employe_transformer_cdi' employeur.id e.id %}" class="text-blue-600 hover:underline mr-3">Passer en CDI</a>{% endif %}
+                            <a href="{% url 'paie_fin_contrat' employeur.id e.id %}" class="text-gray-500 hover:underline">Fin de contrat</a>
+                        {% elif e.statut == "SORTI" %}
+                            <a href="{% url 'paie_employe_reembaucher' employeur.id e.id %}" class="text-green-600 font-medium hover:underline">Réembaucher</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="bg-white rounded-xl border border-gray-200 p-12 text-center">
+        <div class="text-5xl mb-4">🧑‍💼</div>
+        <p class="text-gray-500 mb-4">Aucun salarié pour cette entreprise.</p>
+        <a href="{% url 'paie_employe_creer' employeur.id %}" class="bg-[#C81E6E] text-white font-medium px-4 py-2 rounded-lg hover:bg-[#a81759] transition">+ Créer le premier salarié</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

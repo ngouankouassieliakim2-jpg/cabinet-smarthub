@@ -1,0 +1,40 @@
+{% extends "pilotage/base_pilotage.html" %}
+{% block titre %}Génération automatique — {{ employeur.raison_sociale }}{% endblock %}
+{% block contenu %}
+<div class="p-6 max-w-xl">
+    <a href="{% url 'traitement_paie' employeur.id %}" class="text-sm text-gray-500 hover:text-[#C81E6E]">← Retour au traitement de la paie</a>
+    <div class="mt-4 mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Génération automatique de la paie</h1>
+        <p class="text-gray-500 mt-1">{{ employeur.raison_sociale }}</p>
+    </div>
+
+    <form method="post" class="bg-white rounded-xl border border-gray-200 p-6 space-y-5">
+        {% csrf_token %}
+        <label class="flex items-center gap-3 text-sm text-gray-700">
+            <input type="checkbox" name="active" {% if reglage.active %}checked{% endif %}>
+            <span class="font-medium">Activer la génération automatique</span>
+        </label>
+        <p class="text-xs text-gray-400 -mt-2">Chaque mois, les bulletins manquants seront créés automatiquement, pré-remplis (comme le bouton « Générer la paie du mois »).</p>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">Jour du mois pour générer</label>
+            <input type="number" name="jour_du_mois" min="1" max="31" value="{{ reglage.jour_du_mois }}" class="w-32">
+            <p class="text-xs text-gray-400 mt-1">Ex. 28. Mets 31 pour « dernier jour du mois » (le système ajuste selon la longueur du mois).</p>
+        </div>
+
+        {% if reglage.derniere_execution %}
+        <div class="bg-gray-50 rounded-lg p-3 text-sm text-gray-600">Dernière génération automatique : <strong>{{ reglage.derniere_execution|date:"d/m/Y" }}</strong></div>
+        {% endif %}
+
+        <div class="flex items-center gap-3 pt-2">
+            <button type="submit" class="bg-[#C81E6E] text-white font-medium px-6 py-2.5 rounded-lg hover:bg-[#a81759] transition">Enregistrer</button>
+            <a href="{% url 'traitement_paie' employeur.id %}" class="text-gray-500 hover:text-gray-700">Annuler</a>
+        </div>
+    </form>
+
+    <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mt-5 text-sm text-blue-800">
+        <p class="font-medium mb-1">Comment ça marchera en production</p>
+        <p class="text-blue-700">Sur ton serveur en ligne, une tâche planifiée (cron) lancera chaque jour la génération. Elle ne crée les bulletins que le jour choisi ci-dessus, et jamais deux fois le même mois. On mettra en place cette ligne cron au déploiement — le réglage ci-dessus, lui, est déjà actif.</p>
+    </div>
+</div>
+{% endblock %}

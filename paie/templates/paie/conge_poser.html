@@ -1,0 +1,62 @@
+{% extends "pilotage/base_pilotage.html" %}
+{% block titre %}Poser un congé — {{ employe.nom_prenoms }}{% endblock %}
+{% block contenu %}
+<div class="p-6 max-w-2xl">
+    <a href="{% url 'paie_actions_rh_salarie' employeur.id employe.id %}" class="text-sm text-gray-500 hover:text-[#C81E6E]">← Retour aux actions RH</a>
+    <div class="mt-4 mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Poser un congé</h1>
+        <p class="text-gray-500 mt-1">{{ employe.nom_prenoms }} — {{ employeur.raison_sociale }}</p>
+    </div>
+
+    <form method="post" class="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+        {% csrf_token %}
+        <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">Type de congé</label>
+            {{ form.type_conge }}
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-600 mb-1">Date de départ</label>
+                {{ form.date_depart }}
+                {% for e in form.date_depart.errors %}<p class="text-xs text-red-600 mt-1">{{ e }}</p>{% endfor %}
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-600 mb-1">Date de retour</label>
+                {{ form.date_retour }}
+                {% for e in form.date_retour.errors %}<p class="text-xs text-red-600 mt-1">{{ e }}</p>{% endfor %}
+            </div>
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">Motif (facultatif)</label>
+            {{ form.motif }}
+        </div>
+
+        {% if resultat %}
+        <div class="bg-[#FCEEF3] border border-[#f3cfe0] rounded-lg p-4">
+            <p class="text-sm font-medium text-[#a81759] mb-2">Calcul du congé</p>
+            <p class="text-sm text-gray-700">Jours ouvrables : <strong>{{ resultat.jours_total }}</strong></p>
+            <p class="text-sm text-gray-700">Salaire journalier moyen : <strong>{{ resultat.salaire_journalier|floatformat:0 }} F</strong></p>
+            <p class="text-sm text-gray-700">Indemnité totale : <strong>{{ resultat.montant_total|floatformat:0 }} F</strong></p>
+            {% if resultat.repartition %}
+            <p class="text-xs text-gray-500 mt-2 mb-1">Répartition par mois :</p>
+            <ul class="text-sm text-gray-700">
+                {% for p in resultat.repartition %}
+                <li>• {{ p.mois }}/{{ p.annee }} : {{ p.jours }} jour(s) = {{ p.montant|floatformat:0 }} F</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <div class="flex items-center gap-3 pt-2">
+            {% if resultat %}
+            <button type="submit" name="confirmer" value="1" class="bg-[#C81E6E] text-white font-medium px-6 py-2.5 rounded-lg hover:bg-[#a81759]">Confirmer et enregistrer</button>
+            <button type="submit" class="border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg hover:bg-gray-50">Recalculer</button>
+            {% else %}
+            <button type="submit" class="bg-[#C81E6E] text-white font-medium px-6 py-2.5 rounded-lg hover:bg-[#a81759]">Calculer</button>
+            {% endif %}
+            <a href="{% url 'paie_actions_rh_salarie' employeur.id employe.id %}" class="text-gray-500 hover:text-gray-700">Annuler</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

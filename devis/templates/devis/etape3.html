@@ -1,0 +1,247 @@
+{% extends "pilotage/base_recouvrement.html" %}
+{% block titre %}Nouveau devis — Étape 3{% endblock %}
+{% block style %}
+<style>
+  .sec-head { background:#FCEEF3; border:1px solid #C81E6E; border-bottom:none; }
+  input[type=number], input[type=text], select {
+    border:1px solid #d1d5db; border-radius:6px; padding:6px 8px; font-size:13px;
+  }
+  .ligne-libre input { width:100%; }
+</style>
+{% endblock %}
+
+{% block contenu %}
+{% include "devis/_barre_etapes.html" %}
+
+<div class="max-w-4xl mx-auto p-6">
+  <div class="bg-white rounded-lg shadow p-6">
+    <h1 class="text-xl font-bold text-gray-800 mb-1">Étape 3 — Le devis</h1>
+    <p class="text-gray-500 text-sm mb-6">Devis {{ devis.numero_devis }} — cochez les prestations, ajustez les prix.</p>
+
+    <div id="sections"></div>
+
+    <!-- Ligne libre -->
+    <div class="mt-4">
+      <button type="button" id="add-libre" class="text-sm text-[#C81E6E] font-medium hover:underline">+ Ajouter une ligne libre (hors catalogue)</button>
+      <div id="libres" class="mt-3 space-y-2"></div>
+    </div>
+
+    <!-- Récapitulatif -->
+    <div class="mt-8 border-t pt-4">
+      <h2 class="font-semibold text-gray-800 mb-3">Récapitulatif</h2>
+      <div id="recap" class="text-sm"></div>
+
+      <div class="flex items-center gap-3 mt-4">
+        <label class="text-sm text-gray-700">Remise globale (%)</label>
+        <input type="number" id="remise" min="0" max="100" step="1" value="{{ devis.remise_pourcentage|default:0|floatformat:0 }}" style="width:80px;">
+      </div>
+
+      <div class="mt-4 bg-gray-50 rounded-lg p-4 space-y-1">
+        <div class="flex justify-between text-sm text-gray-600"><span>Total HT brut</span><span id="t-htbrut">0 F</span></div>
+        <div class="flex justify-between text-sm text-gray-600"><span>Remise</span><span id="t-remise">0 F</span></div>
+        <div class="flex justify-between text-sm text-gray-600"><span>TVA</span><span id="t-tva">0 F</span></div>
+        <div class="flex justify-between text-base font-bold text-gray-900 pt-1 border-t mt-1"><span>Total TTC</span><span id="t-ttc">0 F</span></div>
+      </div>
+    </div>
+
+    <!-- Formulaire d'envoi -->
+    <form method="post" id="form-etape3">
+      {% csrf_token %}
+      <input type="hidden" name="lignes_data" id="lignes_data">
+      <input type="hidden" name="remise_pourcentage" id="remise_hidden">
+      <div class="flex justify-between items-center pt-6 mt-6 border-t">
+        <a href="{% url 'devis_etape2' devis.id %}" class="text-sm text-gray-500 hover:underline">← Précédent</a>
+        <button type="submit" class="bg-[#C81E6E] text-white px-6 py-2 rounded font-medium hover:bg-[#a81659]">Enregistrer et continuer →</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+const catalogue = {{ catalogue_json|safe }};
+const lignesExistantes = {{ lignes_existantes_json|safe }};
+const nf = new Intl.NumberFormat("fr-FR");
+const fmt = n => nf.format(Math.round(n)) + " F";
+
+let libreCount = 0;
+
+// Construire les sections par catégorie
+const secBox = document.getElementById("sections");
+catalogue.forEach(cat => {
+  if (cat.prestations.length === 0) return;
+  const sec = document.createElement("div");
+  sec.className = "mb-5 rounded-lg overflow-hidden border border-[#C81E6E]";
+  let html = '<div class="sec-head px-4 py-2 flex items-center justify-between">' +
+    '<span class="font-semibold text-[#8A1349]">' + cat.nom + '</span>' +
+    '<span class="text-xs px-2 py-0.5 rounded-full ' + (cat.regime === "PONCTUELLE" ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-800") + '">' +
+    (cat.regime === "PONCTUELLE" ? "Ponctuel" : "Récurrent") + '</span></div>';
+  html += '<div class="bg-white divide-y">';
+  cat.prestations.forEach(p => {
+    const variantesOpts = p.variantes.map((v, i) => '<option value="' + v.prix + '">' + v.libelle + ' (' + nf.format(v.prix) + ' F)</option>').join("");
+    html += '<div class="px-4 py-3 flex items-center gap-3 flex-wrap" data-presta="' + p.id + '">' +
+      '<input type="checkbox" class="chk" data-id="' + p.id + '">' +
+      '<span class="flex-1 min-w-[160px] text-sm">' + p.libelle + ' <span class="text-xs text-gray-400">· ' + p.periodicite + '</span></span>';
+    if (p.variantes.length > 0) {
+      html += '<select class="var text-sm">' + variantesOpts + '</select>';
+    }
+    html += '<label class="text-xs text-gray-500">Qté</label><input type="number" class="qte" value="1" min="1" step="1" style="width:60px;">' +
+      '<label class="text-xs text-gray-500">P.U.</label><input type="number" class="prix" value="' + (p.variantes.length ? p.variantes[0].prix : p.prix_base) + '" min="0" step="500" style="width:100px;">' +
+      '<input type="hidden" class="tva" value="' + p.tva + '">' +
+      '<input type="hidden" class="lib" value="' + p.libelle.replace(/"/g, "&quot;") + '">' +
+      '<input type="hidden" class="per" value="' + p.periodicite + '">' +
+      '<input type="hidden" class="cat" value="' + cat.nom.replace(/"/g, "&quot;") + '">' +
+      '</div>';
+  });
+  html += '</div>';
+  sec.innerHTML = html;
+  secBox.appendChild(sec);
+});
+
+// Quand on change une variante → mettre à jour le prix
+secBox.querySelectorAll(".var").forEach(sel => {
+  sel.addEventListener("change", e => {
+    const row = e.target.closest("[data-presta]");
+    row.querySelector(".prix").value = e.target.value;
+    row.querySelector(".chk").checked = true;
+    recalc();
+  });
+});
+secBox.querySelectorAll(".chk, .qte, .prix").forEach(el => {
+  el.addEventListener("input", recalc);
+});
+
+// Ligne libre
+document.getElementById("add-libre").addEventListener("click", () => {
+  libreCount++;
+  const div = document.createElement("div");
+  div.className = "ligne-libre flex items-center gap-2 flex-wrap border rounded-lg p-2";
+  div.innerHTML =
+    '<input type="text" class="l-lib" placeholder="Désignation" style="flex:1; min-width:160px;">' +
+    '<input type="text" class="l-per" placeholder="Périodicité" style="width:110px;">' +
+    '<label class="text-xs text-gray-500">Qté</label><input type="number" class="l-qte" value="1" min="1" step="1" style="width:60px;">' +
+    '<label class="text-xs text-gray-500">P.U.</label><input type="number" class="l-prix" value="0" min="0" step="500" style="width:100px;">' +
+    '<button type="button" class="l-del text-red-600 text-sm">×</button>';
+  document.getElementById("libres").appendChild(div);
+  div.querySelectorAll("input").forEach(i => i.addEventListener("input", recalc));
+  div.querySelector(".l-del").addEventListener("click", () => { div.remove(); recalc(); });
+  recalc();
+});
+
+document.getElementById("remise").addEventListener("input", recalc);
+
+function collectLignes() {
+  const lignes = [];
+  // Catalogue
+  secBox.querySelectorAll("[data-presta]").forEach(row => {
+    if (row.querySelector(".chk").checked) {
+      lignes.push({
+        designation: row.querySelector(".lib").value,
+        periodicite: row.querySelector(".per").value,
+        categorie: row.querySelector(".cat").value,
+        quantite: parseFloat(row.querySelector(".qte").value) || 1,
+        prix: parseFloat(row.querySelector(".prix").value) || 0,
+        tva: row.querySelector(".tva").value,
+      });
+    }
+  });
+  // Libres
+  document.querySelectorAll("#libres .ligne-libre").forEach(d => {
+    const lib = d.querySelector(".l-lib").value.trim();
+    if (lib) {
+      lignes.push({
+        designation: lib,
+        periodicite: d.querySelector(".l-per").value,
+        categorie: "",
+        quantite: parseFloat(d.querySelector(".l-qte").value) || 1,
+        prix: parseFloat(d.querySelector(".l-prix").value) || 0,
+        tva: "18",
+      });
+    }
+  });
+  return lignes;
+}
+
+function recalc() {
+  const lignes = collectLignes();
+  // Recap groupé par catégorie
+  const groupes = {};
+  lignes.forEach(l => {
+    const cle = l.categorie || "Autres prestations";
+    if (!groupes[cle]) groupes[cle] = [];
+    groupes[cle].push(l);
+  });
+
+  let htbrut = 0, tvaTotal = 0;
+  let recapHtml = "";
+  Object.keys(groupes).forEach(cle => {
+    let sousTotal = 0;
+    recapHtml += '<div class="mb-2"><p class="font-medium text-gray-700 text-sm">' + cle + '</p>';
+    groupes[cle].forEach(l => {
+      const montant = l.quantite * l.prix;
+      sousTotal += montant;
+      tvaTotal += montant * (parseFloat(l.tva) / 100);
+      recapHtml += '<div class="flex justify-between text-sm text-gray-600 pl-3"><span>' + l.designation + ' × ' + l.quantite + '</span><span>' + fmt(montant) + '</span></div>';
+    });
+    recapHtml += '<div class="flex justify-between text-sm font-semibold text-[#8A1349] pl-3 border-t mt-1"><span>Sous-total ' + cle + '</span><span>' + fmt(sousTotal) + '</span></div></div>';
+    htbrut += sousTotal;
+  });
+  if (lignes.length === 0) recapHtml = '<p class="text-gray-400 text-sm">Aucune prestation sélectionnée.</p>';
+  document.getElementById("recap").innerHTML = recapHtml;
+
+  const remise = parseFloat(document.getElementById("remise").value) || 0;
+  const montantRemise = htbrut * (remise / 100);
+  const htNet = htbrut - montantRemise;
+  const ratio = htbrut > 0 ? htNet / htbrut : 1;
+  const tvaNet = tvaTotal * ratio;
+
+  document.getElementById("t-htbrut").textContent = fmt(htbrut);
+  document.getElementById("t-remise").textContent = "− " + fmt(montantRemise);
+  document.getElementById("t-tva").textContent = fmt(tvaNet);
+  document.getElementById("t-ttc").textContent = fmt(htNet + tvaNet);
+  // fin de recalc()
+}
+
+// ===== Ré-afficher les prestations déjà enregistrées =====
+function rechargerLignes() {
+  lignesExistantes.forEach(le => {
+    let trouve = false;
+    // Chercher la prestation correspondante dans les sections du catalogue
+    secBox.querySelectorAll("[data-presta]").forEach(row => {
+      const lib = row.querySelector(".lib").value;
+      if (!trouve && lib === le.designation && !row.querySelector(".chk").checked) {
+        row.querySelector(".chk").checked = true;
+        row.querySelector(".qte").value = le.quantite;
+        row.querySelector(".prix").value = le.prix;
+        trouve = true;
+      }
+    });
+    // Si pas trouvée dans le catalogue → c'était une ligne libre, on la recrée
+    if (!trouve) {
+      libreCount++;
+      const div = document.createElement("div");
+      div.className = "ligne-libre flex items-center gap-2 flex-wrap border rounded-lg p-2";
+      div.innerHTML =
+        '<input type="text" class="l-lib" placeholder="Désignation" style="flex:1; min-width:160px;" value="' + le.designation.replace(/\"/g, "&quot;") + '">' +
+        '<input type="text" class="l-per" placeholder="Périodicité" style="width:110px;" value="' + (le.periodicite || "") + '">' +
+        '<label class="text-xs text-gray-500">Qté</label><input type="number" class="l-qte" value="' + le.quantite + '" min="1" step="1" style="width:60px;">' +
+        '<label class="text-xs text-gray-500">P.U.</label><input type="number" class="l-prix" value="' + le.prix + '" min="0" step="500" style="width:100px;">' +
+        '<button type="button" class="l-del text-red-600 text-sm">×</button>';
+      document.getElementById("libres").appendChild(div);
+      div.querySelectorAll("input").forEach(i => i.addEventListener("input", recalc));
+      div.querySelector(".l-del").addEventListener("click", () => { div.remove(); recalc(); });
+    }
+  });
+}
+
+rechargerLignes();
+
+
+// À l'envoi : sérialiser les lignes
+document.getElementById("form-etape3").addEventListener("submit", e => {
+  document.getElementById("lignes_data").value = JSON.stringify(collectLignes());
+  document.getElementById("remise_hidden").value = document.getElementById("remise").value || 0;
+});
+
+recalc();
+</script>
+{% endblock %}

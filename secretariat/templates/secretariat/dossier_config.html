@@ -1,0 +1,219 @@
+{% extends "pilotage/base_pilotage.html" %}
+
+{% block titre %}Configurer un dossier — Secrétariat{% endblock %}
+
+{% block contenu %}
+<div class="p-6 max-w-3xl">
+
+    <a href="{% url 'secretariat_dossiers' %}" class="text-sm text-gray-500 hover:text-[#C81E6E]">← Retour à la liste</a>
+
+    <div class="mt-4 mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Configuration du dossier client</h1>
+        <p class="text-gray-500 mt-1">Devis d'origine : <span class="font-medium">{{ devis.numero_devis }}</span> — vérifiez et corrigez les informations, puis complétez le dossier.</p>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" class="space-y-5">
+        {% csrf_token %}
+
+        <!-- IDENTITÉ -->
+        <div class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="font-bold text-gray-800 mb-4 pb-2 border-b border-gray-100">Identité</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-600 mb-1">Type de client</label>
+                    <select name="type_client">
+                        <option value="PP_INFORMEL" {% if devis.type_client == 'PP_INFORMEL' %}selected{% endif %}>Personne Physique — informel</option>
+                        <option value="PP_CONSTITUEE" {% if devis.type_client == 'PP_CONSTITUEE' %}selected{% endif %}>Personne Physique constituée</option>
+                        <option value="PM" {% if devis.type_client == 'PM' %}selected{% endif %}>Personne Morale</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-600 mb-1">Nom et prénoms (personne physique)</label>
+                    <input type="text" name="pp_nom_prenoms" value="{{ devis.pp_nom_prenoms }}">
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Raison sociale</label>
+                        <input type="text" name="pm_raison_sociale" value="{{ devis.pm_raison_sociale }}">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Nom commercial</label>
+                        <input type="text" name="pm_nom_commercial" value="{{ devis.pm_nom_commercial }}">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-600 mb-1">Forme juridique</label>
+                    <input type="text" name="pm_forme_juridique" value="{{ devis.pm_forme_juridique }}">
+                </div>
+            </div>
+        </div>
+
+        <!-- IDENTIFIANTS LÉGAUX -->
+        <div class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="font-bold text-gray-800 mb-4 pb-2 border-b border-gray-100">Identifiants légaux</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-600 mb-1">NCC</label>
+                    <input type="text" name="ncc" value="{{ devis.ncc }}">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-600 mb-1">RCCM</label>
+                    <input type="text" name="rccm_numero" value="{{ devis.rccm_numero }}">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-600 mb-1">Code activité</label>
+                    <input type="text" name="code_activite" value="{{ devis.code_activite }}">
+                </div>
+            </div>
+        </div>
+
+        <!-- CONTACTS -->
+        <div class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="font-bold text-gray-800 mb-4 pb-2 border-b border-gray-100">Contacts</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-600 mb-1">Téléphone</label>
+                    <input type="text" name="telephone" value="{{ devis.telephone }}">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-600 mb-1">Téléphone 2</label>
+                    <input type="text" name="telephone2" value="{{ devis.telephone2 }}">
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="block text-sm font-medium text-gray-600 mb-1">Email</label>
+                    <input type="email" name="email" value="{{ devis.email }}">
+                </div>
+            </div>
+        </div>
+
+        <!-- LOCALISATION -->
+        <div class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="font-bold text-gray-800 mb-4 pb-2 border-b border-gray-100">Localisation du siège</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-600 mb-1">Ville</label>
+                    <input type="text" name="siege_ville" value="{{ devis.siege_ville }}">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-600 mb-1">Commune</label>
+                    <input type="text" name="siege_commune" value="{{ devis.siege_commune }}">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-600 mb-1">Quartier</label>
+                    <input type="text" name="siege_quartier" value="{{ devis.siege_quartier }}">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-600 mb-1">Rue</label>
+                    <input type="text" name="siege_rue" value="{{ devis.siege_rue }}">
+                </div>
+            </div>
+        </div>
+
+        <!-- ACTIVITÉ & DIRIGEANT -->
+        <div class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="font-bold text-gray-800 mb-4 pb-2 border-b border-gray-100">Activité & dirigeant</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-600 mb-1">Activité principale</label>
+                    <input type="text" name="activite_principale" value="{{ devis.activite_principale }}">
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Nom du dirigeant</label>
+                        <input type="text" name="dirigeant_nom" value="{{ devis.dirigeant_nom }}">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Qualité du dirigeant</label>
+                        <input type="text" name="dirigeant_qualite" value="{{ devis.dirigeant_qualite }}">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Téléphone du dirigeant</label>
+                        <input type="text" name="dirigeant_tel" value="{{ devis.dirigeant_tel }}">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Email du dirigeant</label>
+                        <input type="email" name="dirigeant_email" value="{{ devis.dirigeant_email }}">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- IMAGE DE MARQUE -->
+        <div class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="font-bold text-gray-800 mb-4 pb-2 border-b border-gray-100">Image de marque</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+                <div>
+                    <label class="block text-sm font-medium text-gray-600 mb-1">Logo de l'entreprise</label>
+                    {% if client and client.logo_entreprise %}
+                    <img src="{{ client.logo_entreprise.url }}" alt="Logo" class="h-12 mb-2 rounded border border-gray-200 p-1">
+                    {% endif %}
+                    <input type="file" name="logo_entreprise" accept="image/*">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-600 mb-1">Slogan</label>
+                    <input type="text" name="slogan" value="{{ client.slogan|default:'' }}" placeholder="Slogan de l'entreprise">
+                </div>
+            </div>
+        </div>
+
+        <!-- UTILISATEUR PRINCIPAL -->
+        <div class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="font-bold text-gray-800 mb-1">Utilisateur principal</h2>
+            <p class="text-xs text-gray-400 mb-4">Contact de référence — pré-rempli depuis le dirigeant, modifiable</p>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-600 mb-1">Nom et prénoms</label>
+                    <input type="text" name="user_principal_nom" value="{{ client.user_principal_nom|default:devis.dirigeant_nom }}">
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Nature de la pièce</label>
+                        <input type="text" name="user_principal_piece_nature" value="{{ client.user_principal_piece_nature|default:'' }}" placeholder="CNI, passeport…">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">N° de la pièce</label>
+                        <input type="text" name="user_principal_piece_numero" value="{{ client.user_principal_piece_numero|default:'' }}">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Qualité</label>
+                        <input type="text" name="user_principal_qualite" value="{{ client.user_principal_qualite|default:devis.dirigeant_qualite }}" placeholder="Gérant, DG…">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SUIVI INTERNE -->
+        <div class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="font-bold text-gray-800 mb-4 pb-2 border-b border-gray-100">Suivi interne</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-600 mb-1">Gestionnaire attitré</label>
+                    <input type="text" name="gestionnaire" value="{{ client.gestionnaire|default:'' }}">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-600 mb-1">Observations sur le client <span class="font-normal text-gray-400">(visible par les autres membres)</span></label>
+                    <textarea name="observations" rows="3" placeholder="Ce que le secrétariat pense du client…">{{ client.observations|default:'' }}</textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-600 mb-1">Notes internes</label>
+                    <textarea name="notes" rows="2">{{ client.notes|default:'' }}</textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- ACTIONS -->
+        <div class="flex items-center gap-3 pt-2">
+            <button type="submit" class="bg-[#C81E6E] text-white font-medium px-6 py-2.5 rounded-lg hover:bg-[#a81759] transition">
+                Enregistrer le dossier
+            </button>
+            <a href="{% url 'secretariat_dossiers' %}" class="text-gray-500 hover:text-gray-700">Annuler</a>
+        </div>
+
+        <p class="text-xs text-gray-400 pb-4">
+            Dossier enregistré « en préparation ». L'activation du compte client et l'envoi des accès se feront à l'étape suivante.
+        </p>
+
+    </form>
+
+</div>
+{% endblock %}

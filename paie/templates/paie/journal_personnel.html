@@ -1,0 +1,49 @@
+{% extends "pilotage/base_pilotage.html" %}
+{% block titre %}Journal du personnel — {{ employeur.raison_sociale }}{% endblock %}
+{% block contenu %}
+<div class="p-6">
+    <a href="{% url 'paie_employes_liste' employeur.id %}" class="text-sm text-gray-500 hover:text-[#C81E6E]">← Retour au personnel</a>
+    <div class="mt-4 mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Journal du personnel</h1>
+        <p class="text-gray-500 mt-1">{{ employeur.raison_sociale }} — historique des mouvements</p>
+    </div>
+
+    {% if mouvements %}
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50 text-gray-600 text-left">
+                <tr>
+                    <th class="px-4 py-3 font-medium">Date</th>
+                    <th class="px-4 py-3 font-medium">Salarié</th>
+                    <th class="px-4 py-3 font-medium">Mouvement</th>
+                    <th class="px-4 py-3 font-medium">Détail</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for m in mouvements %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3 text-gray-700">{{ m.date_mouvement|date:"d/m/Y" }}</td>
+                    <td class="px-4 py-3 font-medium text-gray-800">{{ m.employe.nom_prenoms }}</td>
+                    <td class="px-4 py-3">
+                        {% if m.type_mouvement == "embauche" %}<span class="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded-full">Embauche</span>
+                        {% elif m.type_mouvement == "sortie" %}<span class="text-xs bg-red-50 text-red-700 px-2 py-0.5 rounded-full">Sortie</span>
+                        {% elif m.type_mouvement == "transformation_cdi" %}<span class="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">CDD → CDI</span>
+                        {% elif m.type_mouvement == "reembauche" %}<span class="text-xs bg-purple-50 text-purple-700 px-2 py-0.5 rounded-full">Réembauche</span>
+                        {% elif m.type_mouvement == "changement_salaire" %}<span class="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full">Salaire</span>
+                        {% elif m.type_mouvement == "changement_poste" %}<span class="text-xs bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full">Poste</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-3 text-gray-500">{{ m.detail|default:"—" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="bg-white rounded-xl border border-gray-200 p-12 text-center">
+        <div class="text-5xl mb-4">📋</div>
+        <p class="text-gray-500">Aucun mouvement enregistré pour cette entreprise.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

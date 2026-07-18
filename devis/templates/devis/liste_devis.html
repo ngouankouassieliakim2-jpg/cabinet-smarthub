@@ -1,0 +1,143 @@
+{% extends "pilotage/base_recouvrement.html" %}
+{% block titre %}Liste des devis{% endblock %}
+
+{% block contenu %}
+<div class="max-w-5xl mx-auto p-4 sm:p-8">
+    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Liste des devis</h1>
+        <a href="{% url 'creer_devis' %}" class="bg-[#C81E6E] text-white px-4 py-2 rounded hover:bg-[#a81659] font-medium text-center">+ Nouveau devis</a>
+    </div>
+
+    <!-- Messages (relances envoyées, etc.) -->
+    {% if messages %}
+      {% for m in messages %}
+      <div class="mb-3 p-3 rounded text-sm {% if m.tags == 'success' %}bg-emerald-50 text-emerald-700 border border-emerald-200{% elif m.tags == 'warning' %}bg-amber-50 text-amber-700 border border-amber-200{% elif m.tags == 'error' %}bg-red-50 text-red-700 border border-red-200{% else %}bg-blue-50 text-blue-700 border border-blue-200{% endif %}">{{ m }}</div>
+      {% endfor %}
+    {% endif %}
+
+    <form method="post" action="{% url 'supprimer_devis_multiple' %}" id="form-suppr"
+          onsubmit="return confirm('Voulez-vous vraiment supprimer le(s) devis sélectionné(s) ? Cette action est définitive.');">
+        {% csrf_token %}
+
+        <!-- Barre d'actions de sélection -->
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-3 min-h-[40px]">
+            <span id="compteur" class="text-sm text-gray-500">Aucun devis sélectionné</span>
+            <button type="submit" id="btn-suppr" disabled
+                    class="bg-red-600 text-white px-4 py-2 rounded text-sm font-medium opacity-40 cursor-not-allowed transition">
+                🗑️ Supprimer la sélection
+            </button>
+        </div>
+
+        <!-- ===== VUE TABLEAU (ordinateur) ===== -->
+        <div class="hidden md:block bg-white shadow rounded-lg overflow-hidden">
+            <table class="w-full text-sm text-left">
+                <thead class="bg-[#16171C] text-white">
+                    <tr>
+                        <th class="px-4 py-3 w-10">
+                            <input type="checkbox" id="check-all" title="Tout sélectionner">
+                        </th>
+                        <th class="px-4 py-3">Numéro</th>
+                        <th class="px-4 py-3">Client</th>
+                        <th class="px-4 py-3">Type</th>
+                        <th class="px-4 py-3">Statut</th>
+                        <th class="px-4 py-3">Suivi</th>
+                        <th class="px-4 py-3 w-20 text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for devis in devis_list %}
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="px-4 py-3">
+                            <input type="checkbox" name="devis_ids" value="{{ devis.id }}" class="row-check">
+                        </td>
+                        <td class="px-4 py-3 font-medium text-[#C81E6E]">
+                            <a href="{% url 'detail_devis' devis.id %}" class="hover:underline">{{ devis.numero_devis }}</a>
+                        </td>
+                        <td class="px-4 py-3">
+                            <a href="{% url 'detail_devis' devis.id %}" class="block">{{ devis.pm_raison_sociale|default:devis.pp_nom_prenoms|default:"—" }}</a>
+                        </td>
+                        <td class="px-4 py-3">{{ devis.get_type_client_display }}</td>
+                        <td class="px-4 py-3">
+                            {% if devis.statut == "ENVOYE" %}
+                            <span class="inline-block px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-700">{{ devis.get_statut_display }}</span>
+                            {% else %}
+                            <span class="inline-block px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-600">{{ devis.get_statut_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3 text-xs text-gray-500">
+                            {% if devis.statut == "ENVOYE" %}
+                              {% if devis.nombre_relances > 0 %}{{ devis.nombre_relances }} relance(s){% else %}Envoyé{% endif %}
+                            {% else %}—{% endif %}
+                        </td>
+                        <td class="px-4 py-3 text-center">
+                            <a href="{% url 'devis_etape2' devis.id %}" class="text-blue-600 hover:underline text-xs">Modifier</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="px-4 py-6 text-center text-gray-500">Aucun devis pour le moment.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ===== VUE CARTES (mobile) ===== -->
+        <div class="md:hidden space-y-3">
+            {% for devis in devis_list %}
+            <div class="bg-white shadow rounded-lg p-4">
+                <div class="flex items-start gap-3">
+                    <input type="checkbox" name="devis_ids" value="{{ devis.id }}" class="row-check-m mt-1">
+                    <div class="flex-1 min-w-0">
+                        <a href="{% url 'detail_devis' devis.id %}" class="font-semibold text-[#C81E6E] hover:underline">{{ devis.numero_devis }}</a>
+                        <p class="text-sm text-gray-800 mt-1">{{ devis.pm_raison_sociale|default:devis.pp_nom_prenoms|default:"—" }}</p>
+                        <p class="text-xs text-gray-500 mt-1">{{ devis.get_type_client_display }}</p>
+                        <div class="flex items-center gap-2 mt-2 flex-wrap">
+                            {% if devis.statut == "ENVOYE" %}
+                            <span class="inline-block px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-700">{{ devis.get_statut_display }}</span>
+                            {% if devis.nombre_relances > 0 %}<span class="text-xs text-gray-500">{{ devis.nombre_relances }} relance(s)</span>{% endif %}
+                            {% else %}
+                            <span class="inline-block px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-600">{{ devis.get_statut_display }}</span>
+                            {% endif %}
+                        </div>
+                        <a href="{% url 'devis_etape2' devis.id %}" class="inline-block mt-3 text-blue-600 hover:underline text-sm">Modifier →</a>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="bg-white shadow rounded-lg p-6 text-center text-gray-500">Aucun devis pour le moment.</div>
+            {% endfor %}
+        </div>
+    </form>
+</div>
+
+<script>
+  const checkAll = document.getElementById("check-all");
+  const rowChecks = document.querySelectorAll(".row-check, .row-check-m");
+  const btnSuppr = document.getElementById("btn-suppr");
+  const compteur = document.getElementById("compteur");
+
+  function majSelection() {
+    const coches = document.querySelectorAll(".row-check:checked, .row-check-m:checked").length;
+    if (coches > 0) {
+      btnSuppr.disabled = false;
+      btnSuppr.classList.remove("opacity-40", "cursor-not-allowed");
+      btnSuppr.classList.add("hover:bg-red-700", "cursor-pointer");
+      compteur.textContent = coches + (coches > 1 ? " devis sélectionnés" : " devis sélectionné");
+    } else {
+      btnSuppr.disabled = true;
+      btnSuppr.classList.add("opacity-40", "cursor-not-allowed");
+      btnSuppr.classList.remove("hover:bg-red-700", "cursor-pointer");
+      compteur.textContent = "Aucun devis sélectionné";
+    }
+  }
+
+  if (checkAll) {
+    checkAll.addEventListener("change", () => {
+      document.querySelectorAll(".row-check").forEach(c => c.checked = checkAll.checked);
+      majSelection();
+    });
+  }
+  rowChecks.forEach(c => c.addEventListener("change", majSelection));
+</script>
+{% endblock %}

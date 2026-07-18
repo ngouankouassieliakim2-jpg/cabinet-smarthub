@@ -1,0 +1,11 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Organisation et stratégie">
+  <rect x="8" y="8" width="104" height="104" rx="24" fill="#FCEEF3"/>
+  <!-- Cible -->
+  <circle cx="58" cy="62" r="28" fill="none" stroke="#ED93B1" stroke-width="4"/>
+  <circle cx="58" cy="62" r="18" fill="none" stroke="#C81E6E" stroke-width="4"/>
+  <circle cx="58" cy="62" r="7" fill="#8E1450"/>
+  <!-- Flèche -->
+  <line x1="80" y1="40" x2="60" y2="60" stroke="#16171C" stroke-width="4" stroke-linecap="round"/>
+  <path d="M88 32 l-10 2 l4 8 Z" fill="#16171C"/>
+  <path d="M88 32 l-8 -1 l1 8 Z" fill="#16171C"/>
+</svg>

@@ -1,0 +1,172 @@
+{% extends "pilotage/base_pilotage.html" %}
+{% block titre %}Messagerie — Espace Direction{% endblock %}
+
+{% block contenu %}
+<div class="p-6 sm:p-8 max-w-3xl mx-auto space-y-6">
+
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/60 pb-5">
+        <div class="space-y-1">
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+                <svg class="w-8 h-8 text-slate-800" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.222 3.419.169A13.9 13.9 0 0 0 21 11.5c0-1.605-1.123-2.994-2.707-3.227A48.81 48.81 0 0 0 12 7.5a48.81 48.81 0 0 0-6.293.773c-1.584.233-2.707 1.622-2.707 3.227M3.75 18h.008v.008H3.75V18Zm.375 0a.375 0 1 1-.75 0 .375 0 0 1 .75 0ZM5.625 18h.008v.008h-.008V18Zm.375 0a.375 0 1 1-.75 0 .375 0 0 1 .75 0Z" />
+                </svg>
+                Messagerie
+            </h1>
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                <span>{{ conversations|length }} conversation{{ conversations|length|pluralize }}</span>
+                {% if conversations %}
+                <span class="w-1 h-1 rounded-full bg-slate-300"></span>
+                <span class="text-[#C81E6E]" id="unread-counter-badge">Filtres actifs disponibles</span>
+                {% endif %}
+            </p>
+        </div>
+        
+        <a href="{% url 'messagerie_nouvelle' %}" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#C81E6E] text-white text-sm font-bold rounded-xl shadow-sm shadow-[#C81E6E]/15 hover:bg-[#a81759] hover:shadow-md transition duration-150">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            Nouvelle conversation
+        </a>
+    </div>
+
+    {% if conversations %}
+    <div class="relative w-full">
+        <span class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-slate-400">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.637 10.637Z" />
+            </svg>
+        </span>
+        <input type="text" id="search-bar" placeholder="Rechercher un client, un collaborateur ou un message..." class="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 hover:border-slate-300 focus:border-[#C81E6E] focus:ring-1 focus:ring-[#C81E6E] rounded-2xl text-sm font-medium text-slate-700 transition outline-none shadow-sm placeholder:text-slate-400">
+    </div>
+
+    <div id="conversations-list" class="bg-white rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden divide-y divide-slate-100">
+        {% for c in conversations %}
+        <div class="conversation-item group relative flex items-center justify-between gap-4 px-6 py-5 transition-all duration-150 hover:bg-slate-50/80 {% if c.nb_non_lus %}bg-[#FCEEF3]/15{% endif %}" data-search-target="{{ c.nom_affiche|lower }} {% if c.dernier_message.texte %}{{ c.dernier_message.texte|lower }}{% endif %}">
+            
+            <a href="{% url 'messagerie_conversation' c.conversation.id %}" class="flex items-center gap-4 flex-1 min-w-0">
+                
+                <div class="w-12 h-12 rounded-full {% if c.nb_non_lus %}bg-gradient-to-tr from-[#C81E6E] to-[#FF4081] text-white shadow-sm shadow-[#C81E6E]/10{% else %}bg-slate-100 text-slate-600 border border-slate-200/40{% endif %} flex items-center justify-center font-bold text-sm shrink-0 uppercase tracking-wider transition-all duration-150 group-hover:scale-105">
+                    {{ c.nom_affiche|slice:":2" }}
+                </div>
+                
+                <div class="flex-1 min-w-0 space-y-1">
+                    <div class="flex items-center justify-between gap-2">
+                        <p class="text-sm {% if c.nb_non_lus %}font-bold text-slate-900{% else %}font-semibold text-slate-800{% endif %} truncate">
+                            {{ c.nom_affiche }}
+                        </p>
+                        {% if c.dernier_message %}
+                        <span class="text-xs text-slate-400 font-medium shrink-0">
+                            {{ c.dernier_message.envoye_le|date:"d M • H:i" }}
+                        </span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="flex items-center justify-between gap-4">
+                        <p class="text-xs {% if c.nb_non_lus %}font-semibold text-slate-800{% else %}text-slate-500{% endif %} truncate">
+                            {% if c.dernier_message %}
+                                {% if c.dernier_message.texte %}
+                                    {{ c.dernier_message.texte }}
+                                {% else %}
+                                    <span class="inline-flex items-center gap-1 text-[#C81E6E] font-medium">
+                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="m18.375 12.739-7.693 7.693a4.5 4.5 0 0 1-6.364-6.364l10.94-10.94A3 3 0 1 1 19.5 7.372L8.552 18.32a1.5 1.5 0 0 1-2.122-2.122l8-8" />
+                                        </svg>
+                                        {{ c.dernier_message.nom_fichier }}
+                                    </span>
+                                {% endif %}
+                            {% else %}
+                            <span class="text-slate-400 italic">Aucun message</span>
+                            {% endif %}
+                        </p>
+                        
+                        {% if c.nb_non_lus %}
+                        <span class="bg-[#C81E6E] text-white text-[11px] font-extrabold px-2 py-0.5 rounded-full flex items-center justify-center shrink-0 min-w-5 h-5 shadow-sm shadow-[#C81E6E]/20">
+                            {{ c.nb_non_lus }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </a>
+            
+            <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-150 flex items-center gap-1.5 shrink-0 ml-2">
+                <a href="{% url 'messagerie_conversation' c.conversation.id %}" class="p-2 bg-slate-100 hover:bg-[#FCEEF3] text-slate-500 hover:text-[#C81E6E] rounded-xl transition duration-150 border border-slate-200/50" title="Ouvrir la conversation">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                    </svg>
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div id="no-results" class="hidden bg-white rounded-2xl border border-slate-200/60 shadow-sm p-12 text-center max-w-md mx-auto space-y-4">
+        <div class="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 mx-auto">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.637 10.637Z" />
+            </svg>
+        </div>
+        <div>
+            <h3 class="text-sm font-bold text-slate-800">Aucun résultat trouvé</h3>
+            <p class="text-xs text-slate-400 mt-1">Ajustez votre recherche ou vérifiez l'orthographe du nom.</p>
+        </div>
+    </div>
+
+    {% else %}
+    <div class="bg-white rounded-3xl border border-slate-200/60 shadow-sm p-12 text-center max-w-xl mx-auto space-y-6 relative overflow-hidden">
+        <div class="absolute inset-0 opacity-[0.015] pointer-events-none bg-[radial-gradient(#C81E6E_1px,transparent_1px)] [background-size:16px_16px]"></div>
+        
+        <div class="w-16 h-16 mx-auto rounded-2xl bg-[#FCEEF3] flex items-center justify-center text-[#C81E6E] border border-pink-100 shadow-inner">
+            <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8.625 9.75a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375m-13.5 3.01c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.222 3.419.169A13.9 13.9 0 0 0 21 11.5c0-1.605-1.123-2.994-2.707-3.227A48.81 48.81 0 0 0 12 7.5a48.81 48.81 0 0 0-6.293.773c-1.584.233-2.707 1.622-2.707 3.227M3.75 18h.008v.008H3.75V18Zm.375 0a.375 0 1 1-.75 0 .375 0 0 1 .75 0ZM5.625 18h.008v.008h-.008V18Zm.375 0a.375 0 1 1-.75 0 .375 0 0 1 .75 0Z" />
+            </svg>
+        </div>
+        
+        <div class="space-y-1.5">
+            <h3 class="text-base font-bold text-slate-800">Aucune conversation en cours</h3>
+            <p class="text-slate-400 text-sm max-w-sm mx-auto">Centralisez vos échanges avec vos clients et collaborateurs directement depuis votre espace de pilotage.</p>
+        </div>
+        
+        <div class="pt-2">
+            <a href="{% url 'messagerie_nouvelle' %}" class="inline-flex items-center gap-2 px-5 py-2.5 bg-[#C81E6E] text-white text-sm font-bold rounded-xl hover:bg-[#a81759] transition shadow-sm shadow-[#C81E6E]/15">
+                Démarrer une conversation
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchBar = document.getElementById('search-bar');
+    if (searchBar) {
+        const conversationItems = document.querySelectorAll('.conversation-item');
+        const noResults = document.getElementById('no-results');
+        const listContainer = document.getElementById('conversations-list');
+
+        searchBar.addEventListener('input', function(e) {
+            const query = e.target.value.toLowerCase().trim();
+            let hasVisibleItem = false;
+
+            conversationItems.forEach(item => {
+                const searchData = item.getAttribute('data-search-target');
+                if (searchData.includes(query)) {
+                    item.style.display = 'flex';
+                    hasVisibleItem = true;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+
+            if (hasVisibleItem) {
+                noResults.classList.add('hidden');
+                listContainer.classList.remove('hidden');
+            } else {
+                noResults.classList.remove('hidden');
+                listContainer.classList.add('hidden');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

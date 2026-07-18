@@ -1,0 +1,223 @@
+{% extends "pilotage/base_pilotage.html" %}
+{% block titre %}Nouvelle conversation — Espace Direction{% endblock %}
+
+{% block contenu %}
+<div class="p-6 sm:p-8 max-w-2xl mx-auto space-y-6">
+
+    <a href="{% url 'messagerie_liste' %}" class="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-[#C81E6E] transition-colors group">
+        <svg class="w-4 h-4 transition-transform group-hover:-translate-x-1" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+        </svg>
+        Retour à la messagerie
+    </a>
+
+    <div class="space-y-1">
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Nouvelle conversation</h1>
+        <p class="text-sm text-slate-500">Sélectionnez le type d'échange que vous souhaitez initier avec vos collaborateurs.</p>
+    </div>
+
+    <div class="bg-slate-100 p-1.5 rounded-2xl flex gap-1 border border-slate-200/50">
+        <button type="button" data-tab="direct" class="tab-btn flex-1 flex items-center justify-center gap-2 py-3 text-sm font-bold rounded-xl transition-all duration-150 bg-white text-slate-800 shadow-sm border border-slate-200/20">
+            <svg class="w-4 h-4 text-[#C81E6E]" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+            </svg>
+            Message direct
+        </button>
+        <button type="button" data-tab="groupe" class="tab-btn flex-1 flex items-center justify-center gap-2 py-3 text-sm font-bold rounded-xl transition-all duration-150 text-slate-500 hover:text-slate-700">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.005 9.005 0 0 0-1.872-5.18M18 18.72a9 9 0 0 0-3.419-11.75A4.5 4.5 0 0 0 10.5 3c-1.558 0-2.979.793-3.831 2.015M10.5 13.5a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9Zm0 0c-2.43 0-4.66.924-6.322 2.44A9.001 9.001 0 0 0 3 18.72m18 0h-1.8M3 18.72h1.8M4.5 18.72h12" />
+            </svg>
+            Créer un groupe
+        </button>
+    </div>
+
+    <div class="space-y-6">
+        
+        <div id="panel-direct" class="tab-panel transition-opacity duration-150">
+            <form method="post" class="bg-white rounded-3xl border border-slate-200/60 shadow-sm p-6 sm:p-8 space-y-6">
+                {% csrf_token %}
+                <input type="hidden" name="type_conversation" value="direct">
+                
+                <div class="space-y-2">
+                    <label class="block text-sm font-bold text-slate-800">Sélectionner un destinataire</label>
+                    <p class="text-xs text-slate-400">Recherchez et sélectionnez le collaborateur avec lequel vous souhaitez démarrer un échange sécurisé.</p>
+                </div>
+
+                <input type="hidden" name="utilisateur_id" id="selected-user-id" required>
+
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-slate-400">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.637 10.637Z" />
+                        </svg>
+                    </span>
+                    <input type="text" id="search-direct-user" placeholder="Filtrer par nom ou prénom..." class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 hover:border-slate-300 focus:border-[#C81E6E] focus:ring-1 focus:ring-[#C81E6E] rounded-xl text-sm font-medium text-slate-700 transition outline-none">
+                </div>
+
+                <div id="direct-users-list" class="border border-slate-200/60 rounded-2xl divide-y divide-slate-100 max-h-72 overflow-y-auto bg-slate-50/20 shadow-inner">
+                    {% for u in utilisateurs %}
+                    <button type="button" class="user-select-card w-full flex items-center justify-between px-5 py-3.5 hover:bg-slate-50 transition-all text-left outline-none group" data-user-id="{{ u.id }}" data-username="{{ u.username|lower }}">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-[#FCEEF3] text-[#C81E6E] border border-pink-100 flex items-center justify-center font-bold text-xs uppercase shrink-0">
+                                {{ u.username|slice:":2" }}
+                            </div>
+                            <div>
+                                <p class="text-sm font-bold text-slate-800">{{ u.username }}</p>
+                                <p class="text-xs text-slate-400 font-medium">Collaborateur</p>
+                            </div>
+                        </div>
+                        <span class="radio-indicator w-5 h-5 rounded-full border border-slate-300 flex items-center justify-center bg-white group-hover:border-slate-400 transition-all shrink-0">
+                            <span class="w-2.5 h-2.5 rounded-full bg-[#C81E6E] opacity-0 transition-opacity"></span>
+                        </span>
+                    </button>
+                    {% endfor %}
+                </div>
+
+                <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+                    <a href="{% url 'messagerie_liste' %}" class="px-4 py-2.5 text-sm font-semibold text-slate-500 hover:text-slate-800 transition">Annuler</a>
+                    <button type="submit" id="submit-direct" disabled class="bg-[#C81E6E] disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed disabled:shadow-none text-white text-sm font-bold px-6 py-2.5 rounded-xl hover:bg-[#a81759] transition shadow-sm shadow-[#C81E6E]/15">
+                        Démarrer la conversation
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div id="panel-groupe" class="tab-panel hidden transition-opacity duration-150">
+            <form method="post" class="bg-white rounded-3xl border border-slate-200/60 shadow-sm p-6 sm:p-8 space-y-6">
+                {% csrf_token %}
+                <input type="hidden" name="type_conversation" value="groupe">
+                
+                <div class="space-y-2">
+                    <label class="block text-sm font-bold text-slate-800">Nom de l'espace / groupe</label>
+                    <input type="text" name="nom" placeholder="Ex: Projet Alpha, Cabinet Direction..." class="w-full px-4 py-3 bg-slate-50 border border-slate-200 hover:border-slate-300 focus:border-[#C81E6E] focus:ring-1 focus:ring-[#C81E6E] rounded-xl text-sm font-medium text-slate-700 transition outline-none" required>
+                </div>
+
+                <div class="space-y-3">
+                    <div class="space-y-1">
+                        <label class="block text-sm font-bold text-slate-800">Ajouter des participants</label>
+                        <p class="text-xs text-slate-400">Cochez les personnes qui prendront part à cet échange collectif.</p>
+                    </div>
+
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-slate-400">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.637 10.637Z" />
+                            </svg>
+                        </span>
+                        <input type="text" id="search-group-user" placeholder="Filtrer les participants..." class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 hover:border-slate-300 focus:border-[#C81E6E] focus:ring-1 focus:ring-[#C81E6E] rounded-xl text-sm font-medium text-slate-700 transition outline-none">
+                    </div>
+
+                    <div id="group-users-list" class="border border-slate-200/60 rounded-2xl divide-y divide-slate-100 max-h-56 overflow-y-auto bg-slate-50/20 shadow-inner">
+                        {% for u in utilisateurs %}
+                        <label class="group-user-card flex items-center justify-between px-5 py-3 hover:bg-slate-50 transition-all cursor-pointer group" data-username="{{ u.username|lower }}">
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-full bg-slate-100 text-slate-600 border border-slate-200/40 flex items-center justify-center font-bold text-xs uppercase shrink-0">
+                                    {{ u.username|slice:":2" }}
+                                </div>
+                                <div>
+                                    <p class="text-sm font-semibold text-slate-800">{{ u.username }}</p>
+                                    <p class="text-xs text-slate-400 font-medium">Collaborateur</p>
+                                </div>
+                            </div>
+                            <input type="checkbox" name="utilisateurs" value="{{ u.id }}" class="rounded text-[#C81E6E] focus:ring-[#C81E6E] border-slate-300 w-4.5 h-4.5 transition cursor-pointer shrink-0">
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+                    <a href="{% url 'messagerie_liste' %}" class="px-4 py-2.5 text-sm font-semibold text-slate-500 hover:text-slate-800 transition">Annuler</a>
+                    <button type="submit" class="bg-[#C81E6E] text-white text-sm font-bold px-6 py-2.5 rounded-xl hover:bg-[#a81759] transition shadow-sm shadow-[#C81E6E]/15">
+                        Créer le groupe
+                    </button>
+                </div>
+            </form>
+        </div>
+
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // --- GESTION DU SWITCH DES ONGLES ---
+    const boutons = document.querySelectorAll('.tab-btn');
+    const panneaux = document.querySelectorAll('.tab-panel');
+
+    boutons.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const cible = btn.dataset.tab;
+            
+            boutons.forEach(function(b) {
+                if (b === btn) {
+                    b.className = "tab-btn flex-1 flex items-center justify-center gap-2 py-3 text-sm font-bold rounded-xl transition-all duration-150 bg-white text-slate-800 shadow-sm border border-slate-200/20";
+                    b.querySelector('svg')?.classList.add('text-[#C81E6E]');
+                } else {
+                    b.className = "tab-btn flex-1 flex items-center justify-center gap-2 py-3 text-sm font-bold rounded-xl transition-all duration-150 text-slate-500 hover:text-slate-700";
+                    b.querySelector('svg')?.classList.remove('text-[#C81E6E]');
+                }
+            });
+
+            panneaux.forEach(function(p) {
+                p.classList.toggle('hidden', p.id !== 'panel-' + cible);
+            });
+        });
+    });
+
+    // --- FILTRAGE DE LA LISTE : MESSAGE DIRECT ---
+    const searchDirect = document.getElementById('search-direct-user');
+    const directCards = document.querySelectorAll('.user-select-card');
+
+    if (searchDirect) {
+        searchDirect.addEventListener('input', function(e) {
+            const val = e.target.value.toLowerCase().trim();
+            directCards.forEach(card => {
+                const username = card.getAttribute('data-username');
+                card.style.display = username.includes(val) ? 'flex' : 'none';
+            });
+        });
+    }
+
+    // --- SÉLECTION COMPOSANT UNIQUE : MESSAGE DIRECT ---
+    const hiddenUserIdInput = document.getElementById('selected-user-id');
+    const submitDirectBtn = document.getElementById('submit-direct');
+
+    directCards.forEach(card => {
+        card.addEventListener('click', function() {
+            const userId = card.getAttribute('data-user-id');
+            
+            directCards.forEach(c => {
+                c.classList.remove('bg-rose-50/60', 'border-rose-100', 'ring-1', 'ring-[#C81E6E]/10');
+                const radioDot = c.querySelector('.radio-indicator span');
+                const radioBorder = c.querySelector('.radio-indicator');
+                if (radioDot) radioDot.classList.add('opacity-0');
+                if (radioBorder) radioBorder.className = "radio-indicator w-5 h-5 rounded-full border border-slate-300 flex items-center justify-center bg-white group-hover:border-slate-400 transition-all shrink-0";
+            });
+
+            card.classList.add('bg-rose-50/60', 'border-rose-100', 'ring-1', 'ring-[#C81E6E]/10');
+            const targetDot = card.querySelector('.radio-indicator span');
+            const targetBorder = card.querySelector('.radio-indicator');
+            if (targetDot) targetDot.classList.remove('opacity-0');
+            if (targetBorder) targetBorder.className = "radio-indicator w-5 h-5 rounded-full border-[#C81E6E] flex items-center justify-center bg-white transition-all shrink-0";
+
+            hiddenUserIdInput.value = userId;
+            if (submitDirectBtn) submitDirectBtn.removeAttribute('disabled');
+        });
+    });
+
+    // --- FILTRAGE DE LA LISTE : GROUPE PARTICIPANTS ---
+    const searchGroup = document.getElementById('search-group-user');
+    const groupCards = document.querySelectorAll('.group-user-card');
+
+    if (searchGroup) {
+        searchGroup.addEventListener('input', function(e) {
+            const val = e.target.value.toLowerCase().trim();
+            groupCards.forEach(card => {
+                const username = card.getAttribute('data-username');
+                card.style.display = username.includes(val) ? 'flex' : 'none';
+            });
+        });
+    }
+});
+</script>
+{% endblock %}

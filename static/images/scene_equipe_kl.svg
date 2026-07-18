@@ -1,0 +1,65 @@
+<svg width="600" height="460" viewBox="0 0 600 460" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illustration équipe et accompagnement">
+  <defs>
+    <linearGradient id="rose" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#C81E6E"/>
+      <stop offset="1" stop-color="#8E1450"/>
+    </linearGradient>
+    <linearGradient id="dark" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1F2128"/>
+      <stop offset="1" stop-color="#16171C"/>
+    </linearGradient>
+  </defs>
+
+  <circle cx="300" cy="220" r="200" fill="#FCEEF3"/>
+  <ellipse cx="300" cy="400" rx="230" ry="24" fill="#F4C0D1" opacity="0.5"/>
+
+  <!-- Table centrale -->
+  <rect x="180" y="300" width="240" height="20" rx="6" fill="url(#dark)"/>
+  <rect x="200" y="320" width="14" height="70" rx="4" fill="#3A3D47"/>
+  <rect x="386" y="320" width="14" height="70" rx="4" fill="#3A3D47"/>
+
+  <!-- Document partagé sur la table -->
+  <rect x="250" y="280" width="100" height="26" rx="5" fill="#FFFFFF" stroke="#FBE0EB" stroke-width="2" transform="rotate(-2 300 293)"/>
+  <rect x="262" y="288" width="50" height="5" rx="2" fill="#C81E6E"/>
+  <rect x="262" y="297" width="70" height="4" rx="2" fill="#E2E8F0"/>
+
+  <!-- Personnage gauche (costume sombre) -->
+  <g transform="translate(150 150)">
+    <rect x="0" y="70" width="70" height="90" rx="20" fill="url(#dark)"/>
+    <rect x="22" y="80" width="26" height="50" rx="8" fill="#ED93B1"/>
+    <circle cx="35" cy="40" r="30" fill="#C68642"/>
+    <path d="M8 36 a27 27 0 0 1 54 0 v-6 a27 27 0 0 0 -54 0 Z" fill="#2A2A2A"/>
+  </g>
+
+  <!-- Personnage centre (rose) -->
+  <g transform="translate(265 130)">
+    <rect x="0" y="75" width="74" height="95" rx="20" fill="url(#rose)"/>
+    <rect x="24" y="86" width="26" height="52" rx="8" fill="#FFFFFF"/>
+    <circle cx="37" cy="42" r="32" fill="#8D5524"/>
+    <path d="M6 44 a31 31 0 0 1 62 0 q-31 -22 -62 0 Z" fill="#1A1A1A"/>
+  </g>
+
+  <!-- Personnage droite (claire) -->
+  <g transform="translate(380 150)">
+    <rect x="0" y="70" width="70" height="90" rx="20" fill="#5B6472"/>
+    <rect x="22" y="80" width="26" height="50" rx="8" fill="#F4C0D1"/>
+    <circle cx="35" cy="40" r="30" fill="#A0673B"/>
+    <path d="M8 38 a27 27 0 0 1 54 0 v-4 a27 27 0 0 0 -54 0 Z" fill="#2A2A2A"/>
+  </g>
+
+  <!-- Bulles de collaboration -->
+  <g>
+    <rect x="120" y="90" width="54" height="36" rx="12" fill="#FFFFFF" stroke="#FBE0EB" stroke-width="2"/>
+    <circle cx="138" cy="108" r="4" fill="#C81E6E"/>
+    <circle cx="150" cy="108" r="4" fill="#ED93B1"/>
+    <circle cx="162" cy="108" r="4" fill="#F4C0D1"/>
+    <path d="M134 126 l8 10 l4 -10 Z" fill="#FFFFFF"/>
+
+    <rect x="430" y="100" width="48" height="40" rx="12" fill="url(#rose)"/>
+    <path d="M440 120 l6 6 l12 -13" stroke="#FFFFFF" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <circle cx="110" cy="180" r="5" fill="#C81E6E"/>
+  <circle cx="500" cy="200" r="5" fill="#ED93B1"/>
+  <circle cx="300" cy="70" r="4" fill="#F4C0D1"/>
+</svg>

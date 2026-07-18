@@ -1,0 +1,13 @@
+{% comment %}Empty state display for no-data scenarios{% endcomment %}
+<div class="rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
+  {% if icon %}
+  <div class="mx-auto mb-4 inline-flex h-16 w-16 items-center justify-center rounded-3xl bg-white text-[#C81E6E] shadow-sm">{{ icon }}</div>
+  {% endif %}
+  <h3 class="text-xl font-semibold text-slate-900">{{ title|default:'Aucune donnée disponible' }}</h3>
+  {% if description %}
+  <p class="mt-2 text-sm text-slate-500">{{ description }}</p>
+  {% endif %}
+  {% if action %}
+  <div class="mt-5 inline-flex">{% include 'components/button.html' with label=action.label href=action.href variant=action.variant extra_classes=action.extra_classes %}</div>
+  {% endif %}
+</div>

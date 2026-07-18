@@ -1,0 +1,84 @@
+{% load paie_extras %}
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="utf-8">
+<style>
+    @page { size: A4; margin: 2cm; @bottom-center { content: "© Cabinet Smart-Hub — Page " counter(page) " / " counter(pages); font-size: 7px; color: #9ca3af; } }
+    body { font-family: "Helvetica Neue", Arial, sans-serif; color: #1f2937; font-size: 11px; line-height: 1.7; }
+    .entete { display: flex; align-items: center; border-bottom: 3px solid {{ employeur.couleur_documents|default:"#111827" }}; padding-bottom: 12px; margin-bottom: 20px; }
+    .entete .logo-wrap { width: 54px; height: 54px; border-radius: 50%; background: {{ employeur.couleur_documents|default:"#111827" }}1a; display: flex; align-items: center; justify-content: center; margin-right: 14px; overflow: hidden; flex-shrink: 0; }
+    .entete .logo { width: 46px; height: 46px; object-fit: contain; }
+    .entete .rs { font-size: 15px; font-weight: 700; }
+    h1 { text-align: center; font-size: 15px; letter-spacing: 1.5px; margin: 24px 0 24px; color: {{ employeur.couleur_documents|default:"#111827" }}; }
+    .corps p { text-align: justify; margin: 10px 0; }
+    .rib-emetteur { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px; margin: 16px 0; }
+    .rib-emetteur .lab { font-size: 8.5px; color: #9ca3af; text-transform: uppercase; }
+    .rib-emetteur .val { font-size: 11px; font-weight: 600; color: #1f2937; margin-bottom: 6px; }
+    .total-band { display: flex; justify-content: space-between; align-items: center; background: {{ employeur.couleur_documents|default:"#111827" }}; color: #fff; border-radius: 8px; padding: 14px 20px; margin: 20px 0; }
+    .total-band .lab { font-size: 12px; letter-spacing: 1px; text-transform: uppercase; }
+    .total-band .val { font-size: 20px; font-weight: 700; }
+    .signature { margin-top: 50px; text-align: right; }
+    .annexe { page-break-before: always; }
+    .annexe h1 { font-size: 13px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    thead th { background: {{ employeur.couleur_documents|default:"#111827" }}; color: #fff; font-size: 8.5px; padding: 6px 8px; text-align: left; }
+    thead th.r { text-align: right; }
+    tbody td { padding: 5px 8px; border-bottom: 1px solid #eee; font-size: 9.5px; }
+    tbody td.r { text-align: right; }
+    tfoot td { padding: 6px 8px; font-weight: 700; border-top: 2px solid #111827; background: #f3f4f6; }
+    tfoot td.r { text-align: right; }
+</style>
+</head>
+<body>
+    <div class="entete">
+        <div class="logo-wrap">{% if employeur.logo %}<img class="logo" src="{{ employeur.logo.url }}" alt="logo" />{% endif %}</div>
+        <div class="rs">{{ employeur.raison_sociale }}</div>
+    </div>
+
+    <h1>ORDRE DE VIREMENT DES SALAIRES — {{ mois_nom|upper }} {{ annee }}</h1>
+
+    <div class="corps">
+        <p>Nous vous prions de bien vouloir procéder au virement des salaires du mois de {{ mois_nom }} {{ annee }} au profit des {{ nb_salaries }} salarié(s) figurant sur la liste jointe en annexe, au débit du compte suivant :</p>
+    </div>
+
+    <div class="rib-emetteur">
+        <div class="lab">Banque</div><div class="val">{{ employeur.banque_nom|default:"—" }}</div>
+        <div class="lab">Intitulé du compte</div><div class="val">{{ employeur.banque_intitule|default:employeur.raison_sociale }}</div>
+        <div class="lab">Code banque — Code guichet — N° compte — Clé</div>
+        <div class="val">{{ employeur.banque_code|default:"—" }} — {{ employeur.banque_guichet|default:"—" }} — {{ employeur.banque_numero_compte|default:"—" }} — {{ employeur.banque_cle_rib|default:"—" }}</div>
+        {% if employeur.banque_iban %}<div class="lab">IBAN</div><div class="val">{{ employeur.banque_iban }}</div>{% endif %}
+    </div>
+
+    <div class="total-band">
+        <div class="lab">Montant total à virer</div>
+        <div class="val">{{ total|espace }} FCFA</div>
+    </div>
+
+    <div class="signature">
+        <p>La Direction</p>
+    </div>
+
+    <div class="annexe">
+        <h1>ANNEXE — LISTE DES SALARIÉS À VIRER</h1>
+        <table>
+            <thead><tr>
+                <th>Nom & Prénoms</th><th>Banque</th><th>Code — Guichet — N° compte — Clé</th><th class="r">Net à virer</th>
+            </tr></thead>
+            <tbody>
+                {% for l in lignes %}
+                <tr>
+                    <td>{{ l.employe.nom_prenoms }}</td>
+                    <td>{{ l.employe.banque|default:"—" }}</td>
+                    <td>{{ l.employe.banque_code|default:"—" }} — {{ l.employe.banque_guichet|default:"—" }} — {{ l.employe.numero_compte|default:"—" }} — {{ l.employe.banque_cle_rib|default:"—" }}</td>
+                    <td class="r">{{ l.net|espace }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot><tr>
+                <td colspan="3">TOTAL ({{ nb_salaries }} salarié{{ nb_salaries|pluralize }})</td>
+                <td class="r">{{ total|espace }}</td>
+            </tr></tfoot>
+        </table>
+    </div>
+</body>
+</html>

@@ -1,0 +1,42 @@
+{% extends "pilotage/base_pilotage.html" %}
+{% block titre %}Grille des salaires — Paie{% endblock %}
+{% block contenu %}
+<div class="p-6">
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800">Grille des salaires</h1>
+            <p class="text-gray-500 mt-1">Secteurs d'activité et leurs catégories (salaires catégoriels)</p>
+        </div>
+        <a href="{% url 'paie_secteur_creer' %}" class="bg-[#C81E6E] text-white font-medium px-4 py-2 rounded-lg hover:bg-[#a81759] transition">+ Nouveau secteur</a>
+    </div>
+
+    {% if secteurs %}
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50 text-gray-600 text-left">
+                <tr><th class="px-4 py-3 font-medium">Secteur</th><th class="px-4 py-3 font-medium">Taux AT</th><th class="px-4 py-3 font-medium">Catégories</th><th class="px-4 py-3 font-medium text-right"></th></tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for s in secteurs %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3 font-medium text-gray-800">{{ s.nom }}</td>
+                    <td class="px-4 py-3 text-gray-600">{{ s.taux_at }} %</td>
+                    <td class="px-4 py-3 text-gray-600">{{ s.grille.count }}</td>
+                    <td class="px-4 py-3 text-right whitespace-nowrap">
+                        <a href="{% url 'paie_secteur_modifier' s.id %}" class="text-gray-500 hover:underline mr-3">Modifier</a>
+                        <a href="{% url 'paie_secteur_grille' s.id %}" class="text-[#C81E6E] font-medium hover:underline">Gérer la grille →</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="bg-white rounded-xl border border-gray-200 p-12 text-center">
+        <div class="text-5xl mb-4">📊</div>
+        <p class="text-gray-500 mb-4">Aucun secteur défini.</p>
+        <a href="{% url 'paie_secteur_creer' %}" class="bg-[#C81E6E] text-white font-medium px-4 py-2 rounded-lg hover:bg-[#a81759] transition">+ Créer le premier secteur</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

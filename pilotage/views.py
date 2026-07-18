@@ -1,0 +1,336 @@
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import Http404
+from django.urls import reverse
+from django.utils import timezone
+from django.contrib import messages
+from comptes.decorators import role_requis
+from comptes.models import Profil
+from devis.models import Devis
+from .modules_data import MODULES, charger_sous_modules, get_module_info
+
+
+def _modules_nav():
+    """Liste des modules pour la barre horizontale du haut."""
+    nav = []
+    # Le tableau de bord en premier
+    nav.append({"cle": "dashboard", "nom": "Tableau de bord", "icone": "🏠", "url": "/pilotage/"})
+    for cle, data in MODULES.items():
+        nav.append({"cle": cle, "nom": data["nom"], "icone": data["icone"], "url": f"/pilotage/module/{cle}/"})
+    return nav
+
+
+@role_requis(Profil.Role.DIRECTION, Profil.Role.CADRE)
+def tableau_bord(request):
+    """Tableau de bord principal de la Direction."""
+    nb_devis_envoyes = Devis.objects.filter(statut="ENVOYE").count()
+
+    chiffres = {
+        "ca_mois": "4 250 000",
+        "devis_en_cours": nb_devis_envoyes,
+        "dossiers_actifs": 18,
+        "taux_recouvrement": 76,
+    }
+
+    modules = []
+    for cle, data in MODULES.items():
+        sous_modules = charger_sous_modules(data["app"])
+        modules.append({
+            "cle": cle, "nom": data["nom"], "icone": data["icone"],
+            "url": f"/pilotage/module/{cle}/",
+            "branche": len(sous_modules) > 0,
+        })
+
+    alertes = [
+        {"texte": f"{nb_devis_envoyes} devis envoyé(s) en attente de réponse", "niveau": "info"},
+        {"texte": "Déclaration TVA à déposer avant le 15", "niveau": "warning"},
+        {"texte": "2 lettres de mission en attente de validation", "niveau": "warning"},
+    ]
+
+    stats_vitrine = {
+        "visiteurs": 1240, "bouton_top": "Demander un devis", "bouton_top_clics": 87,
+        "articles_top": [
+            {"titre": "Comment créer son entreprise en Côte d'Ivoire", "lectures": 342},
+            {"titre": "La FNE : ce qui change en 2025", "lectures": 289},
+            {"titre": "Calculer ses impôts BIC", "lectures": 201},
+        ],
+    }
+
+    taches = [
+        {"titre": "Préparer le bilan ETS SAMTEX", "assignee": "Service Compta", "echeance": "25/06", "statut": "En cours"},
+        {"titre": "Relancer client KPMG (devis)", "assignee": "Secrétariat", "echeance": "24/06", "statut": "À faire"},
+        {"titre": "Audit social Entreprise XYZ", "assignee": "Service RH", "echeance": "30/06", "statut": "À faire"},
+    ]
+
+    return render(request, "pilotage/tableau_bord.html", {
+        "chiffres": chiffres, "modules": modules,
+        "alertes": alertes, "stats_vitrine": stats_vitrine, "taches": taches,
+        # Pour le gabarit :
+        "modules_nav": _modules_nav(),
+        "module_actif": get_module_info("direction"),
+        "sous_modules": None,  # pas de sidebar sur le tableau de bord
+    })
+
+
+@role_requis(Profil.Role.DIRECTION, Profil.Role.CADRE)
+def page_module(request, cle):
+    """Coquille d'un module : sidebar des sous-modules déclarés (branchement)."""
+    data = MODULES.get(cle)
+    if not data:
+        raise Http404("Module inconnu")
+
+    sous_modules = charger_sous_modules(data["app"])
+
+    return render(request, "pilotage/page_module.html", {
+        "cle": cle,
+        "module": data,
+        # Pour le gabarit :
+        "modules_nav": _modules_nav(),
+        "module_actif": get_module_info(cle),
+        "sous_modules": sous_modules,
+    })
+
+
+@role_requis(Profil.Role.DIRECTION)
+def delegations_liste(request):
+    """Liste des délégations de signature créées — visible et gérable uniquement par la Direction."""
+    from comptes.models import DelegationSignature
+    delegations = DelegationSignature.objects.select_related("delegant", "delegataire").all()
+    return render(request, "pilotage/delegations_liste.html", {
+        "delegations": delegations,
+        "modules_nav": _modules_nav(),
+        "module_actif": get_module_info("direction"),
+        "sous_modules": None,
+    })
+
+
+@role_requis(Profil.Role.DIRECTION)
+def delegation_creer(request):
+    """Création d'une délégation de signature — le délégant est TOUJOURS la personne connectée qui crée la délégation."""
+    from comptes.models import DelegationSignature
+    from comptes.models import Profil as ProfilModel
+    from django.contrib.auth.models import User
+
+    delegataires_possibles = User.objects.filter(
+        profil__role__in=[ProfilModel.Role.CADRE, ProfilModel.Role.COLLABORATEUR]
+    ).exclude(id=request.user.id)
+
+    if request.method == "POST":
+        delegataire_id = request.POST.get("delegataire")
+        mode = request.POST.get("mode")
+        perimetre = request.POST.get("perimetre", "").strip()
+        date_debut = request.POST.get("date_debut")
+        date_fin = request.POST.get("date_fin")
+
+        erreurs = []
+        if not delegataire_id:
+            erreurs.append("Choisissez la personne à qui déléguer.")
+        if mode not in ("ORDRE", "DELEGATION_POUVOIR"):
+            erreurs.append("Choisissez le régime (par ordre ou par délégation de pouvoir).")
+        if not perimetre:
+            erreurs.append("Précisez le périmètre ou le motif.")
+        if not date_debut or not date_fin:
+            erreurs.append("Indiquez la période de validité.")
+        elif date_fin < date_debut:
+            erreurs.append("La date de fin doit être après la date de début.")
+
+        if not erreurs:
+            delegation = DelegationSignature.objects.create(
+                delegant=request.user,
+                delegataire_id=delegataire_id,
+                mode=mode,
+                perimetre=perimetre,
+                date_debut=date_debut,
+                date_fin=date_fin,
+                cree_par=request.user,
+            )
+            from django.template.loader import render_to_string
+            from weasyprint import HTML
+            from django.core.files.base import ContentFile
+
+            html = render_to_string("devis/_document_delegation.html", {"delegation": delegation})
+            pdf_bytes = HTML(string=html, base_url=request.build_absolute_uri("/")).write_pdf()
+            delegation.document_preuve.save(
+                f"delegation-{delegation.id}.pdf", ContentFile(pdf_bytes), save=True)
+
+            messages.success(request, f"Délégation créée pour {delegation.delegataire.get_full_name() or delegation.delegataire.username}.")
+            return redirect("pilotage_delegations_liste")
+
+        for e in erreurs:
+            messages.error(request, e)
+
+    return render(request, "pilotage/delegation_creer.html", {
+        "delegataires_possibles": delegataires_possibles,
+        "modules_nav": _modules_nav(),
+        "module_actif": get_module_info("direction"),
+        "sous_modules": None,
+    })
+
+
+@role_requis(Profil.Role.DIRECTION)
+def collaborateurs_liste(request):
+    """Comptes internes (Direction, Cadres, Collaborateurs) — gestion centralisée."""
+    profils = Profil.objects.filter(
+        role__in=[Profil.Role.DIRECTION, Profil.Role.CADRE, Profil.Role.COLLABORATEUR]
+    ).select_related("user").order_by("user__first_name")
+    return render(request, "pilotage/collaborateurs_liste.html", {
+        "profils": profils,
+        "modules_nav": _modules_nav(),
+        "module_actif": get_module_info("direction"),
+        "sous_modules": None,
+    })
+
+
+@role_requis(Profil.Role.DIRECTION)
+def collaborateur_creer(request):
+    """Création d'un compte interne avec mot de passe provisoire et email de bienvenue."""
+    from django.contrib.auth.models import User
+
+    if request.method == "POST":
+        prenom = request.POST.get("prenom", "").strip()
+        nom = request.POST.get("nom", "").strip()
+        email = request.POST.get("email", "").strip()
+        role = request.POST.get("role")
+
+        erreurs = []
+        if not prenom or not nom:
+            erreurs.append("Le prénom et le nom sont obligatoires.")
+        if not email:
+            erreurs.append("L'email est obligatoire (il servira d'identifiant de connexion).")
+        elif User.objects.filter(username=email).exists():
+            erreurs.append("Un compte existe déjà avec cet email.")
+        if role not in dict(Profil.Role.choices):
+            erreurs.append("Choisissez un rôle valide.")
+
+        if not erreurs:
+            import secrets, string
+            alphabet = string.ascii_letters + string.digits
+            mot_de_passe = "".join(secrets.choice(alphabet) for _ in range(10))
+
+            user = User.objects.create_user(
+                username=email, email=email, password=mot_de_passe,
+                first_name=prenom, last_name=nom,
+            )
+            Profil.objects.create(user=user, role=role)
+
+            email_envoye, erreur_email = False, ""
+            try:
+                from parametres.emails import envoyer_email
+                sujet = "Votre accès à Cabinet Smart-Hub"
+                corps = (
+                    f"Bonjour {prenom},\n\n"
+                    f"Un compte vient de vous être créé sur Cabinet Smart-Hub, avec le rôle {dict(Profil.Role.choices)[role]}.\n\n"
+                    f"Identifiants de connexion :\n"
+                    f"  • Email : {email}\n"
+                    f"  • Mot de passe provisoire : {mot_de_passe}\n\n"
+                    f"Nous vous recommandons de le changer dès votre première connexion.\n\n"
+                    f"Cordialement,\nCabinet Comptable & Fiscal K&L"
+                )
+                email_envoye, erreur_email = envoyer_email([email], sujet, corps, [])
+            except Exception as e:
+                erreur_email = str(e)
+
+            if email_envoye:
+                messages.success(request, f"Compte créé pour {prenom} {nom} — identifiants envoyés par email.")
+            else:
+                messages.warning(request, f"Compte créé pour {prenom} {nom}, mais l'email n'a pas pu être envoyé ({erreur_email}). Mot de passe provisoire : {mot_de_passe}")
+            return redirect("pilotage_collaborateurs_liste")
+
+        for e in erreurs:
+            messages.error(request, e)
+
+    return render(request, "pilotage/collaborateur_creer.html", {
+        "roles": [(r.value, r.label) for r in Profil.Role if r != Profil.Role.CLIENT],
+        "modules_nav": _modules_nav(),
+        "module_actif": get_module_info("direction"),
+        "sous_modules": None,
+    })
+
+
+@role_requis(Profil.Role.DIRECTION, Profil.Role.CADRE)
+def notifications_liste(request):
+    """Liste des notifications avec filtres (type, statut de lecture)."""
+    from .models import Notification
+    notifications = Notification.objects.all().order_by("-cree_le")
+    
+    # Filtres
+    filtre_type = request.GET.get("type", "")
+    filtre_statut = request.GET.get("statut", "")
+    
+    if filtre_type:
+        notifications = notifications.filter(type_notification=filtre_type)
+    if filtre_statut == "lues":
+        notifications = notifications.filter(lue=True)
+    elif filtre_statut == "non_lues":
+        notifications = notifications.filter(lue=False)
+    
+    # Types disponibles pour le filtre
+    types_disponibles = Notification.TYPE_CHOICES
+    
+    return render(request, "pilotage/notifications_liste.html", {
+        "notifications": notifications[:50],
+        "filtre_type": filtre_type,
+        "filtre_statut": filtre_statut,
+        "types_disponibles": types_disponibles,
+        "reset_url": reverse('pilotage_notifications'),
+        "module_actif": get_module_info("direction"),
+    })
+
+
+@role_requis(Profil.Role.DIRECTION, Profil.Role.CADRE)
+def notification_marquer_lue(request, notification_id):
+    """Marquer une notification comme lue."""
+    from .models import Notification
+    notif = get_object_or_404(Notification, pk=notification_id)
+    notif.lue = True
+    notif.save()
+    if request.method == "POST" and notif.url:
+        return redirect(notif.url)
+    return redirect("pilotage_notifications")
+
+
+@role_requis(Profil.Role.DIRECTION, Profil.Role.CADRE)
+def notification_supprimer(request, notification_id):
+    """Supprimer une notification."""
+    from .models import Notification
+    notif = get_object_or_404(Notification, pk=notification_id)
+    if request.method == "POST":
+        notif.delete()
+    return redirect("pilotage_notifications")
+
+
+@role_requis(Profil.Role.DIRECTION, Profil.Role.CADRE)
+def lettres_a_valider(request):
+    dossiers = Devis.objects.filter(lettre_statut="EN_VALIDATION_DIRECTION").order_by("date_envoi")
+
+    return render(request, "pilotage/lettres_a_valider.html", {
+        "dossiers": dossiers,
+        "modules_nav": _modules_nav(),
+        "module_actif": get_module_info("direction"),
+        "sous_modules": None,
+    })
+
+
+@role_requis(Profil.Role.DIRECTION, Profil.Role.CADRE)
+def lettre_validation_detail(request, devis_id):
+    devis = get_object_or_404(Devis, id=devis_id)
+
+    if request.method == "POST":
+        action = request.POST.get("action")
+        if action == "valider":
+            devis.lettre_statut = "VALIDEE_DIRECTION"
+            devis.lettre_validee_par = request.user
+            devis.lettre_validee_le = timezone.now()
+            devis.lettre_motif_refus = ""
+            devis.save(update_fields=["lettre_statut", "lettre_validee_par", "lettre_validee_le", "lettre_motif_refus"])
+        elif action == "refuser":
+            devis.lettre_statut = "BROUILLON"
+            devis.lettre_motif_refus = request.POST.get("motif_refus", "").strip()
+            devis.save(update_fields=["lettre_statut", "lettre_motif_refus"])
+        return redirect("pilotage_lettre_validation_detail", devis_id=devis.id)
+
+    return render(request, "pilotage/lettre_validation_detail.html", {
+        "devis": devis,
+        "modules_nav": _modules_nav(),
+        "module_actif": get_module_info("direction"),
+        "sous_modules": None,
+    })

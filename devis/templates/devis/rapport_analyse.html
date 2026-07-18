@@ -1,0 +1,79 @@
+{% extends "pilotage/base_recouvrement.html" %}
+{% block titre %}Rapport d'analyse — {{ devis.numero_devis }}{% endblock %}
+
+{% block contenu %}
+<div class="max-w-3xl mx-auto p-6">
+  <a href="{% url 'devis_etape4' devis.id %}" class="text-sm text-gray-500 hover:underline">← Retour à la visualisation</a>
+
+  <div class="bg-white rounded-lg shadow mt-3 overflow-hidden">
+    <div class="bg-[#16171C] text-white px-6 py-4">
+      <p class="text-xs uppercase tracking-wider text-[#D62E7C] font-semibold">Contrôle qualité</p>
+      <h1 class="text-xl font-bold">Rapport d'analyse du dossier</h1>
+      <p class="text-gray-300 text-sm mt-1">Devis {{ devis.numero_devis }} — analyse automatique par l'IA</p>
+    </div>
+
+    <div class="p-6">
+      <!-- Niveau de risque -->
+      <div class="flex items-center gap-3 mb-5">
+        <span class="text-sm font-medium text-gray-600">Niveau de vigilance :</span>
+        {% if rapport.niveau_risque == "FAIBLE" %}
+          <span class="px-3 py-1 rounded-full text-sm font-semibold bg-emerald-100 text-emerald-800">Faible</span>
+        {% elif rapport.niveau_risque == "MOYEN" %}
+          <span class="px-3 py-1 rounded-full text-sm font-semibold bg-amber-100 text-amber-800">Moyen</span>
+        {% elif rapport.niveau_risque == "ÉLEVÉ" %}
+          <span class="px-3 py-1 rounded-full text-sm font-semibold bg-red-100 text-red-800">Élevé</span>
+        {% else %}
+          <span class="px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-600">—</span>
+        {% endif %}
+      </div>
+
+      <!-- Synthèse -->
+      <div class="bg-gray-50 border-l-4 border-[#C81E6E] rounded-r-lg p-4 mb-6">
+        <p class="text-sm text-gray-700">{{ rapport.synthese }}</p>
+      </div>
+
+      <!-- Incohérences réelles -->
+      {% if rapport.incoherences %}
+      <div class="mb-5">
+        <h2 class="font-semibold text-gray-800 mb-2 flex items-center gap-2">🔴 Incohérences à corriger</h2>
+        <ul class="space-y-1">
+          {% for item in rapport.incoherences %}
+          <li class="text-sm text-gray-700 bg-red-50 border border-red-100 rounded px-3 py-2">{{ item }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
+      <!-- Points d'attention sur le devis -->
+      {% if rapport.points_devis %}
+      <div class="mb-5">
+        <h2 class="font-semibold text-gray-800 mb-2 flex items-center gap-2">⚠️ Points d'attention sur le devis</h2>
+        <ul class="space-y-1">
+          {% for item in rapport.points_devis %}
+          <li class="text-sm text-gray-700 bg-amber-50 border border-amber-100 rounded px-3 py-2">{{ item }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
+      <!-- Documents -->
+      {% if rapport.documents %}
+      <div class="mb-5">
+        <h2 class="font-semibold text-gray-800 mb-2 flex items-center gap-2">📎 Documents</h2>
+        <ul class="space-y-1">
+          {% for item in rapport.documents %}
+          <li class="text-sm text-gray-700 bg-gray-50 border border-gray-100 rounded px-3 py-2">{{ item }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
+      {% if not rapport.incoherences and not rapport.points_devis and not rapport.documents %}
+      <p class="text-emerald-700 text-sm bg-emerald-50 rounded px-3 py-2">✓ Le devis est cohérent avec le profil du client. Aucun point d'attention.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <p class="text-xs text-gray-400 mt-3">Cette analyse est une aide à la décision générée automatiquement. Elle ne remplace pas votre jugement professionnel.</p>
+</div>
+{% endblock %}

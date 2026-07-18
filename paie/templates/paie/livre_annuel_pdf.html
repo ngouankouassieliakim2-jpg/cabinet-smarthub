@@ -1,0 +1,107 @@
+{% load paie_extras %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<style>
+    @page { size: A4 landscape; margin: 1cm; @bottom-center { content: "© Cabinet Smart-Hub — Document généré automatiquement, tous droits réservés."; font-size: 6.5px; color: #9ca3af; } }
+    * { box-sizing: border-box; }
+    body { font-family: "Helvetica Neue", Arial, sans-serif; color: #1f2937; font-size: 8.5px; margin: 0; }
+    .entete { display: flex; align-items: center; border-bottom: 3px solid {{ employeur.couleur_documents|default:"#111827" }}; padding-bottom: 8px; margin-bottom: 10px; }
+    .entete .logo-wrap { width: 40px; height: 40px; border-radius: 50%; background: {{ employeur.couleur_documents|default:"#111827" }}1a; display: flex; align-items: center; justify-content: center; margin-right: 12px; overflow: hidden; flex-shrink: 0; }
+    .entete .logo { width: 34px; height: 34px; object-fit: contain; }
+    .entete .rs { font-size: 14px; font-weight: 700; }
+    .entete .sub { font-size: 8px; color: #6b7280; }
+    .titre { text-align:center; margin-bottom: 10px; }
+    .titre h1 { font-size: 13px; letter-spacing: 1.5px; margin: 0; color: {{ employeur.couleur_documents|default:"#111827" }}; }
+    h2.bloc { font-size: 10px; margin: 14px 0 5px; color: {{ employeur.couleur_documents|default:"#111827" }}; text-transform: uppercase; letter-spacing: .5px; border-left: 3px solid {{ employeur.couleur_documents|default:"#C81E6E" }}; padding-left: 6px; }
+    table { width: 100%; border-collapse: collapse; }
+    thead th { background: {{ employeur.couleur_documents|default:"#111827" }}; color: #fff; font-size: 7.5px; padding: 4px 3px; text-align: right; }
+    thead th.l { text-align: left; }
+    tbody td { padding: 3px 3px; border-bottom: 1px solid #eee; text-align: right; white-space: nowrap; }
+    tbody td.l { text-align: left; }
+    tbody tr:nth-child(even) { background: #fafafa; }
+    tfoot td { padding: 5px 3px; font-weight: 700; border-top: 2px solid #111827; background: #f3f4f6; text-align: right; }
+    tfoot td.l { text-align: left; }
+    .net { background: {{ employeur.couleur_documents|default:"#C81E6E" }}1a !important; color: {{ employeur.couleur_documents|default:"#C81E6E" }}; font-weight: 700; }
+</style>
+</head>
+<body>
+    <div class="entete">
+        <div class="logo-wrap">
+            {% if employeur.logo %}<img class="logo" src="{{ employeur.logo.url }}" alt="logo">{% endif %}
+        </div>
+        <div>
+            <div class="rs">{{ employeur.raison_sociale }}</div>
+            <div class="sub">{% if employeur.ncc %}NCC : {{ employeur.ncc }} &nbsp;•&nbsp; {% endif %}{% if employeur.numero_cnps %}N° CNPS : {{ employeur.numero_cnps }}{% endif %}</div>
+        </div>
+    </div>
+    <div class="titre"><h1>LIVRE DE PAIE ANNUEL — {{ annee }}</h1></div>
+
+    <h2 class="bloc">Cumul annuel — salaires & retenues salariales</h2>
+    <table>
+        <thead><tr>
+            <th class="l">Mat.</th><th class="l">Nom & Prénoms</th><th>Mois payés</th>
+            <th>Brut social</th><th>Brut fiscal</th><th>CNPS sal.</th><th>ITS</th><th>CMU sal.</th><th class="net">Net payé</th>
+        </tr></thead>
+        <tbody>
+            {% for l in lignes %}
+            <tr>
+                <td class="l">{{ l.employe.matricule }}</td>
+                <td class="l">{{ l.employe.nom_prenoms }}</td>
+                <td>{{ l.nb_mois }}</td>
+                <td>{{ l.cumul.brut_social|espace }}</td>
+                <td>{{ l.cumul.brut_fiscal|espace }}</td>
+                <td>{{ l.cumul.cnps_sal|espace }}</td>
+                <td>{{ l.cumul.its|espace }}</td>
+                <td>{{ l.cumul.cmu_sal|espace }}</td>
+                <td class="net">{{ l.cumul.net|espace }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot><tr>
+            <td class="l" colspan="3">TOTAUX ({{ lignes|length }} salarié{{ lignes|length|pluralize }})</td>
+            <td>{{ totaux.brut_social|espace }}</td><td>{{ totaux.brut_fiscal|espace }}</td>
+            <td>{{ totaux.cnps_sal|espace }}</td><td>{{ totaux.its|espace }}</td>
+            <td>{{ totaux.cmu_sal|espace }}</td><td class="net">{{ totaux.net|espace }}</td>
+        </tr></tfoot>
+    </table>
+
+    <h2 class="bloc">Cumul annuel — charges patronales</h2>
+    <table>
+        <thead><tr>
+            <th class="l">Mat.</th><th class="l">Nom & Prénoms</th>
+            <th>CNPS ret.</th><th>Prest. fam.</th><th>Acc. trav.</th><th>Maternité</th>
+            <th>TA</th><th>FPC</th><th>CE</th><th>CN</th><th>CMU emp.</th><th class="net">Total patronal</th>
+        </tr></thead>
+        <tbody>
+            {% for l in lignes %}
+            <tr>
+                <td class="l">{{ l.employe.matricule }}</td>
+                <td class="l">{{ l.employe.nom_prenoms }}</td>
+                <td>{{ l.cumul.cnps_emp|espace }}</td>
+                <td>{{ l.cumul.pf|espace }}</td>
+                <td>{{ l.cumul.at|espace }}</td>
+                <td>{{ l.cumul.mat|espace }}</td>
+                <td>{{ l.cumul.ta|espace }}</td>
+                <td>{{ l.cumul.fpc|espace }}</td>
+                <td>{{ l.cumul.ce|espace }}</td>
+                <td>{{ l.cumul.cn|espace }}</td>
+                <td>{{ l.cumul.cmu_emp|espace }}</td>
+                <td class="net">{{ l.cumul.total_pat|espace }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot><tr>
+            <td class="l" colspan="2">TOTAUX</td>
+            <td>{{ totaux.cnps_emp|espace }}</td><td>{{ totaux.pf|espace }}</td>
+            <td>{{ totaux.at|espace }}</td><td>{{ totaux.mat|espace }}</td>
+            <td>{{ totaux.ta|espace }}</td><td>{{ totaux.fpc|espace }}</td>
+            <td>{{ totaux.ce|espace }}</td><td>{{ totaux.cn|espace }}</td>
+            <td>{{ totaux.cmu_emp|espace }}</td><td class="net">{{ totaux.total_pat|espace }}</td>
+        </tr></tfoot>
+    </table>
+
+    <p style="font-size:7.5px;color:#9ca3af;margin-top:12px;">Cumul des bulletins de l'année {{ annee }}. CE = Contribution employeur · CN = Contribution nationale · TA = Taxe d'apprentissage · FPC = Formation prof. continue.</p>
+</body>
+</html>

@@ -1,0 +1,128 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="{% static 'favicon.svg' %}">
+<title>{% block titre %}{{ module_actif.nom|default:'Espace Collaborateur' }} — Cabinet K&L{% endblock %}</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  @media print { .no-print { display: none !important; } body { background:#fff !important; } }
+  .nav-scroll::-webkit-scrollbar { display: none; }
+  .nav-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+</style>
+{% block style %}{% endblock %}
+</head>
+<body class="bg-[#F8FAFC] text-slate-800 min-h-screen font-sans antialiased">
+
+  <!-- ===== BARRE HORIZONTALE (HAUT) ===== -->
+  <nav class="no-print bg-[#16171C] text-white sticky top-0 z-50 shadow-lg shadow-slate-950/10 border-b border-white/10">
+    <div class="flex items-center gap-3 px-4 py-2">
+      <!-- Logo -->
+      <a href="/collaborateurs/" class="shrink-0 flex items-center">
+        <span class="bg-white rounded p-1 flex items-center">
+          <img src="{% static 'images/LOGO_2025_KL_fne.PNG' %}" alt="Cabinet K&L" class="h-7 w-auto">
+        </span>
+        <div class="hidden sm:block ml-4 border-l border-white/10 pl-4">
+          <p class="text-[9px] uppercase tracking-[0.25em] text-slate-400">Collaborateur</p>
+          <p class="text-sm font-semibold text-white">{{ module_actif.nom|default:'Espace Collaborateur' }}</p>
+        </div>
+      </a>
+
+      <!-- Flèche gauche -->
+      <button id="nav-left" onclick="scrollNav(-200)" class="shrink-0 w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-sm transition" title="Défiler à gauche">‹</button>
+
+      <!-- Modules (STATIQUE : noms seulement, sans destination pour l'instant) -->
+      <div id="nav-modules" class="nav-scroll flex items-center gap-1 text-sm overflow-x-auto flex-1 scroll-smooth">
+        <a href="/collaborateurs/" class="px-3 py-1.5 rounded whitespace-nowrap transition {% if module_actif and module_actif.cle == 'collaborateur' %}bg-[#C81E6E] text-white font-medium{% else %}text-gray-300 hover:text-white hover:bg-white/10{% endif %}">🏠 Tableau de bord</a>
+        <a href="#" class="px-3 py-1.5 rounded whitespace-nowrap transition text-gray-300 hover:text-white hover:bg-white/10">🏛️ Direction</a>
+        <a href="#" class="px-3 py-1.5 rounded whitespace-nowrap transition text-gray-300 hover:text-white hover:bg-white/10">📅 Secrétariat</a>
+        <a href="#" class="px-3 py-1.5 rounded whitespace-nowrap transition text-gray-300 hover:text-white hover:bg-white/10">📄 Recouvrement & Dépenses</a>
+        <a href="#" class="px-3 py-1.5 rounded whitespace-nowrap transition text-gray-300 hover:text-white hover:bg-white/10">👥 Social & RH</a>
+        <a href="#" class="px-3 py-1.5 rounded whitespace-nowrap transition text-gray-300 hover:text-white hover:bg-white/10">📊 Comptabilité & Fiscalité</a>
+        <a href="#" class="px-3 py-1.5 rounded whitespace-nowrap transition text-gray-300 hover:text-white hover:bg-white/10">🎓 Formation & Conseil</a>
+        <a href="#" class="px-3 py-1.5 rounded whitespace-nowrap transition text-gray-300 hover:text-white hover:bg-white/10">📣 Marketing & Image</a>
+        <a href="#" class="px-3 py-1.5 rounded whitespace-nowrap transition text-gray-300 hover:text-white hover:bg-white/10">🚚 Logistique & Livraison</a>
+        <a href="#" class="px-3 py-1.5 rounded whitespace-nowrap transition text-gray-300 hover:text-white hover:bg-white/10">⚙️ Paramètres</a>
+      </div>
+
+      <!-- Flèche droite -->
+      <button id="nav-right" onclick="scrollNav(200)" class="shrink-0 w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-sm transition" title="Défiler à droite">›</button>
+
+      <!-- Bloc utilisateur -->
+      <div class="shrink-0 flex items-center gap-3 pl-3 border-l border-white/20">
+        <!-- Notifications -->
+        <button class="relative w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center transition" title="Notifications">🔔</button>
+        <!-- Nom utilisateur (dynamique : l'utilisateur connecté) -->
+        <div class="text-right hidden md:block">
+          <p class="text-xs font-medium leading-tight">{{ user.username }}</p>
+          <p class="text-[10px] text-gray-400 leading-tight">Collaborateur</p>
+        </div>
+        <div class="w-8 h-8 rounded-full bg-[#C81E6E] flex items-center justify-center text-sm font-bold shrink-0">{{ user.username|first|upper }}</div>
+        <!-- Déconnexion (formulaire POST, comme dans Direction) -->
+        <form method="post" action="{% url 'logout' %}" class="inline">
+          {% csrf_token %}
+          <button type="submit" class="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center transition" title="Se déconnecter">⏻</button>
+        </form>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ===== CORPS : sidebar (gauche) + contenu ===== -->
+  <div class="flex">
+
+    {% block sidebar %}
+      {% if sous_modules %}
+      <aside class="no-print w-56 bg-white border-r border-gray-200 shrink-0 sticky top-12 self-start max-h-[calc(100vh-48px)] overflow-y-auto">
+        <div class="p-4 border-b border-slate-200 bg-slate-50">
+          <div class="flex items-start gap-3">
+            <div class="w-10 h-10 rounded-2xl bg-[#FCEEF3] flex items-center justify-center text-xl text-[#C81E6E] shadow-sm">
+              {{ module_actif.icone|default:'👥' }}
+            </div>
+            <div>
+              <h2 class="font-bold text-slate-900 text-sm">{{ module_actif.nom|default:'Espace Collaborateur' }}</h2>
+              <p class="text-xs text-slate-500 mt-0.5">{{ module_actif.description|default:'Accès aux dossiers, missions et échanges internes.' }}</p>
+            </div>
+          </div>
+        </div>
+        <nav class="p-2">
+          {% for s in sous_modules %}
+          <a href="{{ s.url }}" class="block px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-[#FCEEF3] hover:text-[#C81E6E] mb-0.5">{{ s.nom }}</a>
+          {% endfor %}
+        </nav>
+      </aside>
+      {% endif %}
+    {% endblock %}
+
+    <main class="flex-1 min-w-0">
+      {% block contenu %}{% endblock %}
+    </main>
+
+  </div>
+
+  <script>
+    function scrollNav(px) {
+      const c = document.getElementById("nav-modules");
+      if (c) c.scrollBy({ left: px, behavior: "smooth" });
+    }
+    function majFleches() {
+      const c = document.getElementById("nav-modules");
+      const gauche = document.getElementById("nav-left");
+      const droite = document.getElementById("nav-right");
+      if (!c) return;
+      const debut = c.scrollLeft <= 2;
+      const fin = c.scrollLeft + c.clientWidth >= c.scrollWidth - 2;
+      gauche.style.visibility = debut ? "hidden" : "visible";
+      droite.style.visibility = fin ? "hidden" : "visible";
+    }
+    const navC = document.getElementById("nav-modules");
+    if (navC) {
+      navC.addEventListener("scroll", majFleches);
+      window.addEventListener("resize", majFleches);
+      majFleches();
+    }
+  </script>
+
+</body>
+</html>

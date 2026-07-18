@@ -1,0 +1,189 @@
+{% extends "vitrine/base_vitrine.html" %}
+{% load humanize %}
+
+{% block titre %}{{ service.title_seo|default:service.title }} — Cabinet K&L{% endblock %}
+
+{% block contenu %}
+<div class="bg-slate-50 min-h-screen text-slate-800 font-sans antialiased pb-16">
+
+    <!-- SECTION HERO -->
+    <section class="relative bg-gradient-to-b from-slate-900 to-slate-950 text-white py-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(200,30,110,0.15),transparent_45%)]"></div>
+
+        <div class="max-w-5xl mx-auto text-center relative z-10">
+            <!-- Badge Catégorie -->
+            <span class="inline-flex items-center gap-1.5 py-1.5 px-3 rounded-full text-xs font-semibold bg-white/10 text-pink-400 border border-white/10 tracking-wider uppercase mb-6">
+                <span class="w-1.5 h-1.5 rounded-full bg-pink-500 animate-pulse"></span>
+                {{ service.badge_category }}
+            </span>
+
+            <!-- Titre Principal (retombe sur le titre simple si hero_title_html absent) -->
+            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight mb-6 leading-tight">
+                {{ service.hero_title_html|default:service.title|safe }}
+            </h1>
+
+            <!-- Description -->
+            <p class="text-lg sm:text-xl text-slate-300 max-w-3xl mx-auto leading-relaxed mb-8">
+                {{ service.hero_description }}
+            </p>
+
+            <!-- Boutons d'action -->
+            <div class="flex justify-center gap-4">
+                <a href="{% url 'contact' %}" class="inline-flex items-center justify-center px-6 py-3 rounded-xl text-sm font-bold bg-gradient-to-r from-[#FF4081] to-[#C81E6E] text-white hover:opacity-90 shadow-lg shadow-pink-500/20 transition duration-200">
+                    Planifier un rendez-vous
+                </a>
+                <a href="{% url 'services' %}" class="inline-flex items-center justify-center px-6 py-3 rounded-xl text-sm font-semibold bg-white/5 hover:bg-white/10 text-white border border-white/10 transition duration-200">
+                    Voir les autres services
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION APERÇU DASHBOARD & METRICS -->
+    <section class="max-w-6xl mx-auto px-4 -mt-10 relative z-20">
+        <div class="bg-white rounded-2xl shadow-xl border border-slate-100 p-6 sm:p-8">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
+
+                <!-- Bloc Métrique Principale -->
+                <div class="lg:col-span-1 bg-slate-50 rounded-xl p-6 border border-slate-100">
+                    <h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                        {{ service.metric_title }}
+                    </h3>
+                    <div class="flex items-baseline gap-1 text-2xl sm:text-3xl font-extrabold text-slate-900 mb-4">
+                        <span>{{ service.metric_value }}</span>
+                        <span class="text-lg font-bold text-[#C81E6E]">{{ service.metric_suffix }}</span>
+                    </div>
+
+                    <!-- Barre de progression -->
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-xs font-medium text-slate-500">
+                            <span>Niveau d'optimisation</span>
+                            <span>{{ service.progress_percent }}%</span>
+                        </div>
+                        <div class="w-full bg-slate-200 rounded-full h-2">
+                            <div class="js-progress-bar bg-gradient-to-r from-[#FF4081] to-[#C81E6E] h-2 rounded-full"
+                                 data-width="{{ service.progress_percent }}%">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bloc KPIs Supplémentaires -->
+                <div class="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="p-5 border border-slate-100 rounded-xl flex flex-col justify-between bg-white shadow-sm">
+                        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">{{ service.extra_label_1 }}</span>
+                        <span class="text-xl font-bold text-slate-800 mt-2 flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                            {{ service.extra_val_1 }}
+                        </span>
+                    </div>
+                    <div class="p-5 border border-slate-100 rounded-xl flex flex-col justify-between bg-white shadow-sm">
+                        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">{{ service.extra_label_2 }}</span>
+                        <span class="text-xl font-bold text-slate-800 mt-2 flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                            {{ service.extra_val_2 }}
+                        </span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION LES PILIERS DU SERVICE -->
+    <section class="max-w-6xl mx-auto px-4 mt-20">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight">Notre méthodologie en 3 piliers</h2>
+            <p class="text-slate-500 mt-2">Une approche structurée et digitalisée pour garantir votre croissance.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {% for pillar in service.pillars %}
+            <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-md transition duration-200 flex flex-col justify-between">
+                <div>
+                    <span class="text-xs font-black text-slate-300 tracking-widest uppercase block mb-3">PILIER 0{{ forloop.counter }}</span>
+                    <h3 class="text-xl font-bold text-slate-900 mb-2">{{ pillar.title }}</h3>
+                    <p class="text-sm text-slate-600 mb-6 leading-relaxed">{{ pillar.desc }}</p>
+                </div>
+
+                <ul class="space-y-2.5 border-t border-slate-50 pt-4">
+                    {% for point in pillar.points %}
+                    <li class="flex items-start gap-2.5 text-sm text-slate-700">
+                        <svg class="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"></path>
+                        </svg>
+                        <span>{{ point }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- SECTION TRANSFORMATION (AVANT / APRÈS) — affichée seulement si les données existent -->
+    {% if service.comparison %}
+    <section class="max-w-5xl mx-auto px-4 mt-24">
+        <div class="bg-slate-900 text-white rounded-3xl p-8 sm:p-12 overflow-hidden relative shadow-xl">
+            <div class="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(255,64,129,0.08),transparent_40%)]"></div>
+
+            <div class="text-center mb-10 relative z-10">
+                <h2 class="text-2xl sm:text-3xl font-bold tracking-tight">Ce qui change concrètement avec le Cabinet K&L</h2>
+                <p class="text-slate-400 text-sm mt-2">Mesurez l'impact immédiat sur votre quotidien opérationnel.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
+                <!-- Bloc AVANT -->
+                <div class="bg-white/5 rounded-2xl p-6 border border-white/5">
+                    <div class="flex items-center gap-2 text-rose-400 font-bold uppercase tracking-wider text-xs mb-4">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        Avant notre intervention
+                    </div>
+                    <ul class="space-y-3">
+                        {% for item in service.comparison.avant %}
+                        <li class="text-sm text-slate-300 flex items-start gap-3">
+                            <span class="w-1.5 h-1.5 rounded-full bg-rose-400 shrink-0 mt-2"></span>
+                            <span>{{ item }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <!-- Bloc APRÈS -->
+                <div class="bg-gradient-to-br from-white/10 to-white/[0.02] rounded-2xl p-6 border border-white/10 shadow-inner">
+                    <div class="flex items-center gap-2 text-emerald-400 font-bold uppercase tracking-wider text-xs mb-4">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        Après avec SmartHub
+                    </div>
+                    <ul class="space-y-3">
+                        {% for item in service.comparison.apres %}
+                        <li class="text-sm text-white flex items-start gap-3">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0 mt-2"></span>
+                            <span class="font-medium">{{ item }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+</div>
+
+<!-- Mini script JS : applique la largeur de la barre de progression proprement -->
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        document.querySelectorAll('.js-progress-bar').forEach(function(bar) {
+            const width = bar.getAttribute('data-width');
+            if (width) {
+                bar.style.width = width;
+            }
+        });
+    });
+</script>
+{% endblock %}

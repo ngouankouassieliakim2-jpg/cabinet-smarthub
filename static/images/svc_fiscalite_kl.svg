@@ -1,0 +1,10 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Fiscalité">
+  <rect x="8" y="8" width="104" height="104" rx="24" fill="#FCEEF3"/>
+  <!-- Document -->
+  <path d="M40 28 h28 l14 14 v50 a4 4 0 0 1 -4 4 h-38 a4 4 0 0 1 -4 -4 v-60 a4 4 0 0 1 4 -4 Z" fill="#FFFFFF" stroke="#C81E6E" stroke-width="2.5"/>
+  <path d="M68 28 v14 h14" fill="none" stroke="#C81E6E" stroke-width="2.5" stroke-linejoin="round"/>
+  <!-- Symbole % -->
+  <circle cx="52" cy="62" r="6" fill="none" stroke="#C81E6E" stroke-width="3"/>
+  <circle cx="68" cy="80" r="6" fill="none" stroke="#C81E6E" stroke-width="3"/>
+  <line x1="70" y1="56" x2="50" y2="86" stroke="#C81E6E" stroke-width="3" stroke-linecap="round"/>
+</svg>

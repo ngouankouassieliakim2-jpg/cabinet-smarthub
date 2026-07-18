@@ -1,0 +1,30 @@
+{% extends "pilotage/base_pilotage.html" %}
+{% block titre %}Documents — {{ employeur.raison_sociale }}{% endblock %}
+{% block contenu %}
+<div class="p-6">
+    <a href="{% url 'paie_choisir_entreprise' 'documents' %}" class="text-sm text-gray-500 hover:text-[#C81E6E]">← Toutes les entreprises</a>
+    <div class="flex items-center justify-between mt-4 mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800">Documents — {{ employeur.raison_sociale }}</h1>
+            <p class="text-gray-500 mt-1">Choisis une période pour voir ses documents RH &amp; sociaux</p>
+        </div>
+        <a href="{% url 'paie_declarations_annuelles' employeur.id %}" class="bg-gray-800 text-white font-medium px-4 py-2 rounded-lg hover:bg-gray-900 whitespace-nowrap">📅 Déclarations annuelles</a>
+    </div>
+    {% if periodes %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {% for p in periodes %}
+        <a href="{% url 'paie_documents_mois' employeur.id p.annee p.mois %}" class="block bg-white border border-gray-200 rounded-xl p-4 hover:border-[#C81E6E] hover:shadow-sm transition">
+            <p class="font-bold text-gray-800">{{ p.nom }} {{ p.annee }}</p>
+            <p class="text-xs text-gray-400 mt-1">{{ p.nb }} bulletin(s)</p>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="bg-white rounded-xl border border-gray-200 p-12 text-center">
+        <div class="text-5xl mb-4">🗓️</div>
+        <p class="text-gray-500">Aucune paie traitée pour cette entreprise.</p>
+        <p class="text-gray-400 text-sm mt-1">Traite une paie mensuelle pour voir apparaître des périodes ici.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

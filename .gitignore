@@ -1,0 +1,11 @@
+.env
+db.sqlite3
+__pycache__/
+*.pyc
+media/
+staticfiles/
+venv/
+*.log
+liasses_generees/
+
+liasses_generees/

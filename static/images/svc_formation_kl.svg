@@ -1,0 +1,9 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Formation">
+  <rect x="8" y="8" width="104" height="104" rx="24" fill="#FCEEF3"/>
+  <!-- Chapeau de diplômé -->
+  <path d="M60 36 L92 50 L60 64 L28 50 Z" fill="#16171C"/>
+  <path d="M60 64 L82 55 v16 a22 10 0 0 1 -44 0 v-16 Z" fill="#C81E6E"/>
+  <!-- Pompon -->
+  <line x1="92" y1="50" x2="92" y2="72" stroke="#16171C" stroke-width="2.5"/>
+  <circle cx="92" cy="76" r="5" fill="#ED93B1"/>
+</svg>

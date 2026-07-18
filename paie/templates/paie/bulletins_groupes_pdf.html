@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="utf-8"></head>
+<body>
+{% for item in bulletins %}
+<div{% if not forloop.last %} style="page-break-after: always;"{% endif %}>
+    {% include "paie/_bulletin_corps.html" with employe=item.employe bulletin=item.bulletin c=item.c gains_rub=item.gains_rub retenues_rub=item.retenues_rub %}
+</div>
+{% endfor %}
+</body>
+</html>

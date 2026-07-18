@@ -1,0 +1,295 @@
+{% extends "vitrine/base_vitrine.html" %}
+
+{% load static %}
+
+{% block titre %}À propos — Cabinet K&L{% endblock %}
+
+{% block style %}
+<style>
+  .reveal { opacity: 0; transform: translateY(24px); transition: opacity .6s ease, transform .6s ease; }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+  .lift { transition: transform .25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow .25s cubic-bezier(0.4, 0, 0.2, 1); }
+  .lift:hover { transform: translateY(-6px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
+</style>
+{% endblock %}
+
+{% block contenu %}
+
+<!-- HERO -->
+<section class="relative overflow-hidden bg-[#16171C]">
+    <div class="absolute -top-32 -right-20 w-96 h-96 bg-[#C81E6E] opacity-20 rounded-full blur-3xl"></div>
+    <div class="absolute -bottom-24 -left-20 w-80 h-80 bg-[#C81E6E] opacity-10 rounded-full blur-3xl"></div>
+    <div class="relative max-w-5xl mx-auto px-4 py-24 text-center">
+        <p class="text-sm font-semibold text-[#ED93B1] tracking-wide uppercase">À propos du cabinet</p>
+        <h1 class="mt-3 text-3xl md:text-5xl font-bold text-white leading-tight">La maison de l'entreprise</h1>
+        <p class="mt-5 text-slate-300 max-w-2xl mx-auto text-lg">
+            Plus de 20 ans d'expertise au service des entreprises et des particuliers,
+            réunis sous un même toit pour faire grandir vos projets.
+        </p>
+    </div>
+</section>
+
+<!-- QUI SOMMES-NOUS (Arrière-plan structuré pour donner de la profondeur) -->
+<section class="bg-[#FAF9FB] border-y border-slate-100">
+    <div class="max-w-6xl mx-auto px-4 py-20 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+        <!-- Colonne texte -->
+        <div class="reveal">
+            <p class="text-sm font-semibold text-[#C81E6E] tracking-wide uppercase">Qui sommes-nous</p>
+            <h2 class="mt-2 text-2xl md:text-3xl font-bold text-slate-900 leading-tight">Un cabinet à taille humaine, une expertise de haut niveau</h2>
+            <p class="mt-5 text-slate-600 leading-relaxed">
+                Le Cabinet Comptable et Fiscal K&amp;L est un bureau privé de droit ivoirien
+                d'assistance comptable et fiscale, créé à l'initiative d'un groupe de professionnels :
+                comptables, consultants et formateurs.
+            </p>
+            <p class="mt-4 text-slate-600 leading-relaxed">
+                Nous accompagnons les entreprises et les particuliers à chaque étape de leur
+                développement, en réunissant sous un même toit la comptabilité, la fiscalité, l'audit,
+                les ressources humaines, la formation et le conseil. Pour chacune de nos missions,
+                nous nous appuyons sur une base d'experts chevronnés, dans le strict respect du
+                secret professionnel.
+            </p>
+        </div>
+        <!-- Colonne illustration -->
+        <div class="reveal flex justify-center">
+            <div class="relative group">
+                <div class="absolute -inset-1 bg-gradient-to-r from-[#C81E6E] to-[#ED93B1] rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
+                <img src="{% static 'images/equipe.jpeg' %}" alt="L'équipe du Cabinet K&L" class="relative w-full max-w-md rounded-2xl shadow-md transition duration-500 group-hover:scale-[1.01]">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- BANDE DE PREUVES (Avec compteurs animés) -->
+<section class="bg-[#16171C] stats-section">
+    <div class="max-w-5xl mx-auto px-4 py-16 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+        <div>
+            <p class="text-3xl md:text-5xl font-extrabold text-[#ED93B1] tracking-tight">
+                <span class="counter" data-target="20" data-suffix="+">0+</span>
+            </p>
+            <p class="mt-2 text-xs md:text-sm font-medium text-slate-400 uppercase tracking-wider">ans d'expérience</p>
+        </div>
+        <div>
+            <p class="text-3xl md:text-5xl font-extrabold text-[#ED93B1] tracking-tight">
+                <span class="counter" data-target="8" data-suffix="">0</span>
+            </p>
+            <p class="mt-2 text-xs md:text-sm font-medium text-slate-400 uppercase tracking-wider">domaines d'expertise</p>
+        </div>
+        <div>
+            <p class="text-3xl md:text-5xl font-extrabold text-[#ED93B1] tracking-tight">
+                <span class="counter" data-target="9" data-suffix="">0</span>
+            </p>
+            <p class="mt-2 text-xs md:text-sm font-medium text-slate-400 uppercase tracking-wider">types de clients</p>
+        </div>
+        <div>
+            <p class="text-3xl md:text-5xl font-extrabold text-[#ED93B1] tracking-tight">
+                <span class="counter" data-target="100" data-suffix="%">0%</span>
+            </p>
+            <p class="mt-2 text-xs md:text-sm font-medium text-slate-400 uppercase tracking-wider">confidentialité</p>
+        </div>
+    </div>
+</section>
+
+<!-- ILS NOUS FONT CONFIANCE (Secteurs réels) -->
+<section class="max-w-5xl mx-auto px-4 py-20">
+    <div class="text-center mb-12">
+        <p class="text-sm font-semibold text-[#C81E6E] tracking-wide uppercase">Ils nous font confiance</p>
+        <h2 class="mt-2 text-2xl md:text-3xl font-bold text-slate-900">Des secteurs variés nous confient leur gestion</h2>
+        <p class="mt-3 text-slate-500 max-w-2xl mx-auto">
+            Notre portefeuille reflète la diversité des entreprises que nous accompagnons au quotidien.
+        </p>
+    </div>
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+        <div class="reveal lift bg-white rounded-xl border border-slate-100 p-5 text-center">
+            <div class="text-3xl">💊</div>
+            <p class="mt-3 text-sm font-semibold text-slate-850">Pharmacies</p>
+        </div>
+        <div class="reveal lift bg-white rounded-xl border border-slate-100 p-5 text-center">
+            <div class="text-3xl">🪵</div>
+            <p class="mt-3 text-sm font-semibold text-slate-850">Industrie du bois</p>
+        </div>
+        <div class="reveal lift bg-white rounded-xl border border-slate-100 p-5 text-center">
+            <div class="text-3xl">🏨</div>
+            <p class="mt-3 text-sm font-semibold text-slate-850">Hôtellerie</p>
+        </div>
+        <div class="reveal lift bg-white rounded-xl border border-slate-100 p-5 text-center">
+            <div class="text-3xl">🎓</div>
+            <p class="mt-3 text-sm font-semibold text-slate-850">Établissements scolaires</p>
+        </div>
+        <div class="reveal lift bg-white rounded-xl border border-slate-100 p-5 text-center">
+            <div class="text-3xl">🤝</div>
+            <p class="mt-3 text-sm font-semibold text-slate-850">Sociétés coopératives</p>
+        </div>
+        <div class="reveal lift bg-white rounded-xl border border-slate-100 p-5 text-center">
+            <div class="text-3xl">🖨️</div>
+            <p class="mt-3 text-sm font-semibold text-slate-850">Imprimeries</p>
+        </div>
+        <div class="reveal lift bg-white rounded-xl border border-slate-100 p-5 text-center">
+            <div class="text-3xl">🏢</div>
+            <p class="mt-3 text-sm font-semibold text-slate-850">Sociétés immobilières</p>
+        </div>
+        <div class="reveal lift bg-white rounded-xl border border-slate-100 p-5 text-center">
+            <div class="text-3xl">🌾</div>
+            <p class="mt-3 text-sm font-semibold text-slate-850">Secteur agricole</p>
+        </div>
+        <div class="reveal lift bg-white rounded-xl border border-slate-100 p-5 text-center">
+            <div class="text-3xl">🍽️</div>
+            <p class="mt-3 text-sm font-semibold text-slate-850">Débits de boissons</p>
+        </div>
+    </div>
+</section>
+
+<!-- POURQUOI NOUS CHOISIR -->
+<section class="bg-white border-y border-slate-200">
+    <div class="max-w-5xl mx-auto px-4 py-20">
+        <div class="text-center mb-12">
+            <p class="text-sm font-semibold text-[#C81E6E] tracking-wide uppercase">Pourquoi nous choisir</p>
+            <h2 class="mt-2 text-2xl md:text-3xl font-bold text-slate-900">Ce qui fait notre différence</h2>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+
+            <div class="reveal">
+                <div class="w-12 h-12 rounded-xl bg-[#FCEEF3] flex items-center justify-center text-xl mb-4">🎯</div>
+                <h3 class="font-bold text-slate-900">Une expertise complète</h3>
+                <p class="mt-2 text-sm text-slate-600 leading-relaxed">Huit domaines réunis sous un même toit : vous n'avez plus besoin de multiplier les interlocuteurs.</p>
+            </div>
+
+            <div class="reveal">
+                <div class="w-12 h-12 rounded-xl bg-[#FCEEF3] flex items-center justify-center text-xl mb-4">💰</div>
+                <h3 class="font-bold text-slate-900">L'accès aux financements</h3>
+                <p class="mt-2 text-sm text-slate-600 leading-relaxed">Nous accompagnons les promoteurs vers les bailleurs nationaux et internationaux, et la monétisation des lettres de garantie.</p>
+            </div>
+
+            <div class="reveal">
+                <div class="w-12 h-12 rounded-xl bg-[#FCEEF3] flex items-center justify-center text-xl mb-4">📚</div>
+                <h3 class="font-bold text-slate-900">La formation certifiée</h3>
+                <p class="mt-2 text-sm text-slate-600 leading-relaxed">Des modules de formation et d'encadrement, notamment via les financements du FDFP.</p>
+            </div>
+
+            <div class="reveal">
+                <div class="w-12 h-12 rounded-xl bg-[#FCEEF3] flex items-center justify-center text-xl mb-4">📍</div>
+                <h3 class="font-bold text-slate-900">Proche de vous</h3>
+                <p class="mt-2 text-sm text-slate-600 leading-relaxed">Un siège à Daloa et une succursale à Grand-Bassam, pour un accompagnement de proximité.</p>
+            </div>
+
+            <div class="reveal">
+                <div class="w-12 h-12 rounded-xl bg-[#FCEEF3] flex items-center justify-center text-xl mb-4">🔒</div>
+                <h3 class="font-bold text-slate-900">Le secret professionnel</h3>
+                <p class="mt-2 text-sm text-slate-600 leading-relaxed">Vos données et votre activité sont traitées dans la plus stricte confidentialité.</p>
+            </div>
+
+            <div class="reveal">
+                <div class="w-12 h-12 rounded-xl bg-[#FCEEF3] flex items-center justify-center text-xl mb-4">⭐</div>
+                <h3 class="font-bold text-slate-900">Plus de 20 ans d'expérience</h3>
+                <p class="mt-2 text-sm text-slate-600 leading-relaxed">Une base d'experts chevronnés et expérimentés dans leurs domaines de compétence respectifs.</p>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<!-- NOTRE DIRECTION -->
+<section class="max-w-4xl mx-auto px-4 py-20">
+    <div class="text-center mb-12">
+        <p class="text-sm font-semibold text-[#C81E6E] tracking-wide uppercase">Notre direction</p>
+        <h2 class="mt-2 text-2xl md:text-3xl font-bold text-slate-900">Des dirigeants à votre écoute</h2>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+        <!-- Kedi Ayekpa Armand -->
+        <div class="reveal lift group bg-white rounded-2xl border border-slate-250/80 p-8 text-center">
+            <div class="relative w-28 h-28 mx-auto mb-5 rounded-full overflow-hidden border-4 border-white shadow-md ring-2 ring-[#C81E6E]/20 transition-transform duration-500 group-hover:scale-105">
+                <img src="{% static 'images/kedi.jpeg' %}" alt="Kedi Ayekpa Armand" class="w-full h-full object-cover">
+            </div>
+            <h3 class="font-bold text-slate-900 text-lg transition-colors duration-300 group-hover:text-[#C81E6E]">Kedi Ayekpa Armand</h3>
+            <p class="text-sm text-[#C81E6E] font-semibold mt-1">Directeur Général</p>
+            <p class="mt-3 text-sm text-slate-500 leading-relaxed font-medium">Master audit et contrôle · Consultant-formateur</p>
+        </div>
+
+        <!-- Leba Okpo Francis Niamba -->
+        <div class="reveal lift group bg-white rounded-2xl border border-slate-250/80 p-8 text-center">
+            <div class="relative w-28 h-28 mx-auto mb-5 rounded-full overflow-hidden border-4 border-white shadow-md ring-2 ring-[#C81E6E]/20 transition-transform duration-500 group-hover:scale-105">
+                <img src="{% static 'images/leba.jpeg' %}" alt="Leba Okpo Francis Niamba" class="w-full h-full object-cover object-center">
+            </div>
+            <h3 class="font-bold text-slate-900 text-lg transition-colors duration-300 group-hover:text-[#C81E6E]">Leba Okpo Francis Niamba</h3>
+            <p class="text-sm text-[#C81E6E] font-semibold mt-1">Directeur Associé</p>
+            <p class="mt-3 text-sm text-slate-500 leading-relaxed font-medium">Master audit et contrôle · Executive MSc Finances (EM Lyon) · Consultant-formateur</p>
+        </div>
+
+    </div>
+</section>
+
+<!-- APPEL À L'ACTION -->
+<section class="max-w-6xl mx-auto px-4 pb-24">
+    <div class="bg-[#16171C] rounded-2xl px-8 py-16 text-center relative overflow-hidden">
+        <div class="absolute -bottom-24 -left-16 w-80 h-80 bg-[#C81E6E] opacity-15 rounded-full blur-3xl"></div>
+        <p class="relative text-2xl md:text-3xl font-bold text-white">Prêt à faire grandir votre entreprise ?</p>
+        <p class="relative mt-3 text-slate-300 max-w-xl mx-auto">Discutons de votre projet et de la manière dont le Cabinet K&amp;L peut vous accompagner.</p>
+        <a href="{% url 'contact' %}" class="relative inline-block mt-8 bg-[#C81E6E] text-white font-semibold px-8 py-3.5 rounded-xl hover:bg-[#a81759] transition-all duration-300 shadow-lg shadow-[#C81E6E]/20 hover:shadow-[#C81E6E]/30">
+            Contactez-nous
+        </a>
+    </div>
+</section>
+
+<script>
+  (function () {
+    // 1. Reveal Animations on scroll
+    var els = document.querySelectorAll('.reveal');
+    if (!('IntersectionObserver' in window)) {
+      els.forEach(function (c) { c.classList.add('visible'); });
+      animateCounters();
+      return;
+    }
+    var obs = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry, i) {
+        if (entry.isIntersecting) {
+          var el = entry.target;
+          setTimeout(function () { el.classList.add('visible'); }, i * 60);
+          obs.unobserve(el);
+        }
+      });
+    }, { threshold: 0.12 });
+    els.forEach(function (c) { obs.observe(c); });
+
+    // 2. Premium deceleration counter animation (Ease-Out)
+    function animateCounters() {
+      var counters = document.querySelectorAll('.counter');
+      counters.forEach(function(counter) {
+        var target = +counter.getAttribute('data-target');
+        var suffix = counter.getAttribute('data-suffix') || '';
+        var duration = 1600; // Total ms animation duration
+        var startTime = null;
+
+        function step(timestamp) {
+          if (!startTime) startTime = timestamp;
+          var progress = Math.min((timestamp - startTime) / duration, 1);
+          // Deceleration curve formula (Ease Out Quad)
+          var easeProgress = progress * (2 - progress);
+          var current = Math.floor(easeProgress * target);
+          counter.textContent = current + suffix;
+          if (progress < 1) {
+            window.requestAnimationFrame(step);
+          } else {
+            counter.textContent = target + suffix;
+          }
+        }
+        window.requestAnimationFrame(step);
+      });
+    }
+
+    // Trigger counters precisely when entering viewport
+    var statsSection = document.querySelector('.stats-section');
+    if (statsSection) {
+      var statsObs = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            animateCounters();
+            statsObs.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.25 });
+      statsObs.observe(statsSection);
+    }
+  })();
+</script>
+
+{% endblock %}

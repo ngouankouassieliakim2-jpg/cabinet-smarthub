@@ -1,0 +1,83 @@
+﻿{% extends "pilotage/base_recouvrement.html" %}
+{% load form_extras %}
+{% block titre %}Nouveau devis — Étape 2{% endblock %}
+{% block style %}
+<style>
+  input[type=text], input[type=email], input[type=number], textarea {
+    width:100%; border:1px solid #d1d5db; border-radius:6px; padding:8px 10px; font-size:14px; margin-top:4px; background:#fff;
+  }
+  textarea { min-height:60px; }
+  label { font-size:13px; font-weight:600; color:#374151; }
+  .req::after { content:" *"; color:#dc2626; font-weight:700; }
+  .helptext { font-size:11px; color:#9ca3af; display:block; margin-top:2px; }
+  .sec { background:#fff; border:1px solid #e5e7eb; border-radius:10px; margin-bottom:18px; overflow:hidden; }
+  .sec-h { background:#FCEEF3; border-bottom:1px solid #f3c9dd; padding:10px 18px; display:flex; align-items:center; gap:10px; }
+  .sec-h .n { font-weight:700; color:#C81E6E; font-size:13px; }
+  .sec-h .t { font-weight:600; color:#8A1349; font-size:13px; text-transform:uppercase; letter-spacing:.04em; }
+  .sec-b { padding:18px; }
+</style>
+{% endblock %}
+
+{% block contenu %}
+{% include "devis/_barre_etapes.html" %}
+
+{% with t=devis.type_client %}
+<div class="max-w-4xl mx-auto p-6">
+  <div class="mb-5">
+    <h1 class="text-xl font-bold text-gray-800">Étape 2 — Identification minimale</h1>
+    <p class="text-gray-500 text-sm">
+      Devis <span class="font-medium">{{ devis.numero_devis }}</span> —
+      juste de quoi établir et envoyer le devis. Le dossier complet (identité légale,
+      documents, associés...) sera constitué plus tard, à Porte d'entrée, une fois
+      le devis accepté par le prospect.
+      · Les champs marqués d'une <span class="text-red-600 font-bold">*</span> sont obligatoires.
+    </p>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+
+    <!-- ============ A. IDENTITÉ ============ -->
+    <div class="sec">
+      <div class="sec-h"><span class="n">A</span><span class="t">Identité</span></div>
+      <div class="sec-b">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {% if t == "PM" %}
+            {% with f=form|field:"pm_raison_sociale" %}{% if f %}<div><label class="{% if f.field.required %}req{% endif %}">{{ f.label }}</label>{{ f }}{% if f.errors %}<span class="text-red-600 text-xs">{{ f.errors|striptags }}</span>{% endif %}</div>{% endif %}{% endwith %}
+          {% else %}
+            {% with f=form|field:"pp_nom_prenoms" %}{% if f %}<div><label class="{% if f.field.required %}req{% endif %}">{{ f.label }}</label>{{ f }}{% if f.errors %}<span class="text-red-600 text-xs">{{ f.errors|striptags }}</span>{% endif %}</div>{% endif %}{% endwith %}
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ F. CONTACTS ============ -->
+    <div class="sec">
+      <div class="sec-h"><span class="n">F</span><span class="t">Contacts</span></div>
+      <div class="sec-b">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {% with champs="telephone email" %}
+          {% for nom in champs.split %}
+            {% with f=form|field:nom %}{% if f %}<div><label class="{% if f.field.required %}req{% endif %}">{{ f.label }}</label>{{ f }}{% if f.errors %}<span class="text-red-600 text-xs">{{ f.errors|striptags }}</span>{% endif %}</div>{% endif %}{% endwith %}
+          {% endfor %}
+          {% endwith %}
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ H. ACTIVITÉ ============ -->
+    <div class="sec">
+      <div class="sec-h"><span class="n">H</span><span class="t">Activité</span></div>
+      <div class="sec-b">
+        {% with f=form|field:"activite_principale" %}{% if f %}<div><label class="{% if f.field.required %}req{% endif %}">{{ f.label }}</label>{{ f }}{% if f.errors %}<span class="text-red-600 text-xs">{{ f.errors|striptags }}</span>{% endif %}</div>{% endif %}{% endwith %}
+      </div>
+    </div>
+
+    <div class="flex justify-between items-center pt-2 pb-8">
+      <a href="{% url 'creer_devis' %}" class="text-sm text-gray-500 hover:underline">← Annuler</a>
+      <button type="submit" class="bg-[#C81E6E] text-white px-6 py-2 rounded font-medium hover:bg-[#a81659]">Enregistrer et continuer →</button>
+    </div>
+  </form>
+</div>
+{% endwith %}
+{% endblock %}

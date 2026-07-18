@@ -1,0 +1,439 @@
+{% extends "vitrine/base_vitrine.html" %}
+{% load static %}
+
+{% block titre %}Contact — Cabinet K&L{% endblock %}
+
+{% block style %}
+<style>
+  /* Transitions d'apparition fluide */
+  .reveal { opacity: 0; transform: translateY(20px); transition: opacity .6s cubic-bezier(0.16, 1, 0.3, 1), transform .6s cubic-bezier(0.16, 1, 0.3, 1); }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+
+  /* Style global premium pour les formulaires Django */
+  .premium-form input[type="text"],
+  .premium-form input[type="email"],
+  .premium-form input[type="tel"],
+  .premium-form input[type="date"],
+  .premium-form select,
+  .premium-form textarea {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    border: 1px solid #E2E8F0; /* border-slate-200 */
+    background-color: #F8FAFC; /* bg-slate-50 */
+    color: #0F172A; /* text-slate-900 */
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+    outline: none;
+  }
+  .premium-form input:focus,
+  .premium-form select:focus,
+  .premium-form textarea:focus {
+    border-color: #C81E6E;
+    background-color: #FFFFFF;
+    box-shadow: 0 0 0 4px rgba(200, 30, 110, 0.1);
+  }
+  
+  /* Style des cases à cocher Django (motifs) */
+  .premium-form input[type="checkbox"] {
+    appearance: none;
+    width: 1.15rem;
+    height: 1.15rem;
+    border: 2px solid #CBD5E1;
+    border-radius: 0.375rem;
+    outline: none;
+    cursor: pointer;
+    display: inline-grid;
+    place-content: center;
+    transition: all 0.15s ease-in-out;
+  }
+  .premium-form input[type="checkbox"]::before {
+    content: "";
+    width: 0.65rem;
+    height: 0.65rem;
+    transform: scale(0);
+    transition: 120ms transform ease-in-out;
+    box-shadow: inset 1em 1em #C81E6E;
+    transform-origin: bottom left;
+    clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+  }
+  .premium-form input[type="checkbox"]:checked {
+    border-color: #C81E6E;
+  }
+  .premium-form input[type="checkbox"]:checked::before {
+    transform: scale(1);
+  }
+</style>
+{% endblock %}
+
+{% block contenu %}
+
+<!-- HERO SECTION AVEC BADGES DE RÉASSURANCE -->
+<section class="relative overflow-hidden bg-[#16171C] text-white py-24">
+    <div class="absolute -top-32 -right-20 w-96 h-96 bg-[#C81E6E] opacity-20 rounded-full blur-3xl"></div>
+    <div class="absolute -bottom-32 -left-20 w-96 h-96 bg-blue-900/10 rounded-full blur-3xl"></div>
+    
+    <div class="relative max-w-5xl mx-auto px-4 text-center z-10">
+        <span class="inline-flex items-center gap-1.5 py-1 px-3 rounded-full text-xs font-semibold bg-white/10 text-pink-400 border border-white/10 tracking-wider uppercase">
+            Cabinet K&L
+        </span>
+        <h1 class="mt-4 text-4xl md:text-6xl font-black tracking-tight leading-tight">
+            Parlons de votre projet
+        </h1>
+        <p class="mt-6 text-slate-300 max-w-2xl mx-auto text-lg leading-relaxed">
+            Un accompagnement d'excellence commence toujours par une écoute attentive. Nos équipes vous accueillent dans nos cabinets de Daloa et de Grand-Bassam.
+        </p>
+
+        <!-- Les 3 Badges de réassurance -->
+        <div class="mt-10 flex flex-wrap justify-center gap-4 text-sm font-medium text-slate-200">
+            <span class="flex items-center gap-1.5 px-4 py-2 rounded-full bg-white/5 border border-white/10 shadow-sm">
+                <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+                Réponse sous 24h
+            </span>
+            <span class="flex items-center gap-1.5 px-4 py-2 rounded-full bg-white/5 border border-white/10 shadow-sm">
+                <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+                Premier RDV offert
+            </span>
+            <span class="flex items-center gap-1.5 px-4 py-2 rounded-full bg-white/5 border border-white/10 shadow-sm">
+                <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+                Sans engagement
+            </span>
+        </div>
+    </div>
+</section>
+
+<!-- CARTES DES SIÈGES & COORDONNÉES (MODERNES & PREMIUM) -->
+<section class="max-w-6xl mx-auto px-4 py-16">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        
+        <!-- Siège Social (Daloa) -->
+        <div class="reveal bg-white rounded-2xl border border-slate-100 p-6 shadow-sm hover:shadow-md transition duration-200">
+            <div class="flex items-center gap-4 mb-4">
+                <div class="w-12 h-12 rounded-xl bg-pink-50 text-[#C81E6E] flex items-center justify-center">
+                    <!-- Icone Map -->
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/></svg>
+                </div>
+                <div>
+                    <h3 class="font-bold text-slate-900 text-lg">Siège de Daloa</h3>
+                    <span class="text-xs text-[#C81E6E] font-semibold tracking-wider uppercase">Siège Principal</span>
+                </div>
+            </div>
+            <p class="text-sm text-slate-600 leading-relaxed">
+                Quartier Tazibouo, en face du parvis.<br>
+                Bâtiment peint en rouge et noir, 2<sup>e</sup> porte au 1<sup>er</sup> étage.
+            </p>
+        </div>
+
+        <!-- Bureau Grand-Bassam -->
+        <div class="reveal bg-white rounded-2xl border border-slate-100 p-6 shadow-sm hover:shadow-md transition duration-200">
+            <div class="flex items-center gap-4 mb-4">
+                <div class="w-12 h-12 rounded-xl bg-pink-50 text-[#C81E6E] flex items-center justify-center">
+                    <!-- Icone Map -->
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/></svg>
+                </div>
+                <div>
+                    <h3 class="font-bold text-slate-900 text-lg">Grand-Bassam</h3>
+                    <span class="text-xs text-blue-600 font-semibold tracking-wider uppercase">Succursale</span>
+                </div>
+            </div>
+            <p class="text-sm text-slate-600 leading-relaxed">
+                Quartier Impérial, Rue Mockey, immeuble Antony Kangah, rez-de-chaussée.
+            </p>
+        </div>
+
+        <!-- Contact Direct (Téléphones & Emails) -->
+        <div class="reveal bg-white rounded-2xl border border-slate-100 p-6 shadow-sm hover:shadow-md transition duration-200 md:col-span-2 lg:col-span-1">
+            <div class="flex items-center gap-4 mb-4">
+                <div class="w-12 h-12 rounded-xl bg-pink-50 text-[#C81E6E] flex items-center justify-center">
+                    <!-- Icone Phone -->
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25V16.19c0-.621-.403-1.16-1.002-1.3l-3.71-.82a2.25 2.25 0 00-1.802.75l-1.56 1.56a15.192 15.192 0 01-6.709-6.71l1.56-1.56a2.25 2.25 0 00.75-1.8L8.162 4.06a2.25 2.25 0 00-1.002-1.3H3.75A2.25 2.25 0 002.25 4.5v2.25z"/></svg>
+                </div>
+                <div>
+                    <h3 class="font-bold text-slate-900 text-lg">Contact Direct</h3>
+                    <span class="text-xs text-slate-400 font-medium">Ligne pro & mail</span>
+                </div>
+            </div>
+            <div class="text-sm space-y-2">
+                <div class="flex flex-col">
+                    <span class="text-xs font-semibold text-slate-400 uppercase">Téléphones</span>
+                    <span class="font-semibold text-slate-800">27 32 70 44 04 (Fixe) <span class="text-xs text-slate-400 font-normal">/ 07 07 31 59 64</span></span>
+                </div>
+                <div class="flex flex-col">
+                    <span class="text-xs font-semibold text-slate-400 uppercase">Email Pro</span>
+                    <a href="mailto:cabinetkl120@gmail.com" class="font-medium text-[#C81E6E] hover:underline">cabinetkl120@gmail.com</a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<!-- SECTION FORMULAIRE DE RENDEZ-VOUS (LAYOUT DOUBLE-COLONNE PREMIUM) -->
+<section class="max-w-6xl mx-auto px-4 pb-24">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+        
+        <!-- COLONNE GAUCHE : FORMULAIRE PROPRE -->
+        <div class="reveal lg:col-span-7 bg-white rounded-2xl border border-slate-100 shadow-xl shadow-slate-100/50 p-6 sm:p-8">
+            
+            <!-- Header du Formulaire -->
+            <div class="flex justify-between items-center border-b border-slate-100 pb-6 mb-8">
+                <div>
+                    <h2 class="text-2xl font-black text-slate-900">Demander un rendez-vous</h2>
+                    <p class="mt-1 text-sm text-slate-500">Planifiez votre entretien stratégique gratuit.</p>
+                </div>
+                <div class="text-right hidden sm:block">
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 text-slate-600 font-medium text-xs">
+                        <!-- Icon Clock -->
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        Temps estimé : 2 min
+                    </span>
+                </div>
+            </div>
+
+            <!-- LE FORMULAIRE DJANGO PROPRE -->
+            <form method="post" class="premium-form space-y-8">
+                {% csrf_token %}
+
+                <!-- Étape 1 : Coordonnées de base -->
+                <div class="space-y-4">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="w-6 h-6 rounded-full bg-pink-100 text-[#C81E6E] text-xs font-bold flex items-center justify-center">1</span>
+                        <h3 class="font-bold text-slate-900 text-sm tracking-wide uppercase">Vos coordonnées</h3>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {% if form.nom %}
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 uppercase mb-1.5">{{ form.nom.label }}</label>
+                            {{ form.nom }}
+                        </div>
+                        {% endif %}
+                        {% if form.telephone %}
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 uppercase mb-1.5">{{ form.telephone.label }}</label>
+                            {{ form.telephone }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 uppercase mb-1.5">{{ form.email.label }}</label>
+                        {{ form.email }}
+                    </div>
+                </div>
+
+                <!-- Étape 2 : Motif de l'appel -->
+                <div class="space-y-4">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="w-6 h-6 rounded-full bg-pink-100 text-[#C81E6E] text-xs font-bold flex items-center justify-center">2</span>
+                        <h3 class="font-bold text-slate-900 text-sm tracking-wide uppercase">Votre besoin</h3>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 uppercase mb-3">{{ form.motifs.label }}</label>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-slate-700">
+                            {% for case in form.motifs %}
+                            <label class="flex items-start gap-3 p-3 rounded-xl border border-slate-100 hover:bg-slate-50 cursor-pointer transition">
+                                <span class="shrink-0 mt-0.5">{{ case.tag }}</span> 
+                                <span class="font-medium text-slate-700">{{ case.choice_label }}</span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Étape 3 : Fiche d'identification Entreprise -->
+                <div class="space-y-4 border-t border-slate-100 pt-6">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="w-6 h-6 rounded-full bg-pink-100 text-[#C81E6E] text-xs font-bold flex items-center justify-center">3</span>
+                        <h3 class="font-bold text-slate-900 text-sm tracking-wide uppercase">Votre structure</h3>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 uppercase mb-1.5">{{ form.structure.label }}</label>
+                            {{ form.structure }}
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 uppercase mb-1.5">{{ form.secteur.label }}</label>
+                            {{ form.secteur }}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 uppercase mb-1.5">{{ form.anciennete.label }}</label>
+                            {{ form.anciennete }}
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 uppercase mb-1.5">{{ form.chiffre_affaires.label }}</label>
+                            {{ form.chiffre_affaires }}
+                        </div>
+                    </div>
+
+                    <label class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 text-sm text-slate-700 cursor-pointer hover:bg-slate-100/70 transition">
+                        {{ form.cabinet_actuel }} 
+                        <span class="font-medium text-slate-700">{{ form.cabinet_actuel.label }}</span>
+                    </label>
+                </div>
+
+                <!-- Étape 4 : Détails du RDV -->
+                <div class="space-y-4 border-t border-slate-100 pt-6">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="w-6 h-6 rounded-full bg-pink-100 text-[#C81E6E] text-xs font-bold flex items-center justify-center">4</span>
+                        <h3 class="font-bold text-slate-900 text-sm tracking-wide uppercase">Votre rendez-vous</h3>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 uppercase mb-1.5">{{ form.lieu.label }}</label>
+                            {{ form.lieu }}
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 uppercase mb-1.5">{{ form.date_souhaitee.label }}</label>
+                            {{ form.date_souhaitee }}
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 uppercase mb-1.5">{{ form.message.label }}</label>
+                        {{ form.message }}
+                    </div>
+                </div>
+
+                <!-- Bouton d'envoi -->
+                <div class="pt-4 text-center">
+                    <button type="submit" class="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 rounded-xl text-sm font-bold bg-gradient-to-r from-[#FF4081] to-[#C81E6E] text-white hover:opacity-95 shadow-lg shadow-pink-500/20 transition duration-200">
+                        Planifier mon rendez-vous
+                    </button>
+                    <p class="text-[11px] text-slate-400 mt-2.5">
+                        En envoyant ce formulaire, vos données restent strictement confidentielles.
+                    </p>
+                </div>
+            </form>
+        </div>
+
+        <!-- COLONNE DROITE : POURQUOI K&L / HORAIRES (SIDEBAR DE RÉASSURANCE) -->
+        <div class="lg:col-span-5 space-y-6">
+            
+            <!-- Box Horaires d'ouverture -->
+            <div class="reveal bg-slate-900 text-white rounded-2xl p-6 shadow-sm border border-slate-800">
+                <h3 class="font-bold text-lg mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-pink-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    Horaires d'ouverture
+                </h3>
+                <ul class="text-sm text-slate-300 space-y-2">
+                    <li class="flex justify-between border-b border-slate-800 pb-1.5">
+                        <span>Lundi — Vendredi</span>
+                        <span class="font-semibold text-white">08:00 – 17:00</span>
+                    </li>
+                    <li class="flex justify-between border-b border-slate-800 pb-1.5">
+                        <span>Samedi</span>
+                        <span class="font-semibold text-white">09:00 – 12:00</span>
+                    </li>
+                    <li class="flex justify-between text-slate-500">
+                        <span>Dimanche & Jours fériés</span>
+                        <span>Fermé</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Box Pourquoi nous faire confiance -->
+            <div class="reveal bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-4">
+                <h3 class="font-bold text-slate-900 text-lg">Pourquoi choisir SmartHub K&L ?</h3>
+                
+                <div class="space-y-4 text-sm">
+                    <div class="flex gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-pink-50 text-[#C81E6E] shrink-0 flex items-center justify-center">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-900">Audit initial offert</h4>
+                            <p class="text-slate-500 text-xs mt-0.5">Votre premier entretien stratégique est 100% gratuit et sans engagement.</p>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-pink-50 text-[#C81E6E] shrink-0 flex items-center justify-center">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17L17.25 21A2.67 2.67 0 1113.5 17.25l-1.95-1.95m-1.95-1.95L3.9 7.35A2.67 2.67 0 117.65 3.6l1.95 1.95m0 0a2.403 2.403 0 010 3.398l-.001.001a2.403 2.403 0 01-3.398 0l-.001-.001M11.42 15.17l-1.95-1.95m1.95 1.95l-1.95-1.95M2.25 12h19.5"/></svg>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-900">Digitalisation de vos processus</h4>
+                            <p class="text-slate-500 text-xs mt-0.5">Accès à notre outil collaboratif sécurisé SmartHub pour un suivi en temps réel.</p>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-pink-50 text-[#C81E6E] shrink-0 flex items-center justify-center">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-900">Conseiller dédié de haut niveau</h4>
+                            <p class="text-slate-500 text-xs mt-0.5">Un interlocuteur unique, expert-comptable ou conseiller fiscal d’expérience, pour votre structure.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Box Illustration élégante -->
+            <div class="reveal hidden lg:block bg-slate-50 rounded-2xl p-6 border border-slate-200/50 flex justify-center items-center">
+                <img src="{% static 'images/scene_rendezvous_kl.svg' %}" alt="Prenez rendez-vous avec le Cabinet K&L" class="w-full max-w-xs transform hover:scale-105 transition duration-300">
+            </div>
+
+        </div>
+
+    </div>
+</section>
+
+<!-- SECTION FAQ (FAQS POUR CONVAINCRE DE PRENDRE RDV) -->
+<section class="max-w-4xl mx-auto px-4 pb-24 border-t border-slate-100 pt-16">
+    <div class="text-center mb-12">
+        <h2 class="text-2xl font-black text-slate-900">Questions fréquentes</h2>
+        <p class="text-slate-500 text-sm mt-1">Tout ce que vous devez savoir avant notre premier échange.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+        <div class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm">
+            <h4 class="font-bold text-slate-900 mb-2">Combien coûte le premier rendez-vous ?</h4>
+            <p class="text-slate-600 leading-relaxed">Rien du tout. Le premier rendez-vous d'orientation et de cadrage est gratuit et permet d'évaluer vos besoins précis.</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm">
+            <h4 class="font-bold text-slate-900 mb-2">Les conseillers se déplacent-ils ?</h4>
+            <p class="text-slate-600 leading-relaxed">Oui, nos spécialistes peuvent se déplacer dans vos locaux selon l'urgence ou planifier un échange virtuel de haut niveau via SmartHub.</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm">
+            <h4 class="font-bold text-slate-900 mb-2">Sous quel délai serai-je recontacté ?</h4>
+            <p class="text-slate-600 leading-relaxed">Nous garantissons une réponse par mail ou téléphone sous un délai strict de 24 heures ouvrées.</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm">
+            <h4 class="font-bold text-slate-900 mb-2">Quels documents dois-je préparer ?</h4>
+            <p class="text-slate-600 leading-relaxed">Si possible, munissez-vous de vos derniers états financiers (bilans) ou de vos dernières déclarations d'impôts pour optimiser l'échange.</p>
+        </div>
+    </div>
+</section>
+
+<!-- SCRIPT OBSERVER POUR TRANSITIONS EN DOUCEUR -->
+<script>
+  (function () {
+    var els = document.querySelectorAll('.reveal');
+    if (!('IntersectionObserver' in window)) {
+      els.forEach(function (c) { c.classList.add('visible'); });
+      return;
+    }
+    var obs = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry, i) {
+        if (entry.isIntersecting) {
+          var el = entry.target;
+          setTimeout(function () { el.classList.add('visible'); }, i * 60);
+          obs.unobserve(el);
+        }
+      });
+    }, { threshold: 0.1 });
+    els.forEach(function (c) { obs.observe(c); });
+  })();
+</script>
+
+{% endblock %}

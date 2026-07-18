@@ -1,0 +1,41 @@
+{% extends "pilotage/base_pilotage.html" %}
+
+{% block titre %}Documents à signer{% endblock %}
+
+{% block contenu %}
+<div class="max-w-4xl mx-auto p-6">
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Documents à signer</h1>
+        <p class="text-gray-500 mt-1">Liste des documents en attente de signature.</p>
+    </div>
+
+    {% if factures %}
+    <div class="bg-white border border-gray-200 rounded-xl p-6">
+        <table class="w-full text-sm text-left">
+            <thead class="bg-gray-50 text-gray-600">
+                <tr>
+                    <th class="px-4 py-3">Référence</th>
+                    <th class="px-4 py-3">Client</th>
+                    <th class="px-4 py-3">Statut</th>
+                    <th class="px-4 py-3">Date signature</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for facture in factures %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3 font-medium text-gray-800">{{ facture.numero_facture }}</td>
+                    <td class="px-4 py-3 text-gray-600">{{ facture.client_nom }}</td>
+                    <td class="px-4 py-3 text-gray-600">{{ facture.get_statut_display }}</td>
+                    <td class="px-4 py-3 text-gray-600">{{ facture.date_signature|default:'Non définie' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="bg-gray-50 border border-gray-200 rounded-xl p-8 text-center text-gray-400">
+        Aucun document en attente de signature.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,241 @@
+{% extends "pilotage/base_pilotage.html" %}
+{% block titre %}{{ titre }} — Personnel{% endblock %}
+{% block contenu %}
+<div class="p-6 max-w-4xl">
+    <a href="{% url 'paie_employes_liste' employeur.id %}" class="text-sm text-gray-500 hover:text-[#C81E6E]">← Retour au personnel</a>
+    <div class="mt-4 mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">{{ titre }}</h1>
+        <p class="text-gray-500 mt-1">{{ employeur.raison_sociale }}</p>
+    </div>
+
+    <form method="post" class="space-y-5">
+        {% csrf_token %}
+
+        <!-- IDENTITÉ -->
+        <div class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="font-bold text-gray-800 mb-4 pb-2 border-b border-gray-100">Identité</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div><label class="block text-sm font-medium text-gray-600 mb-1">Matricule</label>{{ form.matricule }}<p class="text-xs text-gray-400 mt-1">Proposé automatiquement — modifiable.</p></div>
+                <div><label class="block text-sm font-medium text-gray-600 mb-1">Civilité</label>{{ form.civilite }}</div>
+                <div><label class="block text-sm font-medium text-gray-600 mb-1">Sexe</label>{{ form.sexe }}</div>
+                <div class="sm:col-span-3"><label class="block text-sm font-medium text-gray-600 mb-1">Noms & Prénoms <span class="text-red-500">*</span></label>{{ form.nom_prenoms }}</div>
+                <div><label class="block text-sm font-medium text-gray-600 mb-1">Date de naissance</label>{{ form.date_naissance }}</div>
+                <div><label class="block text-sm font-medium text-gray-600 mb-1">Lieu de naissance</label>{{ form.lieu_naissance }}</div>
+                <div><label class="block text-sm font-medium text-gray-600 mb-1">Nationalité</label>{{ form.nationalite }}</div>
+                <div><label class="block text-sm font-medium text-gray-600 mb-1">Nature pièce</label>{{ form.nature_piece }}</div>
+                <div><label class="block text-sm font-medium text-gray-600 mb-1">N° pièce d'identité</label>{{ form.numero_piece }}</div>
+                <div><label class="block text-sm font-medium text-gray-600 mb-1">Situation matrimoniale</label>{{ form.situation_matrimoniale }}</div>
+                <div><label class="block text-sm font-medium text-gray-600 mb-1">Nombre d'enfants</label>{{ form.nombre_enfants }}</div>
+                <div><label class="block text-sm font-medium text-gray-600 mb-1">Téléphone</label>{{ form.telephone }}</div>
+                <div class="sm:col-span-2"><label class="block text-sm font-medium text-gray-600 mb-1">Adresse</label>{{ form.adresse }}</div>
+                <div><label class="block text-sm font-medium text-gray-600 mb-1">Lieu d'habitation</label>{{ form.lieu_habitation }}</div>
+            </div>
+        </div>
+
+        <!-- CONTRAT & POSTE -->
+        <div class="bg-white rounded-xl border border-gray-200 p-6">
+            {% if employe and employe.alerte_requalification_cdd %}
+            <div class="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-800 mb-4">
+                ⚠️ Ce CDD cumule <strong>{{ employe.cdd_mois_ecoules }} mois</strong> (≥ 2 ans). Au-delà de 2 ans, la loi le répute à durée indéterminée (art. 15.4 &amp; 15.10). Régularise-le en le passant en CDI.
+            </div>
+            {% endif %}
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div><label class="block text-sm font-medium text-gray-600 mb-1">Type de contrat <span class="text-red-500">*</span></label>{{ form.contrat }}</div>
+                <div><label class="block text-sm font-medium text-gray-600 mb-1">Date de signature</label>{{ form.date_signature_contrat }}</div>
+                <div id="bloc-duree"><label class="block text-sm font-medium text-gray-600 mb-1">Durée CDD (mois)</label>{{ form.duree_cdd_mois }}<p class="text-xs text-gray-400 mt-1">Obligatoire pour un CDD.</p></div>
+                <div><label class="block text-sm font-medium text-gray-600 mb-1">Date d'entrée <span class="text-red-500">*</span></label>{{ form.date_entree }}</div>
+                <div id="bloc-sortie"><label class="block text-sm font-medium text-gray-600 mb-1">Date de sortie</label>{{ form.date_sortie }}</div>
+                <div><label class="block text-sm font-medium text-gray-600 mb-1">Statut</label>{{ form.statut }}</div>
+                <div><label class="block text-sm font-medium text-gray-600 mb-1">Direction</label>{{ form.direction }}</div>
+                <div><label class="block text-sm font-medium text-gray-600 mb-1">Service</label>{{ form.service }}</div>
+                <div><label class="block text-sm font-medium text-gray-600 mb-1">Poste occupé</label>{{ form.poste }}</div>
+                <div><label class="block text-sm font-medium text-gray-600 mb-1">Code emploi (EDI/CNPS)</label>{{ form.emploi_ref }}</div>
+                <div><label class="block text-sm font-medium text-gray-600 mb-1">Régime</label>{{ form.regime }}</div>
+                <div><label class="block text-sm font-medium text-gray-600 mb-1">Type de salaire</label>{{ form.type_salaire }}</div>
+            </div>
+        </div>
+
+        <!-- SALAIRE -->
+        <div class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="font-bold text-gray-800 mb-4 pb-2 border-b border-gray-100">Salaire</h2>
+            {% if form.categorie_vide %}
+            <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800 mb-4">
+                Aucune catégorie trouvée pour la convention <strong>{{ form.convention_nom|default:"(non définie)" }}</strong> de cette entreprise.
+                Va dans <strong>Grille des salaires</strong> ajouter des catégories à cette convention, ou vérifie que l'entreprise est rattachée à la bonne convention.
+            </div>
+            {% endif %}
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div><label class="block text-sm font-medium text-gray-600 mb-1">Catégorie <span class="text-red-500">*</span> <span class="font-normal text-gray-400">({{ form.convention_nom|default:"—" }})</span></label>{{ form.categorie }}</div>
+                <div><label class="block text-sm font-medium text-gray-600 mb-1">Sursalaire (FCFA)</label>{{ form.sursalaire }}</div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                <div class="bg-gray-50 rounded-lg p-3"><p class="text-xs text-gray-500">Salaire catégoriel (grille)</p><p class="text-lg font-bold text-gray-700"><span id="aff-categoriel">0 F</span></p></div>
+                <div class="bg-[#FCEEF3] rounded-lg p-3"><p class="text-xs text-[#a81759]">Salaire de base (calculé)</p><p class="text-lg font-bold text-[#C81E6E]"><span id="aff-base">0 F</span></p></div>
+            </div>
+        </div>
+
+        <!-- RUBRIQUES RÉCURRENTES -->
+        <div class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="font-bold text-gray-800 mb-1">Rubriques récurrentes</h2>
+            <p class="text-xs text-gray-400 mb-4">Primes fixes et retenues (transport, CMU…) reportées automatiquement sur chaque bulletin.</p>
+            {% if rubriques_catalogue %}
+            <div id="rub-container">
+                {% for rr in rubriques_recurrentes %}
+                <div class="rub-ligne flex items-end gap-3 mb-3">
+                    <div class="flex-1">
+                        <label class="block text-xs text-gray-500 mb-1">Rubrique</label>
+                        <select name="rub_rubrique" class="w-full">
+                            <option value="">— Choisir —</option>
+                            {% for r in rubriques_catalogue %}<option value="{{ r.id }}" {% if r.id == rr.rubrique_id %}selected{% endif %}>{{ r.libelle }}{% if r.type_rubrique == "RETENUE" %} (retenue){% endif %}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="w-40"><label class="block text-xs text-gray-500 mb-1">Montant (FCFA)</label><input type="number" name="rub_montant" value="{{ rr.montant|floatformat:0 }}"></div>
+                    <button type="button" class="rub-remove text-red-500 text-sm hover:underline pb-2">Retirer</button>
+                </div>
+                {% endfor %}
+            </div>
+            <button type="button" id="rub-add" class="text-[#C81E6E] font-medium text-sm hover:underline">+ Ajouter une rubrique</button>
+            <template id="rub-template">
+                <div class="rub-ligne flex items-end gap-3 mb-3">
+                    <div class="flex-1">
+                        <label class="block text-xs text-gray-500 mb-1">Rubrique</label>
+                        <select name="rub_rubrique" class="w-full">
+                            <option value="">— Choisir —</option>
+                            {% for r in rubriques_catalogue %}<option value="{{ r.id }}">{{ r.libelle }}{% if r.type_rubrique == "RETENUE" %} (retenue){% endif %}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="w-40"><label class="block text-xs text-gray-500 mb-1">Montant (FCFA)</label><input type="number" name="rub_montant" value="0"></div>
+                    <button type="button" class="rub-remove text-red-500 text-sm hover:underline pb-2">Retirer</button>
+                </div>
+            </template>
+            {% else %}
+            <p class="text-sm text-gray-400">Aucune rubrique dans le catalogue. Crée-en d'abord (menu Rubriques).</p>
+            {% endif %}
+        </div>
+
+        <!-- SOCIAL -->
+        <div class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="font-bold text-gray-800 mb-4 pb-2 border-b border-gray-100">Social</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end mb-4">
+                <div><label class="block text-sm font-medium text-gray-600 mb-1">N° CNPS</label>{{ form.numero_cnps }}</div>
+                <label class="flex items-center gap-2 text-sm text-gray-700 pb-2">{{ form.non_soumis_cnps }} Non soumis à la CNPS</label>
+            </div>
+            <div class="border-t border-gray-100 pt-4">
+                <p class="text-sm font-medium text-gray-700 mb-1">Couverture CMU</p>
+                <p class="text-xs text-gray-400 mb-3">Coche uniquement ce que ce salarié couvre (évite la double cotisation si le conjoint travaille).</p>
+                <div class="space-y-2">
+                    <label class="flex items-center gap-2 text-sm text-gray-700">{{ form.cmu_conjoint_a_charge }} Conjoint à charge (sans emploi)</label>
+                    <label class="flex items-center gap-2 text-sm text-gray-700">{{ form.cmu_enfants_a_charge }} Enfants à charge (décocher si le conjoint les couvre)</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAIEMENT -->
+        <div class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="font-bold text-gray-800 mb-4 pb-2 border-b border-gray-100">Paiement</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div><label class="block text-sm font-medium text-gray-600 mb-1">Mode de paiement <span class="text-red-500">*</span></label>{{ form.mode_paiement }}</div>
+            </div>
+            <div id="bloc-bancaire" class="mt-4">
+                <p class="text-xs text-gray-400 mb-3">Coordonnées bancaires — requises uniquement pour un paiement par virement.</p>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="sm:col-span-3"><label class="block text-sm font-medium text-gray-600 mb-1">Banque</label>{{ form.banque }}</div>
+                    <div><label class="block text-sm font-medium text-gray-600 mb-1">Code banque</label>{{ form.banque_code }}</div>
+                    <div><label class="block text-sm font-medium text-gray-600 mb-1">Code guichet</label>{{ form.banque_guichet }}</div>
+                    <div><label class="block text-sm font-medium text-gray-600 mb-1">Numéro de compte</label>{{ form.numero_compte }}</div>
+                    <div><label class="block text-sm font-medium text-gray-600 mb-1">Clé RIB</label>{{ form.banque_cle_rib }}</div>
+                    <div class="sm:col-span-2"><label class="block text-sm font-medium text-gray-600 mb-1">IBAN</label>{{ form.banque_iban }}</div>
+                </div>
+            </div>
+        </div>
+
+        {% if periodes_anterieures %}
+        <div class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="font-bold text-gray-800 mb-1">Historique des périodes</h2>
+            <p class="text-xs text-gray-400 mb-4">Périodes d'emploi antérieures (réembauches). Le dossier et l'historique de paie sont conservés.</p>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead class="bg-gray-50 text-gray-600 text-left">
+                        <tr>
+                            <th class="px-3 py-2 font-medium">Ancien matricule</th>
+                            <th class="px-3 py-2 font-medium">Contrat</th>
+                            <th class="px-3 py-2 font-medium">Entrée</th>
+                            <th class="px-3 py-2 font-medium">Sortie</th>
+                            <th class="px-3 py-2 font-medium">Motif</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        {% for p in periodes_anterieures %}
+                        <tr>
+                            <td class="px-3 py-2 font-medium text-gray-700">{{ p.matricule }}</td>
+                            <td class="px-3 py-2 text-gray-600">{{ p.contrat }}</td>
+                            <td class="px-3 py-2 text-gray-600">{{ p.date_entree|date:"d/m/Y" }}</td>
+                            <td class="px-3 py-2 text-gray-600">{{ p.date_sortie|date:"d/m/Y" }}</td>
+                            <td class="px-3 py-2 text-gray-500">{{ p.motif_sortie|default:"—" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+        <div class="flex items-center gap-3 pt-2">
+            <button type="submit" class="bg-[#C81E6E] text-white font-medium px-6 py-2.5 rounded-lg hover:bg-[#a81759] transition">Enregistrer le salarié</button>
+            <a href="{% url 'paie_employes_liste' employeur.id %}" class="text-gray-500 hover:text-gray-700">Annuler</a>
+        </div>
+    </form>
+</div>
+
+<div id="grille-data" data-grille="{{ grille_json }}" hidden></div>
+<script>
+    // Salaire de base en direct
+    const grille = JSON.parse(document.getElementById('grille-data').dataset.grille || '{}');
+    const selCat = document.getElementById('id_categorie');
+    const inpSur = document.getElementById('id_sursalaire');
+    const affCat = document.getElementById('aff-categoriel');
+    const affBase = document.getElementById('aff-base');
+    function fmt(n){ return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' F'; }
+    function majSalaire(){ const c = grille[selCat.value] || 0; const s = parseFloat(inpSur.value) || 0; affCat.textContent = fmt(c); affBase.textContent = fmt(c + s); }
+    if (selCat && inpSur) { majSalaire(); selCat.addEventListener('change', majSalaire); inpSur.addEventListener('input', majSalaire); }
+
+    // Logique CDD / CDI
+    const selContrat = document.getElementById('id_contrat');
+    const inpDuree = document.getElementById('id_duree_cdd_mois');
+    const inpSortie = document.getElementById('id_date_sortie');
+    const blocDuree = document.getElementById('bloc-duree');
+    const blocSortie = document.getElementById('bloc-sortie');
+    function majContrat(){
+        const v = (selContrat.value || '').toUpperCase();
+        const estCDI = v.indexOf('CDI') !== -1;
+        // CDI : durée et date de sortie grisées et vidées
+        if (inpDuree){ inpDuree.disabled = estCDI; if (estCDI) inpDuree.value = ''; }
+        if (inpSortie){ inpSortie.disabled = estCDI; if (estCDI) inpSortie.value = ''; }
+        if (blocDuree) blocDuree.style.opacity = estCDI ? '.4' : '1';
+        if (blocSortie) blocSortie.style.opacity = estCDI ? '.4' : '1';
+    }
+    if (selContrat) { majContrat(); selContrat.addEventListener('change', majContrat); }
+
+    // Grisage du bloc bancaire selon le mode de paiement (actif seulement si "virement")
+    const selMode = document.getElementById('id_mode_paiement');
+    const blocBancaire = document.getElementById('bloc-bancaire');
+    function majBancaire(){
+        const estVirement = (selMode.value || '') === 'virement';
+        if (blocBancaire){
+            blocBancaire.style.opacity = estVirement ? '1' : '.4';
+            blocBancaire.querySelectorAll('input, select').forEach(function(el){
+                el.disabled = !estVirement;
+            });
+        }
+    }
+    if (selMode) { majBancaire(); selMode.addEventListener('change', majBancaire); }
+
+    // Rubriques récurrentes : ajout / suppression
+    const container = document.getElementById('rub-container');
+    const tmpl = document.getElementById('rub-template');
+    const btnAdd = document.getElementById('rub-add');
+    if (btnAdd && container && tmpl) {
+        btnAdd.addEventListener('click', function(){ container.appendChild(tmpl.content.cloneNode(true)); });
+        container.addEventListener('click', function(e){ if (e.target.classList.contains('rub-remove')) e.target.closest('.rub-ligne').remove(); });
+    }
+</script>
+{% endblock %}

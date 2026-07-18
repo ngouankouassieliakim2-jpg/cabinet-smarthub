@@ -1,0 +1,61 @@
+{% extends "pilotage/base_pilotage.html" %}
+{% load paie_extras %}
+{% block titre %}Fin de contrat — {{ employe.nom_prenoms }}{% endblock %}
+{% block contenu %}
+<div class="p-6 max-w-3xl">
+    <a href="{% url 'paie_employes_liste' employeur.id %}" class="text-sm text-gray-500 hover:text-[#C81E6E]">← Retour au personnel</a>
+    <div class="mt-4 mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Fin de contrat</h1>
+        <p class="text-gray-500 mt-1">{{ employe.nom_prenoms }} — {{ employeur.raison_sociale }}</p>
+    </div>
+
+    <form method="post" class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+        {% csrf_token %}
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div><label class="block text-sm font-medium text-gray-600 mb-1">Motif de la rupture</label>{{ form.motif }}</div>
+            <div><label class="block text-sm font-medium text-gray-600 mb-1">Date de sortie effective</label>{{ form.date_fin }}</div>
+        </div>
+        <p class="text-xs text-gray-400 mt-3">Salaire moyen, ancienneté, congés et gratification sont déduits automatiquement de l'historique des bulletins.</p>
+        <button type="submit" class="mt-4 bg-[#C81E6E] text-white font-medium px-6 py-2.5 rounded-lg hover:bg-[#a81759] transition">Calculer le solde de tout compte</button>
+    </form>
+
+    {% if resultat %}
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-3"><p class="text-xs text-gray-500">Ancienneté</p><p class="font-bold text-gray-800">{{ resultat.auto.anciennete|floatformat:2 }} an(s)</p></div>
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-3"><p class="text-xs text-gray-500">Salaire moyen (12 mois)</p><p class="font-bold text-gray-800">{{ resultat.auto.salaire_moyen|espace }} F</p></div>
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-3"><p class="text-xs text-gray-500">Jours de congés dus</p><p class="font-bold text-gray-800">{{ resultat.auto.jours_conges|floatformat:1 }}</p></div>
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-3"><p class="text-xs text-gray-500">Mois (gratif.)</p><p class="font-bold text-gray-800">{{ resultat.auto.mois_annee }}</p></div>
+    </div>
+    <p class="text-xs text-gray-400 mb-4">Congés comptés {% if resultat.auto.dernier_conge %}depuis le dernier congé ({{ resultat.auto.dernier_conge.get_mois_display }} {{ resultat.auto.dernier_conge.annee }}){% else %}depuis l'embauche{% endif %} — {{ resultat.auto.mois_conges }} mois × 2,2 j + bonus d'ancienneté.</p>
+
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div class="px-5 py-3 bg-gray-50 border-b border-gray-100"><span class="font-bold text-gray-800">{{ resultat.motif_label }}</span></div>
+        <table class="w-full text-sm">
+            <tbody class="divide-y divide-gray-100">
+                {% for l in resultat.lignes %}
+                <tr>
+                    <td class="px-5 py-3 text-gray-700">{{ l.libelle }}</td>
+                    <td class="px-5 py-3 text-right font-medium text-gray-800">{{ l.montant|espace }} F</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr class="bg-[#FCEEF3]">
+                    <td class="px-5 py-3 font-bold text-[#C81E6E]">TOTAL DU SOLDE DE TOUT COMPTE</td>
+                    <td class="px-5 py-3 text-right font-bold text-[#C81E6E] text-lg">{{ resultat.total|espace }} F</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+    <form method="post" class="mt-4" target="_blank">
+        {% csrf_token %}
+        <input type="hidden" name="motif" value="{{ form.data.motif }}">
+        <input type="hidden" name="date_fin" value="{{ form.data.date_fin }}">
+        <input type="hidden" name="reporter" value="1">
+        <button type="submit" class="bg-[#C81E6E] text-white font-medium px-6 py-2.5 rounded-lg hover:bg-[#a81759] transition">✓ Reporter dans le bulletin final et voir le solde de tout compte</button>
+    </form>
+    <p class="text-xs text-gray-400 mt-2">Le solde de tout compte s'ouvre dans un nouvel onglet.</p>
+    <p class="text-xs text-gray-400 mt-2">Le solde de tout compte devient le bulletin final du salarié (mois de la date de sortie), avec le brut et les cotisations calculés dessus.</p>
+    {% endif %}
+</div>
+{% endblock %}
