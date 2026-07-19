@@ -248,6 +248,10 @@ class Employe(models.Model):
 
     # Rattachement
     employeur = models.ForeignKey(Employeur, on_delete=models.CASCADE, related_name="employes", verbose_name="Employeur")
+    utilisateur = models.OneToOneField(
+        "auth.User", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="fiche_employe", verbose_name="Compte utilisateur (si personnel du cabinet)"
+    )
 
     # Identité
     matricule = models.CharField("Matricule", max_length=30)

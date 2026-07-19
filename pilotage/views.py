@@ -6,6 +6,8 @@ from django.contrib import messages
 from comptes.decorators import role_requis
 from comptes.models import Profil
 from devis.models import Devis
+from paie.models import Employeur, Employe
+from paie.views import _matricule_auto
 from .modules_data import MODULES, charger_sous_modules, get_module_info
 
 
@@ -180,9 +182,21 @@ def collaborateurs_liste(request):
     })
 
 
+def _employeur_cabinet():
+    """Récupère (ou crée une seule fois) l'employeur représentant le
+    Cabinet K&L lui-même, pour y rattacher son propre personnel."""
+    employeur, _ = Employeur.objects.get_or_create(
+        raison_sociale="Cabinet Comptable et Fiscal K&L",
+        defaults={"commune": "Daloa"},
+    )
+    return employeur
+
+
 @role_requis(Profil.Role.DIRECTION)
 def collaborateur_creer(request):
-    """Création d'un compte interne avec mot de passe provisoire et email de bienvenue."""
+    """Création d'un compte interne — crée en même temps le compte de
+    connexion ET la fiche salarié dans Paie (le cabinet se traite comme
+    son propre employeur), avec un mot de passe provisoire envoyé par email."""
     from django.contrib.auth.models import User
 
     if request.method == "POST":
@@ -190,6 +204,9 @@ def collaborateur_creer(request):
         nom = request.POST.get("nom", "").strip()
         email = request.POST.get("email", "").strip()
         role = request.POST.get("role")
+        poste = request.POST.get("poste", "").strip()
+        contrat = request.POST.get("contrat", "CDI")
+        date_entree = request.POST.get("date_entree")
 
         erreurs = []
         if not prenom or not nom:
@@ -200,6 +217,8 @@ def collaborateur_creer(request):
             erreurs.append("Un compte existe déjà avec cet email.")
         if role not in dict(Profil.Role.choices):
             erreurs.append("Choisissez un rôle valide.")
+        if not date_entree:
+            erreurs.append("La date d'entrée est obligatoire.")
 
         if not erreurs:
             import secrets, string
@@ -211,6 +230,17 @@ def collaborateur_creer(request):
                 first_name=prenom, last_name=nom,
             )
             Profil.objects.create(user=user, role=role)
+
+            employeur_cabinet = _employeur_cabinet()
+            Employe.objects.create(
+                employeur=employeur_cabinet,
+                utilisateur=user,
+                matricule=_matricule_auto(employeur_cabinet),
+                nom_prenoms=f"{prenom} {nom}",
+                poste=poste,
+                contrat=contrat,
+                date_entree=date_entree,
+            )
 
             email_envoye, erreur_email = False, ""
             try:
@@ -232,7 +262,8 @@ def collaborateur_creer(request):
             if email_envoye:
                 messages.success(request, f"Compte créé pour {prenom} {nom} — identifiants envoyés par email.")
             else:
-                messages.warning(request, f"Compte créé pour {prenom} {nom}, mais l'email n'a pas pu être envoyé ({erreur_email}). Mot de passe provisoire : {mot_de_passe}")
+                messages.warning(request, f"Compte créé pour {prenom} {nom}, mais l'email n'a pas pu être envoyé "
+                                          f"({erreur_email}). Mot de passe provisoire : {mot_de_passe}")
             return redirect("pilotage_collaborateurs_liste")
 
         for e in erreurs:

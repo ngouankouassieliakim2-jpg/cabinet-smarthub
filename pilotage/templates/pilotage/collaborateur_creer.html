@@ -31,6 +31,24 @@
                 {% endfor %}
             </select>
         </label>
+        <div>
+            <label class="text-sm font-semibold text-gray-700 block mb-1">Poste occupé</label>
+            <input type="text" name="poste" placeholder="Ex : Comptable senior" class="w-full border border-gray-300 rounded-lg p-2 text-sm">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="text-sm font-semibold text-gray-700 block mb-1">Type de contrat</label>
+                <select name="contrat" class="w-full border border-gray-300 rounded-lg p-2 text-sm">
+                    <option value="CDI">CDI</option>
+                    <option value="CDD">CDD</option>
+                    <option value="STAGE">Stage</option>
+                </select>
+            </div>
+            <div>
+                <label class="text-sm font-semibold text-gray-700 block mb-1">Date d'entrée</label>
+                <input type="date" name="date_entree" required class="w-full border border-gray-300 rounded-lg p-2 text-sm">
+            </div>
+        </div>
         <div class="flex items-center justify-between gap-3">
             <a href="{% url 'pilotage_collaborateurs_liste' %}" class="text-sm text-gray-600 hover:text-gray-900">Retour à la liste</a>
             <button type="submit" class="bg-[#C81E6E] text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-[#a81759]">Créer</button>
