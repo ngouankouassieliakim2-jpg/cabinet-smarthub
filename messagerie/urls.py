@@ -6,4 +6,5 @@ urlpatterns = [
     path("nouvelle/", views.nouvelle_conversation, name="messagerie_nouvelle"),
     path("<int:conversation_id>/", views.conversation_ouvrir, name="messagerie_conversation"),
     path("<int:conversation_id>/actualiser/", views.messages_actualiser, name="messagerie_actualiser"),
+    path("<int:conversation_id>/reunion/", views.reunion_obtenir, name="messagerie_reunion"),
 ]

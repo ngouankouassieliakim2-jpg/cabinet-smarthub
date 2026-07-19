@@ -20,11 +20,6 @@ def charger_sous_modules(nom_app, request=None):
     """
     Cherche un fichier <app>/sous_modules.py qui contient une liste SOUS_MODULES.
     Retourne la liste si elle existe, sinon une liste vide (module pas encore branché).
-    Format attendu dans <app>/sous_modules.py :
-        SOUS_MODULES = [
-            {"nom": "Devis", "url": "/devis/"},
-            ...
-        ]
     """
     import importlib
     try:
@@ -33,19 +28,30 @@ def charger_sous_modules(nom_app, request=None):
         return []
     except Exception:
         return []
-
     sous_modules = list(getattr(module, "SOUS_MODULES", []))
-
-    # Extension optionnelle : un module peut définir sous_modules_dynamiques(request)
-    # pour ajouter des entrées propres à l'utilisateur connecté (ex : délégations
-    # actives). Si cette fonction n'existe pas, ce mécanisme est simplement
-    # ignoré -- 100% rétrocompatible avec tous les modules existants.
     fonction_dynamique = getattr(module, "sous_modules_dynamiques", None)
     if fonction_dynamique and request is not None:
         try:
             sous_modules = sous_modules + fonction_dynamique(request)
         except Exception:
             pass
+
+    # Marque comme "actif" le sous-module de la page actuelle, y compris ses
+    # pages filles (ex: /postes/nouveau/ reste actif pour /postes/) -- sauf
+    # pour une URL racine générique (comme /pilotage/ tout seul), qui ne doit
+    # matcher qu'exactement, sinon elle capterait toutes les autres pages.
+    if request is not None:
+        chemin = request.path
+        for sm in sous_modules:
+            url_sm = sm.get("url", "")
+            if not url_sm:
+                sm["actif"] = False
+            elif chemin == url_sm:
+                sm["actif"] = True
+            elif url_sm.rstrip("/").count("/") <= 1:
+                sm["actif"] = False
+            else:
+                sm["actif"] = chemin.startswith(url_sm)
 
     return sous_modules
 

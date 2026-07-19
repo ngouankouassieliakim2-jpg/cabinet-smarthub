@@ -139,11 +139,11 @@
               {% for s in groupe.list %}
               <a href="{{ s.url }}"
                  class="group flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm transition-all duration-200
-                        {% if request.path == s.url %}
+                        {% if s.actif %}
                         bg-[#FCEEF3] text-[#C81E6E] font-semibold border-l-4 border-[#C81E6E] shadow-sm -ml-0.5
                         {% else %}
                         text-slate-600 hover:bg-slate-50 hover:text-[#C81E6E]{% endif %}">
-                <span class="w-1.5 h-1.5 rounded-full shrink-0 transition-all duration-200 {% if request.path == s.url %}bg-[#C81E6E] scale-125{% else %}bg-slate-300 group-hover:bg-[#C81E6E] group-hover:scale-125{% endif %}"></span>
+                <span class="w-1.5 h-1.5 rounded-full shrink-0 transition-all duration-200 {% if s.actif %}bg-[#C81E6E] scale-125{% else %}bg-slate-300 group-hover:bg-[#C81E6E] group-hover:scale-125{% endif %}"></span>
                 <span>{{ s.nom }}</span>
               </a>
               {% endfor %}

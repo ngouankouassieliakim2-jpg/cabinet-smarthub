@@ -35,6 +35,7 @@ class Profil(models.Model):
         "pilotage.Poste", on_delete=models.SET_NULL, null=True, blank=True,
         related_name="titulaires", verbose_name="Poste",
     )
+    derniere_activite = models.DateTimeField("Dernière activité", null=True, blank=True)
 
     class Meta:
         verbose_name = "Profil"

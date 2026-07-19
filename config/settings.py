@@ -68,6 +68,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     "comptes.middleware.DelaiInactiviteMiddleware",
     "portail.middleware.ParcoursAccueilMiddleware",
+    "comptes.middleware_presence.PresenceMiddleware",
 ]
 
 ROOT_URLCONF = 'config.urls'

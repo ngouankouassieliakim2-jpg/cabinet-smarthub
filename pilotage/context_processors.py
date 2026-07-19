@@ -14,7 +14,7 @@ def navigation(request):
     role = profil.role if profil else None
     cles_visibles = modules_visibles_pour(request.user)
 
-    modules_nav = []
+    modules_nav = [{"cle": "dashboard", "nom": "Tableau de bord", "icone": "🏠", "url": "/pilotage/"}]
     for cle, data in MODULES.items():
         if cle == "outils":
             pass  # toujours visible pour tout le personnel interne

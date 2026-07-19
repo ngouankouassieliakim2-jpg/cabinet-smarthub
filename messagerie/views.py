@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse, HttpResponseBadRequest
 from django.utils import timezone
+from datetime import timedelta
 from django.db.models import Max, Q, OuterRef, Subquery, IntegerField, Count
 from django.db import transaction
 from django.core.exceptions import ValidationError
@@ -97,20 +98,30 @@ def conversation_ouvrir(request, conversation_id):
     if request.method == "POST":
         texte = request.POST.get("texte", "").strip()
         fichier = request.FILES.get("fichier")
+        latitude = request.POST.get("latitude")
+        longitude = request.POST.get("longitude")
         
-        if texte or fichier:
+        if latitude and longitude and not (texte or fichier):
+            texte = "Localisation partagée"
+
+        if texte or fichier or (latitude and longitude):
             with transaction.atomic():
                 msg = Message.objects.create(
                     conversation=conversation,
                     expediteur=request.user,
                     texte=texte,
                     fichier=fichier,
-                    nom_fichier_original=fichier.name if fichier else ""
+                    nom_fichier_original=fichier.name if fichier else ("Localisation" if latitude and longitude else ""),
+                    latitude=latitude or None,
+                    longitude=longitude or None,
                 )
                 # Mise à jour directe du dernier message lu de l'expéditeur
                 participation.dernier_message_lu = msg
                 participation.save()
                 
+            if request.headers.get("x-requested-with") == "XMLHttpRequest":
+                return JsonResponse({"ok": True, "message_id": msg.id})
+
             return redirect("messagerie_conversation", conversation_id=conversation.id)
 
     # Sécurisation du marquage comme lu à l'ouverture
@@ -126,12 +137,51 @@ def conversation_ouvrir(request, conversation_id):
     else:
         nom_affiche = conversation.nom or f"Groupe #{conversation.id}"
 
+    messages_vus = _messages_vus_par_autre(conversation, request.user)
+    if conversation.type_conversation == "direct":
+        autre_part = conversation.participations.exclude(utilisateur=request.user).select_related("utilisateur__profil").first()
+        presence = _texte_presence(autre_part.utilisateur.profil.derniere_activite) if autre_part and hasattr(autre_part.utilisateur, "profil") else ""
+    else:
+        presence = ""
+
     ctx = {
         "conversation": conversation,
         "messages_liste": messages_liste,
-        "nom_affiche": nom_affiche
+        "nom_affiche": nom_affiche,
+        "messages_vus": messages_vus,
+        "presence": presence,
     }
     return render(request, "messagerie/conversation.html", ctx)
+
+
+def _texte_presence(derniere_activite):
+    if not derniere_activite:
+        return "Jamais connecté"
+    maintenant = timezone.now()
+    if (maintenant - derniere_activite) < timedelta(minutes=3):
+        return "En ligne"
+    diff = maintenant - derniere_activite
+    if diff < timedelta(hours=1):
+        return f"Vu il y a {int(diff.total_seconds() // 60)} min"
+    if derniere_activite.date() == maintenant.date():
+        return f"Vu aujourd'hui à {timezone.localtime(derniere_activite).strftime('%H:%M')}"
+    if diff < timedelta(days=2):
+        return f"Vu hier à {timezone.localtime(derniere_activite).strftime('%H:%M')}"
+    return f"Vu le {timezone.localtime(derniere_activite).strftime('%d/%m/%Y')}"
+
+
+def _messages_vus_par_autre(conversation, moi):
+    """Pour une conversation directe : IDs de MES messages déjà lus par l'autre."""
+    if conversation.type_conversation != "direct":
+        return set()
+    autre_p = conversation.participations.exclude(utilisateur=moi).select_related("dernier_message_lu").first()
+    if not autre_p or not autre_p.dernier_message_lu_id:
+        return set()
+    return set(
+        conversation.messages.filter(
+            expediteur=moi, id__lte=autre_p.dernier_message_lu_id
+        ).values_list("id", flat=True)
+    )
 
 
 @login_required
@@ -143,6 +193,7 @@ def messages_actualiser(request, conversation_id):
     depuis_id = int(request.GET.get("depuis", 0))
     nouveaux = conversation.messages.filter(id__gt=depuis_id).select_related("expediteur")
 
+    messages_vus = _messages_vus_par_autre(conversation, request.user)
     data = [{
         "id": m.id,
         "expediteur": m.expediteur.username if m.expediteur else "?",
@@ -150,10 +201,21 @@ def messages_actualiser(request, conversation_id):
         "texte": m.texte,
         "fichier_url": m.fichier.url if m.fichier else None,
         "nom_fichier": m.nom_fichier_original,
+        "latitude": float(m.latitude) if m.latitude is not None else None,
+        "longitude": float(m.longitude) if m.longitude is not None else None,
+        "est_audio": m.est_audio(),
         "heure": m.envoye_le.strftime("%H:%M"),
+        "vu": m.id in messages_vus,
     } for m in nouveaux]
 
     return JsonResponse({"messages": data})
+
+
+@login_required
+def reunion_obtenir(request, conversation_id):
+    conversation = get_object_or_404(Conversation, pk=conversation_id)
+    get_object_or_404(Participation, conversation=conversation, utilisateur=request.user)
+    return JsonResponse({"cle_reunion": conversation.obtenir_reunion()})
 
 
 @login_required
