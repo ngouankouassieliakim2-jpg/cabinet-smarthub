@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block titre %}Cabinet K&amp;L — Expertise Comptable, Fiscale &amp; Sociale{% endblock %}</title>
+    <meta name="description" content="{% block meta_description %}Cabinet Comptable et Fiscal K&L : expertise comptable, fiscale et sociale en Côte d'Ivoire. Comptabilité, fiscalité, paie et conseil pour PME et entreprises à Daloa et Grand-Bassam.{% endblock %}">
     
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -88,6 +89,22 @@
         }
     </style>
     {% block style %}{% endblock %}
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "AccountingService",
+        "name": "Cabinet Comptable et Fiscal K&L",
+        "image": "https://cabinet-comptable-kl.com{% static 'images/LOGO_2025_KL_fne.PNG' %}",
+        "telephone": "+225 27 32 70 44 04",
+        "email": "cabinetkl120@gmail.com",
+        "address": [
+            {"@type": "PostalAddress", "addressLocality": "Daloa", "addressCountry": "CI"},
+            {"@type": "PostalAddress", "addressLocality": "Grand-Bassam", "addressCountry": "CI"}
+        ],
+        "openingHours": "Mo-Fr 08:00-17:30",
+        "url": "https://cabinet-comptable-kl.com"
+    }
+    </script>
 </head>
 <body class="min-h-screen bg-slate-50 text-slate-800 flex flex-col antialiased">
 

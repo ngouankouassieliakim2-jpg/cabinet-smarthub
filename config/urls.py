@@ -1,7 +1,11 @@
 from django.contrib import admin
+from django.contrib.sitemaps.views import sitemap
 from django.urls import path, include
+from django.views.generic import TemplateView
 from django.conf import settings
 from django.conf.urls.static import static
+
+from vitrine.sitemaps import VitrineSitemap
 
 
 urlpatterns = [
@@ -18,6 +22,8 @@ urlpatterns = [
     path("actualites/", include("actualites.urls")),
     path("secretariat/", include("secretariat.urls")),
     path("messagerie/", include("messagerie.urls")),
+    path("sitemap.xml", sitemap, {"sitemaps": {"vitrine": VitrineSitemap}}, name="sitemap"),
+    path("robots.txt", TemplateView.as_view(template_name="robots.txt", content_type="text/plain")),
 ]
 
 if settings.DEBUG:

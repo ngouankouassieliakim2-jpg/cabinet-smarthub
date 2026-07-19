@@ -1,0 +1,20 @@
+User-agent: *
+Allow: /
+Allow: /services/
+Allow: /a-propos/
+Allow: /contact/
+Allow: /actualites/
+
+Disallow: /pilotage/
+Disallow: /devis/
+Disallow: /paie/
+Disallow: /comptes/
+Disallow: /parametres/
+Disallow: /comptabilite/
+Disallow: /portail/
+Disallow: /collaborateurs/
+Disallow: /secretariat/
+Disallow: /messagerie/
+Disallow: /admin/
+
+Sitemap: https://cabinet-comptable-kl.com/sitemap.xml
