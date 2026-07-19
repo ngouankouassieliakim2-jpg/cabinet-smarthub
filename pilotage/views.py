@@ -211,6 +211,8 @@ def collaborateur_creer(request):
         nom = request.POST.get("nom", "").strip()
         email = request.POST.get("email", "").strip()
         role = request.POST.get("role")
+        pole_id = request.POST.get("pole") or None
+        poste_organigramme_id = request.POST.get("poste_organigramme") or None
         poste = request.POST.get("poste", "").strip()
         contrat = request.POST.get("contrat", "CDI")
         date_entree = request.POST.get("date_entree")
@@ -236,7 +238,7 @@ def collaborateur_creer(request):
                 username=email, email=email, password=mot_de_passe,
                 first_name=prenom, last_name=nom,
             )
-            Profil.objects.create(user=user, role=role)
+            Profil.objects.create(user=user, role=role, pole_id=pole_id, poste_id=poste_organigramme_id)
 
             employeur_cabinet = _employeur_cabinet()
             Employe.objects.create(
@@ -278,9 +280,32 @@ def collaborateur_creer(request):
 
     return render(request, "pilotage/collaborateur_creer.html", {
         "roles": [(r.value, r.label) for r in Profil.Role if r != Profil.Role.CLIENT],
+        "poles": Pole.objects.all(),
+        "postes": Poste.objects.select_related("pole").all(),
         "modules_nav": _modules_nav(),
         "module_actif": get_module_info("direction"),
         "sous_modules": None,
+    })
+
+
+@role_requis(Profil.Role.DIRECTION)
+def collaborateur_modifier(request, profil_id):
+    profil = get_object_or_404(Profil, id=profil_id)
+    if request.method == "POST":
+        profil.role = request.POST.get("role")
+        profil.pole_id = request.POST.get("pole") or None
+        profil.poste_id = request.POST.get("poste_organigramme") or None
+        profil.save()
+        messages.success(request, f"Affectation de {profil.user.get_full_name()} mise à jour.")
+        return redirect("pilotage_collaborateurs_liste")
+
+    return render(request, "pilotage/collaborateur_modifier.html", {
+        "profil": profil,
+        "roles": [(r.value, r.label) for r in Profil.Role if r != Profil.Role.CLIENT],
+        "poles": Pole.objects.all(),
+        "postes": Poste.objects.select_related("pole").all(),
+        "module_actif": get_module_info("direction"),
+        "sous_modules": charger_sous_modules("pilotage", request),
     })
 
 

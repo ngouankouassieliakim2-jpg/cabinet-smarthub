@@ -1,0 +1,38 @@
+{% extends "pilotage/base_pilotage.html" %}
+{% block titre %}Modifier {{ profil.user.get_full_name }}{% endblock %}
+{% block contenu %}
+<div class="max-w-xl mx-auto p-6">
+    <a href="{% url 'pilotage_collaborateurs_liste' %}" class="text-sm text-gray-500 hover:text-[#C81E6E]">← Retour aux collaborateurs</a>
+    <h1 class="text-xl font-bold text-gray-800 mt-3 mb-6">{{ profil.user.get_full_name|default:profil.user.username }}</h1>
+    <form method="post" class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+        {% csrf_token %}
+        <div>
+            <label class="text-sm font-semibold text-gray-700 block mb-1">Rôle</label>
+            <select name="role" class="w-full border border-gray-300 rounded-lg p-2 text-sm">
+                {% for valeur, libelle in roles %}
+                <option value="{{ valeur }}" {% if profil.role == valeur %}selected{% endif %}>{{ libelle }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="text-sm font-semibold text-gray-700 block mb-1">Pôle</label>
+            <select name="pole" class="w-full border border-gray-300 rounded-lg p-2 text-sm">
+                <option value="">— Aucun —</option>
+                {% for p in poles %}
+                <option value="{{ p.id }}" {% if profil.pole_id == p.id %}selected{% endif %}>{{ p.nom }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="text-sm font-semibold text-gray-700 block mb-1">Poste (organigramme)</label>
+            <select name="poste_organigramme" class="w-full border border-gray-300 rounded-lg p-2 text-sm">
+                <option value="">— Aucun —</option>
+                {% for ps in postes %}
+                <option value="{{ ps.id }}" {% if profil.poste_id == ps.id %}selected{% endif %}>{{ ps.intitule }} ({{ ps.pole.nom }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="w-full bg-[#C81E6E] text-white font-medium py-2.5 rounded-lg hover:bg-[#a81759]">Enregistrer</button>
+    </form>
+</div>
+{% endblock %}

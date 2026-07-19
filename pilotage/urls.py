@@ -11,6 +11,7 @@ urlpatterns = [
     path("delegations/nouvelle/", views.delegation_creer, name="pilotage_delegation_creer"),
     path("collaborateurs/", views.collaborateurs_liste, name="pilotage_collaborateurs_liste"),
     path("collaborateurs/nouveau/", views.collaborateur_creer, name="pilotage_collaborateur_creer"),
+    path("collaborateurs/<int:profil_id>/modifier/", views.collaborateur_modifier, name="pilotage_collaborateur_modifier"),
     path("poles/", views.poles_liste, name="pilotage_poles_liste"),
     path("poles/nouveau/", views.pole_creer, name="pilotage_pole_creer"),
     path("poles/<int:pole_id>/modifier/", views.pole_modifier, name="pilotage_pole_modifier"),

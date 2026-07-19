@@ -27,6 +27,14 @@ class Profil(models.Model):
         choices=Role.choices,
         verbose_name="Rôle",
     )
+    pole = models.ForeignKey(
+        "pilotage.Pole", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="membres", verbose_name="Pôle",
+    )
+    poste = models.ForeignKey(
+        "pilotage.Poste", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="titulaires", verbose_name="Poste",
+    )
 
     class Meta:
         verbose_name = "Profil"

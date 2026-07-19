@@ -49,6 +49,26 @@
                 <input type="date" name="date_entree" required class="w-full border border-gray-300 rounded-lg p-2 text-sm">
             </div>
         </div>
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="text-sm font-semibold text-gray-700 block mb-1">Pôle</label>
+                <select name="pole" class="w-full border border-gray-300 rounded-lg p-2 text-sm">
+                    <option value="">— Aucun —</option>
+                    {% for p in poles %}
+                    <option value="{{ p.id }}">{{ p.nom }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="text-sm font-semibold text-gray-700 block mb-1">Poste (organigramme)</label>
+                <select name="poste_organigramme" class="w-full border border-gray-300 rounded-lg p-2 text-sm">
+                    <option value="">— Aucun —</option>
+                    {% for ps in postes %}
+                    <option value="{{ ps.id }}">{{ ps.intitule }} ({{ ps.pole.nom }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
         <div class="flex items-center justify-between gap-3">
             <a href="{% url 'pilotage_collaborateurs_liste' %}" class="text-sm text-gray-600 hover:text-gray-900">Retour à la liste</a>
             <button type="submit" class="bg-[#C81E6E] text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-[#a81759]">Créer</button>

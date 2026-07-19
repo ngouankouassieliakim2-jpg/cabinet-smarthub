@@ -69,3 +69,33 @@ def arbre_permissions():
             "sous_modules": charger_sous_modules(data["app"]),
         })
     return arbre
+
+
+def modules_visibles_pour(user):
+    """Clés des modules métier visibles pour cet utilisateur, selon son rôle et son pôle.
+    Direction/Cadre voient tout. Un Collaborateur ne voit que les modules de son pôle
+    (accès complet), plus tout module dont il n'a qu'un sous-module ou une
+    fonctionnalité précise (pour pouvoir seulement y naviguer)."""
+    from comptes.models import Profil
+    profil = getattr(user, "profil", None)
+    if not profil:
+        return []
+    if profil.role in (Profil.Role.DIRECTION, Profil.Role.CADRE):
+        return list(MODULES.keys())
+
+    pole = profil.pole
+    if not pole:
+        return []
+
+    visibles = set(pole.modules_ids)
+    for module in arbre_permissions():
+        if module["cle"] in visibles:
+            continue
+        for sm in module["sous_modules"]:
+            if sm["url"] in pole.sous_modules_urls:
+                visibles.add(module["cle"])
+                break
+            if any(f["url"] in pole.fonctionnalites_urls for f in sm.get("fonctionnalites", [])):
+                visibles.add(module["cle"])
+                break
+    return list(visibles)
