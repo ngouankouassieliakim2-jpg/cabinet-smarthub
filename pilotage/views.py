@@ -3,12 +3,19 @@ from django.http import Http404
 from django.urls import reverse
 from django.utils import timezone
 from django.contrib import messages
+from django.contrib.auth.models import User
 from comptes.decorators import role_requis
 from comptes.models import Profil
 from devis.models import Devis
 from paie.models import Employeur, Employe
 from paie.views import _matricule_auto
-from .modules_data import MODULES, charger_sous_modules, get_module_info
+from .models import Pole, Poste
+from pilotage.modules_data import MODULES, charger_sous_modules, get_module_info
+
+MODULES_METIER_CHOIX = [
+    (cle, data["nom"]) for cle, data in MODULES.items()
+    if cle not in ("outils", "parametres")
+]
 
 
 def _modules_nav():
@@ -274,6 +281,157 @@ def collaborateur_creer(request):
         "modules_nav": _modules_nav(),
         "module_actif": get_module_info("direction"),
         "sous_modules": None,
+    })
+
+
+@role_requis(Profil.Role.DIRECTION)
+def poles_liste(request):
+    poles = Pole.objects.select_related("responsable").all()
+    return render(request, "pilotage/poles_liste.html", {
+        "poles": poles,
+        "module_actif": get_module_info("direction"),
+        "sous_modules": charger_sous_modules("pilotage", request),
+    })
+
+
+@role_requis(Profil.Role.DIRECTION)
+def pole_creer(request):
+    if request.method == "POST":
+        nom = request.POST.get("nom", "").strip()
+        description = request.POST.get("description", "").strip()
+        modules_ids = request.POST.getlist("modules_ids")
+        responsable_id = request.POST.get("responsable") or None
+
+        if not nom:
+            messages.error(request, "Le nom du pôle est obligatoire.")
+        else:
+            Pole.objects.create(
+                nom=nom, description=description,
+                modules_ids=modules_ids, responsable_id=responsable_id,
+            )
+            messages.success(request, f"Pôle « {nom} » créé.")
+            return redirect("pilotage_poles_liste")
+
+    responsables_possibles = User.objects.filter(
+        profil__role__in=[Profil.Role.DIRECTION, Profil.Role.CADRE]
+    )
+    return render(request, "pilotage/pole_form.html", {
+        "titre_page": "Nouveau pôle",
+        "modules_choix": MODULES_METIER_CHOIX,
+        "responsables_possibles": responsables_possibles,
+        "module_actif": get_module_info("direction"),
+        "sous_modules": charger_sous_modules("pilotage", request),
+    })
+
+
+@role_requis(Profil.Role.DIRECTION)
+def pole_modifier(request, pole_id):
+    pole = get_object_or_404(Pole, id=pole_id)
+    if request.method == "POST":
+        pole.nom = request.POST.get("nom", "").strip()
+        pole.description = request.POST.get("description", "").strip()
+        pole.modules_ids = request.POST.getlist("modules_ids")
+        pole.responsable_id = request.POST.get("responsable") or None
+        pole.save()
+        messages.success(request, f"Pôle « {pole.nom} » mis à jour.")
+        return redirect("pilotage_poles_liste")
+
+    responsables_possibles = User.objects.filter(
+        profil__role__in=[Profil.Role.DIRECTION, Profil.Role.CADRE]
+    )
+    return render(request, "pilotage/pole_form.html", {
+        "titre_page": f"Modifier : {pole.nom}",
+        "pole": pole,
+        "modules_choix": MODULES_METIER_CHOIX,
+        "responsables_possibles": responsables_possibles,
+        "module_actif": get_module_info("direction"),
+        "sous_modules": charger_sous_modules("pilotage", request),
+    })
+
+
+@role_requis(Profil.Role.DIRECTION)
+def pole_supprimer(request, pole_id):
+    pole = get_object_or_404(Pole, id=pole_id)
+    if request.method == "POST":
+        pole.delete()
+        messages.success(request, "Pôle supprimé.")
+    return redirect("pilotage_poles_liste")
+
+
+@role_requis(Profil.Role.DIRECTION)
+def postes_liste(request):
+    postes = Poste.objects.select_related("pole", "poste_parent").all()
+    return render(request, "pilotage/postes_liste.html", {
+        "postes": postes,
+        "module_actif": get_module_info("direction"),
+        "sous_modules": charger_sous_modules("pilotage", request),
+    })
+
+
+@role_requis(Profil.Role.DIRECTION)
+def poste_creer(request):
+    if request.method == "POST":
+        intitule = request.POST.get("intitule", "").strip()
+        pole_id = request.POST.get("pole")
+        poste_parent_id = request.POST.get("poste_parent") or None
+
+        if not intitule or not pole_id:
+            messages.error(request, "L'intitulé et le pôle sont obligatoires.")
+        else:
+            Poste.objects.create(intitule=intitule, pole_id=pole_id, poste_parent_id=poste_parent_id)
+            messages.success(request, f"Poste « {intitule} » créé.")
+            return redirect("pilotage_postes_liste")
+
+    return render(request, "pilotage/poste_form.html", {
+        "titre_page": "Nouveau poste",
+        "poles": Pole.objects.all(),
+        "postes_possibles": Poste.objects.all(),
+        "module_actif": get_module_info("direction"),
+        "sous_modules": charger_sous_modules("pilotage", request),
+    })
+
+
+@role_requis(Profil.Role.DIRECTION)
+def poste_modifier(request, poste_id):
+    poste = get_object_or_404(Poste, id=poste_id)
+    if request.method == "POST":
+        poste.intitule = request.POST.get("intitule", "").strip()
+        poste.pole_id = request.POST.get("pole")
+        nouveau_parent_id = request.POST.get("poste_parent") or None
+        if nouveau_parent_id and int(nouveau_parent_id) == poste.id:
+            messages.error(request, "Un poste ne peut pas être son propre supérieur.")
+        else:
+            poste.poste_parent_id = nouveau_parent_id
+            poste.save()
+            messages.success(request, f"Poste « {poste.intitule} » mis à jour.")
+            return redirect("pilotage_postes_liste")
+
+    return render(request, "pilotage/poste_form.html", {
+        "titre_page": f"Modifier : {poste.intitule}",
+        "poste": poste,
+        "poles": Pole.objects.all(),
+        "postes_possibles": Poste.objects.exclude(id=poste.id),
+        "module_actif": get_module_info("direction"),
+        "sous_modules": charger_sous_modules("pilotage", request),
+    })
+
+
+@role_requis(Profil.Role.DIRECTION)
+def poste_supprimer(request, poste_id):
+    poste = get_object_or_404(Poste, id=poste_id)
+    if request.method == "POST":
+        poste.delete()
+        messages.success(request, "Poste supprimé.")
+    return redirect("pilotage_postes_liste")
+
+
+@role_requis(Profil.Role.DIRECTION)
+def organigramme(request):
+    postes_racines = Poste.objects.filter(poste_parent__isnull=True).select_related("pole")
+    return render(request, "pilotage/organigramme.html", {
+        "postes_racines": postes_racines,
+        "module_actif": get_module_info("direction"),
+        "sous_modules": charger_sous_modules("pilotage", request),
     })
 
 

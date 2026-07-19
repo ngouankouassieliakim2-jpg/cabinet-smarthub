@@ -1,0 +1,38 @@
+{% extends "pilotage/base_pilotage.html" %}
+{% block titre %}Postes{% endblock %}
+{% block contenu %}
+<div class="p-6 max-w-4xl mx-auto">
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800">Postes</h1>
+            <p class="text-gray-500 mt-1">Les postes précis, rattachés à un pôle et à une hiérarchie.</p>
+        </div>
+        <a href="{% url 'pilotage_poste_creer' %}" class="bg-[#C81E6E] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#a81759]">+ Nouveau poste</a>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50 text-gray-600 text-left">
+                <tr><th class="px-4 py-3">Intitulé</th><th class="px-4 py-3">Pôle</th><th class="px-4 py-3">Rattaché à</th><th class="px-4 py-3"></th></tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for poste in postes %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3 font-medium text-gray-800">{{ poste.intitule }}</td>
+                    <td class="px-4 py-3 text-gray-600">{{ poste.pole.nom }}</td>
+                    <td class="px-4 py-3 text-gray-600">{{ poste.poste_parent.intitule|default:"— (sommet)" }}</td>
+                    <td class="px-4 py-3 text-right whitespace-nowrap">
+                        <a href="{% url 'pilotage_poste_modifier' poste.id %}" class="text-[#C81E6E] font-medium hover:underline">Modifier</a>
+                        <form method="post" action="{% url 'pilotage_poste_supprimer' poste.id %}" onsubmit="return confirm('Supprimer ce poste ?');" class="inline ml-3">
+                            {% csrf_token %}
+                            <button type="submit" class="text-rose-600 font-medium hover:underline">Supprimer</button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="4" class="px-4 py-8 text-center text-gray-400">Aucun poste pour l'instant.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends "pilotage/base_pilotage.html" %}
+{% block titre %}Organigramme{% endblock %}
+{% block contenu %}
+<div class="p-6 max-w-5xl mx-auto">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Organigramme du cabinet</h1>
+        <a href="{% url 'pilotage_poste_creer' %}" class="bg-[#C81E6E] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#a81759]">+ Nouveau poste</a>
+    </div>
+    {% if postes_racines %}
+        {% for racine in postes_racines %}
+            {% include "pilotage/_organigramme_noeud.html" with poste=racine profondeur=0 %}
+        {% endfor %}
+    {% else %}
+        <div class="bg-gray-50 border border-gray-200 rounded-xl p-8 text-center text-gray-400">
+            Aucun poste créé pour l'instant — commence par créer un pôle, puis ses postes.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

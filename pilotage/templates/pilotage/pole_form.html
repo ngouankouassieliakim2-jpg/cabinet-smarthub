@@ -1,0 +1,40 @@
+{% extends "pilotage/base_pilotage.html" %}
+{% block titre %}{{ titre_page }}{% endblock %}
+{% block contenu %}
+<div class="max-w-xl mx-auto p-6">
+    <a href="{% url 'pilotage_poles_liste' %}" class="text-sm text-gray-500 hover:text-[#C81E6E]">← Retour aux pôles</a>
+    <h1 class="text-xl font-bold text-gray-800 mt-3 mb-6">{{ titre_page }}</h1>
+    <form method="post" class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+        {% csrf_token %}
+        <div>
+            <label class="text-sm font-semibold text-gray-700 block mb-1">Nom du pôle</label>
+            <input type="text" name="nom" value="{{ pole.nom|default:'' }}" class="w-full border border-gray-300 rounded-lg p-2 text-sm">
+        </div>
+        <div>
+            <label class="text-sm font-semibold text-gray-700 block mb-1">Description</label>
+            <textarea name="description" rows="2" class="w-full border border-gray-300 rounded-lg p-2 text-sm">{{ pole.description|default:'' }}</textarea>
+        </div>
+        <div>
+            <label class="text-sm font-semibold text-gray-700 block mb-1">Responsable du pôle</label>
+            <select name="responsable" class="w-full border border-gray-300 rounded-lg p-2 text-sm">
+                <option value="">— Aucun —</option>
+                {% for u in responsables_possibles %}
+                <option value="{{ u.id }}" {% if pole.responsable_id == u.id %}selected{% endif %}>{{ u.get_full_name|default:u.username }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="text-sm font-semibold text-gray-700 block mb-2">Modules accessibles</label>
+            <div class="space-y-2">
+                {% for cle, nom in modules_choix %}
+                <label class="flex items-center gap-2">
+                    <input type="checkbox" name="modules_ids" value="{{ cle }}" style="width:auto;" {% if cle in pole.modules_ids %}checked{% endif %}>
+                    <span class="text-sm text-gray-700">{{ nom }}</span>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+        <button type="submit" class="w-full bg-[#C81E6E] text-white font-medium py-2.5 rounded-lg hover:bg-[#a81759]">Enregistrer</button>
+    </form>
+</div>
+{% endblock %}

@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from django.contrib.auth.models import User
 
 
 class Notification(models.Model):
@@ -25,3 +26,45 @@ class Notification(models.Model):
         verbose_name = "Notification"
         verbose_name_plural = "Notifications"
         ordering = ["-cree_le"]
+
+
+class Pole(models.Model):
+    """Un pôle/service du cabinet (ex: Social & RH, Comptabilité & Fiscalité).
+    Détermine quels modules métier ses membres peuvent voir dans la barre du haut."""
+    nom = models.CharField("Nom du pôle", max_length=100)
+    description = models.TextField("Description", blank=True)
+    modules_ids = models.JSONField(
+        "Modules accessibles", default=list,
+        help_text="Clés des modules métier (ex: ['social-rh']) que ce pôle peut voir.",
+    )
+    responsable = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="poles_diriges", verbose_name="Responsable du pôle",
+    )
+
+    class Meta:
+        verbose_name = "Pôle"
+        verbose_name_plural = "Pôles"
+        ordering = ["nom"]
+
+    def __str__(self):
+        return self.nom
+
+
+class Poste(models.Model):
+    """Un poste précis au sein d'un pôle (ex: Comptable senior, Assistant RH).
+    Sert à l'organigramme et à l'affichage sur les documents."""
+    intitule = models.CharField("Intitulé du poste", max_length=150)
+    pole = models.ForeignKey(Pole, on_delete=models.CASCADE, related_name="postes", verbose_name="Pôle")
+    poste_parent = models.ForeignKey(
+        "self", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="postes_subordonnes", verbose_name="Rattaché à (poste hiérarchique supérieur)",
+    )
+
+    class Meta:
+        verbose_name = "Poste"
+        verbose_name_plural = "Postes"
+        ordering = ["pole__nom", "intitule"]
+
+    def __str__(self):
+        return f"{self.intitule} ({self.pole.nom})"
