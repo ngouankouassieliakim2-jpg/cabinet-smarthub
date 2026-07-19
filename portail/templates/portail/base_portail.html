@@ -4,6 +4,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="manifest" href="{% static 'manifest.json' %}">
+<meta name="theme-color" content="#C81E6E">
+<link rel="apple-touch-icon" href="{% static 'images/icone-192.png' %}">
 <link rel="icon" type="image/svg+xml" href="{% static 'favicon.svg' %}">
 <title>{% block titre %}{{ module_actif.nom|default:'Portail client' }} — Cabinet K&L{% endblock %}</title>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -15,6 +18,11 @@
 {% block style %}{% endblock %}
 </head>
 <body class="bg-[#F8FAFC] text-slate-800 min-h-screen font-sans antialiased">
+  <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register("{% static 'service-worker.js' %}");
+        }
+    </script>
 
   <!-- ===== BARRE HORIZONTALE (HAUT) ===== -->
   <nav class="no-print bg-[#16171C] text-white sticky top-0 z-50 shadow-lg shadow-slate-950/10 border-b border-white/10">
@@ -99,6 +107,11 @@
 
   </div>
 
+  <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register("{% static 'service-worker.js' %}");
+        }
+    </script>
   <script>
     function scrollNav(px) {
       const c = document.getElementById("nav-modules");

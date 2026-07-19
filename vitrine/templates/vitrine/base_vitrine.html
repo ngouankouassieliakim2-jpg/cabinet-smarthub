@@ -4,6 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+    <meta name="theme-color" content="#C81E6E">
+    <link rel="apple-touch-icon" href="{% static 'images/icone-192.png' %}">
     <link rel="icon" type="image/svg+xml" href="{% static 'favicon.svg' %}">
     <title>{% block titre %}Cabinet K&amp;L — Expertise Comptable, Fiscale &amp; Sociale{% endblock %}</title>
     <meta name="description" content="{% block meta_description %}Cabinet Comptable et Fiscal K&L : expertise comptable, fiscale et sociale en Côte d'Ivoire. Comptabilité, fiscalité, paie et conseil pour PME et entreprises à Daloa et Grand-Bassam.{% endblock %}">
@@ -109,6 +112,16 @@
     </script>
 </head>
 <body class="min-h-screen bg-slate-50 text-slate-800 flex flex-col antialiased">
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register("{% static 'service-worker.js' %}");
+        }
+    </script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register("{% static 'service-worker.js' %}");
+        }
+    </script>
 
     <!-- Évitement (Accessibilité clavier) -->
     <a href="#contenu-principal" class="sr-only skip-link">Aller au contenu principal</a>
@@ -262,7 +275,7 @@
                 {% if user.is_authenticated %}
                     <a href="{% url 'tableau_bord' %}" class="flex items-center justify-center gap-2 bg-slate-950 text-white w-full py-3.5 rounded-xl font-bold transition">Mon espace &rarr;</a>
                 {% else %}
-                    <a href="{% url 'login' %}" class="flex items-center justify-center gap-2 bg-brand-pink text-white w-full py-3.5 rounded-xl font-bold transition">Espace Client &rarr;</a>
+                    <a href="{% url 'login' %}" class="flex items-center justify-center gap-2 bg-brand-pink text-white w-full py-3.5 rounded-xl font-bold transition">Connexion &rarr;</a>
                 {% endif %}
                 <div class="text-[10px] text-slate-400 text-center uppercase tracking-widest font-bold">
                     cabinet agréé daloa &bull; bassam

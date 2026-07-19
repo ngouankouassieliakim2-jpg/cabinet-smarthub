@@ -4,6 +4,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="manifest" href="{% static 'manifest.json' %}">
+<meta name="theme-color" content="#C81E6E">
+<link rel="apple-touch-icon" href="{% static 'images/icone-192.png' %}">
 <title>{% block titre %}Cabinet K&L{% endblock %}</title>
 <script src="https://cdn.tailwindcss.com"></script>
 {% block style %}{% endblock %}
@@ -23,5 +26,10 @@
     </div>
   </nav>
   {% block contenu %}{% endblock %}
+  <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register("{% static 'service-worker.js' %}");
+        }
+    </script>
 </body>
 </html>

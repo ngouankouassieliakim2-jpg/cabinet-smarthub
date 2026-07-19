@@ -4,13 +4,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="manifest" href="{% static 'manifest.json' %}">
+<meta name="theme-color" content="#C81E6E">
+<link rel="apple-touch-icon" href="{% static 'images/icone-192.png' %}">
 <link rel="icon" type="image/svg+xml" href="{% static 'favicon.svg' %}">
 <title>{% block titre %}{{ module_actif.nom|default:'Direction' }} — Cabinet K&L{% endblock %}</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
   @media print { .no-print { display: none !important; } body { background:#fff !important; } }
   .nav-scroll::-webkit-scrollbar { display: none; }
-  .nav-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+  .nav-scroll { min-width: 0; -ms-overflow-style: none; scrollbar-width: none; }
 
   /* Transition globale & formulaires premiums (Amélioration 5) */
   input[type="text"], input[type="password"], input[type="email"],
@@ -36,6 +39,11 @@
 {% block style %}{% endblock %}
 </head>
 <body class="bg-[#F8FAFC] text-slate-800 min-h-screen flex flex-col font-sans antialiased">
+  <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register("{% static 'service-worker.js' %}");
+        }
+    </script>
 
   <nav class="no-print bg-[#16171CEB] backdrop-blur-md text-white sticky top-0 z-50 shadow-lg shadow-black/10 border-b border-white/5">
     <div class="flex items-center gap-4 px-4 py-2.5">
@@ -192,6 +200,11 @@
 
   </div>
 
+  <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register("{% static 'service-worker.js' %}");
+        }
+    </script>
   <script>
     // Amélioration 7 : Logique d'affichage responsive du tiroir (drawer) de la Sidebar
     function toggleSidebar() {
