@@ -1,5 +1,11 @@
 SOUS_MODULES = [
-    {"cle": "devis", "nom": "Devis", "url": "/devis/"},
-    {"cle": "documents", "nom": "Documents", "url": "/devis/documents/"},
-    {"cle": "facturation", "nom": "Facturation", "url": "/devis/facturation/"},
+    {
+        "nom": "Devis", "url": "/devis/",
+        "fonctionnalites": [
+            {"nom": "Nouveau devis", "url": "/devis/nouveau/"},
+            {"nom": "Liste des devis", "url": "/devis/"},
+        ],
+    },
+    {"nom": "Documents", "url": "/devis/documents/"},
+    {"nom": "Facturation", "url": "/devis/facturation/"},
 ]

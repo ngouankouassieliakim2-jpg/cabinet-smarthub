@@ -56,3 +56,16 @@ def get_module_info(cle):
     if not data:
         return None
     return {"cle": cle, **data}
+
+
+def arbre_permissions():
+    """Module -> Sous-modules -> Fonctionnalités (si déclarées), pour l'écran Pôles."""
+    arbre = []
+    for cle, data in MODULES.items():
+        if cle in ("outils", "parametres"):
+            continue
+        arbre.append({
+            "cle": cle, "nom": data["nom"], "icone": data["icone"],
+            "sous_modules": charger_sous_modules(data["app"]),
+        })
+    return arbre
