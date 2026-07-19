@@ -1,7 +1,7 @@
 {% extends "pilotage/base_pilotage.html" %}
 {% block titre %}{{ titre_page }}{% endblock %}
 {% block contenu %}
-<div class="max-w-xl mx-auto p-6">
+<div class="max-w-2xl mx-auto p-6">
     <a href="{% url 'pilotage_poles_liste' %}" class="text-sm text-gray-500 hover:text-[#C81E6E]">← Retour aux pôles</a>
     <h1 class="text-xl font-bold text-gray-800 mt-3 mb-6">{{ titre_page }}</h1>
     <form method="post" class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
@@ -23,18 +23,65 @@
                 {% endfor %}
             </select>
         </div>
+
         <div>
-            <label class="text-sm font-semibold text-gray-700 block mb-2">Modules accessibles</label>
+            <label class="text-sm font-semibold text-gray-700 block mb-2">Accès — modules, sous-modules ou fonctionnalités précises</label>
+            <p class="text-xs text-gray-400 mb-3">Cocher un module donne accès à tout ce qu'il contient. Déplie pour choisir plus finement.</p>
             <div class="space-y-2">
-                {% for cle, nom in modules_choix %}
-                <label class="flex items-center gap-2">
-                    <input type="checkbox" name="modules_ids" value="{{ cle }}" style="width:auto;" {% if cle in pole.modules_ids %}checked{% endif %}>
-                    <span class="text-sm text-gray-700">{{ nom }}</span>
-                </label>
+                {% for module in arbre %}
+                <details class="border border-gray-200 rounded-lg" {% if module.cle in pole.modules_ids %}open{% endif %}>
+                    <summary class="flex items-center gap-2 px-3 py-2 cursor-pointer bg-gray-50 hover:bg-gray-100 rounded-lg">
+                        <input type="checkbox" name="modules_ids" value="{{ module.cle }}"
+                               class="module-checkbox" data-module="{{ module.cle }}"
+                               {% if module.cle in pole.modules_ids %}checked{% endif %}
+                               onclick="event.stopPropagation();">
+                        <span class="font-semibold text-sm">{{ module.icone }} {{ module.nom }}</span>
+                    </summary>
+                    <div class="pl-8 pr-3 py-2 space-y-1">
+                        {% for sm in module.sous_modules %}
+                        <details class="border-l-2 border-gray-100 pl-2">
+                            <summary class="flex items-center gap-2 py-1 cursor-pointer">
+                                <input type="checkbox" name="sous_modules_urls" value="{{ sm.url }}"
+                                       class="sm-checkbox" data-module="{{ module.cle }}"
+                                       {% if sm.url in pole.sous_modules_urls %}checked{% endif %}
+                                       onclick="event.stopPropagation();">
+                                <span class="text-sm text-gray-700">{{ sm.nom }}</span>
+                            </summary>
+                            {% if sm.fonctionnalites %}
+                            <div class="pl-8 py-1 space-y-1">
+                                {% for f in sm.fonctionnalites %}
+                                <label class="flex items-center gap-2 py-0.5">
+                                    <input type="checkbox" name="fonctionnalites_urls" value="{{ f.url }}"
+                                           data-module="{{ module.cle }}"
+                                           {% if f.url in pole.fonctionnalites_urls %}checked{% endif %}>
+                                    <span class="text-xs text-gray-600">{{ f.nom }}</span>
+                                </label>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </details>
+                        {% empty %}
+                        <p class="text-xs text-gray-400">Aucun sous-module déclaré.</p>
+                        {% endfor %}
+                    </div>
+                </details>
                 {% endfor %}
             </div>
         </div>
+
         <button type="submit" class="w-full bg-[#C81E6E] text-white font-medium py-2.5 rounded-lg hover:bg-[#a81759]">Enregistrer</button>
     </form>
 </div>
+
+<script>
+document.querySelectorAll('.module-checkbox').forEach(function(moduleCb) {
+    moduleCb.addEventListener('change', function() {
+        var moduleCle = this.dataset.module;
+        var checked = this.checked;
+        this.closest('details').querySelectorAll('input[type="checkbox"][data-module="' + moduleCle + '"]').forEach(function(cb) {
+            cb.checked = checked;
+        });
+    });
+});
+</script>
 {% endblock %}

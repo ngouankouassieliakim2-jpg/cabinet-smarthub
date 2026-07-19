@@ -10,7 +10,7 @@ from devis.models import Devis
 from paie.models import Employeur, Employe
 from paie.views import _matricule_auto
 from .models import Pole, Poste
-from pilotage.modules_data import MODULES, charger_sous_modules, get_module_info
+from pilotage.modules_data import MODULES, charger_sous_modules, get_module_info, arbre_permissions
 
 MODULES_METIER_CHOIX = [
     (cle, data["nom"]) for cle, data in MODULES.items()
@@ -76,7 +76,7 @@ def tableau_bord(request):
         # Pour le gabarit :
         "modules_nav": _modules_nav(),
         "module_actif": get_module_info("direction"),
-        "sous_modules": None,  # pas de sidebar sur le tableau de bord
+        "sous_modules": charger_sous_modules("pilotage", request),
     })
 
 
@@ -108,7 +108,7 @@ def delegations_liste(request):
         "delegations": delegations,
         "modules_nav": _modules_nav(),
         "module_actif": get_module_info("direction"),
-        "sous_modules": None,
+        "sous_modules": charger_sous_modules("pilotage", request),
     })
 
 
@@ -171,7 +171,7 @@ def delegation_creer(request):
         "delegataires_possibles": delegataires_possibles,
         "modules_nav": _modules_nav(),
         "module_actif": get_module_info("direction"),
-        "sous_modules": None,
+        "sous_modules": charger_sous_modules("pilotage", request),
     })
 
 
@@ -185,7 +185,7 @@ def collaborateurs_liste(request):
         "profils": profils,
         "modules_nav": _modules_nav(),
         "module_actif": get_module_info("direction"),
-        "sous_modules": None,
+        "sous_modules": charger_sous_modules("pilotage", request),
     })
 
 
@@ -300,6 +300,8 @@ def pole_creer(request):
         nom = request.POST.get("nom", "").strip()
         description = request.POST.get("description", "").strip()
         modules_ids = request.POST.getlist("modules_ids")
+        sous_modules_urls = request.POST.getlist("sous_modules_urls")
+        fonctionnalites_urls = request.POST.getlist("fonctionnalites_urls")
         responsable_id = request.POST.get("responsable") or None
 
         if not nom:
@@ -307,7 +309,8 @@ def pole_creer(request):
         else:
             Pole.objects.create(
                 nom=nom, description=description,
-                modules_ids=modules_ids, responsable_id=responsable_id,
+                modules_ids=modules_ids, sous_modules_urls=sous_modules_urls,
+                fonctionnalites_urls=fonctionnalites_urls, responsable_id=responsable_id,
             )
             messages.success(request, f"Pôle « {nom} » créé.")
             return redirect("pilotage_poles_liste")
@@ -317,7 +320,7 @@ def pole_creer(request):
     )
     return render(request, "pilotage/pole_form.html", {
         "titre_page": "Nouveau pôle",
-        "modules_choix": MODULES_METIER_CHOIX,
+        "arbre": arbre_permissions(),
         "responsables_possibles": responsables_possibles,
         "module_actif": get_module_info("direction"),
         "sous_modules": charger_sous_modules("pilotage", request),
@@ -331,6 +334,8 @@ def pole_modifier(request, pole_id):
         pole.nom = request.POST.get("nom", "").strip()
         pole.description = request.POST.get("description", "").strip()
         pole.modules_ids = request.POST.getlist("modules_ids")
+        pole.sous_modules_urls = request.POST.getlist("sous_modules_urls")
+        pole.fonctionnalites_urls = request.POST.getlist("fonctionnalites_urls")
         pole.responsable_id = request.POST.get("responsable") or None
         pole.save()
         messages.success(request, f"Pôle « {pole.nom} » mis à jour.")
@@ -342,7 +347,7 @@ def pole_modifier(request, pole_id):
     return render(request, "pilotage/pole_form.html", {
         "titre_page": f"Modifier : {pole.nom}",
         "pole": pole,
-        "modules_choix": MODULES_METIER_CHOIX,
+        "arbre": arbre_permissions(),
         "responsables_possibles": responsables_possibles,
         "module_actif": get_module_info("direction"),
         "sous_modules": charger_sous_modules("pilotage", request),
@@ -462,6 +467,7 @@ def notifications_liste(request):
         "types_disponibles": types_disponibles,
         "reset_url": reverse('pilotage_notifications'),
         "module_actif": get_module_info("direction"),
+        "sous_modules": charger_sous_modules("pilotage", request),
     })
 
 
@@ -495,7 +501,7 @@ def lettres_a_valider(request):
         "dossiers": dossiers,
         "modules_nav": _modules_nav(),
         "module_actif": get_module_info("direction"),
-        "sous_modules": None,
+        "sous_modules": charger_sous_modules("pilotage", request),
     })
 
 

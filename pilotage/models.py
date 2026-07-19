@@ -37,6 +37,14 @@ class Pole(models.Model):
         "Modules accessibles", default=list,
         help_text="Clés des modules métier (ex: ['social-rh']) que ce pôle peut voir.",
     )
+    sous_modules_urls = models.JSONField(
+        "Sous-modules accessibles", default=list,
+        help_text="Accès à un sous-module précis, sans donner tout le module.",
+    )
+    fonctionnalites_urls = models.JSONField(
+        "Fonctionnalités accessibles", default=list,
+        help_text="Accès à une action précise (ex: 'Nouveau devis'), comme un outil isolé.",
+    )
     responsable = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True,
         related_name="poles_diriges", verbose_name="Responsable du pôle",
