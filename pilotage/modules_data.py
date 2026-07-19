@@ -9,7 +9,7 @@ MODULES = {
     "social-rh":     {"nom": "Social & RH",              "icone": "👥", "app": "paie", "description": "Gestion des salariés, paie et obligations sociales."},
     "comptabilite":  {"nom": "Comptabilité & Fiscalité", "icone": "📊", "app": "comptabilite", "description": "Production comptable, TVA et états financiers."},
     "formation":     {"nom": "Formation & Conseil",      "icone": "🎓", "app": "formation", "description": "Accompagnement, formation et montée en compétences."},
-    "marketing":     {"nom": "Marketing & Image",        "icone": "📣", "app": "marketing", "description": "Visibilité, communication et image de marque."},
+    "marketing":     {"nom": "Marketing & Image",        "icone": "📣", "app": "actualites", "description": "Visibilité, communication et image de marque."},
     "logistique":    {"nom": "Logistique & Livraison",   "icone": "🚚", "app": "logistique", "description": "Optimisation des flux et suivi des livraisons."},
     "outils":        {"nom": "Outils",                    "icone": "🛠️", "app": "comptes"},
     "parametres":    {"nom": "Paramètres",               "icone": "⚙️", "app": "parametres", "description": "Configuration globale et accès aux réglages."},

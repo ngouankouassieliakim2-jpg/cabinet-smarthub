@@ -1,0 +1,64 @@
+{% extends "pilotage/base_pilotage.html" %}
+
+{% block titre %}{{ titre_page }} — Actualités{% endblock %}
+
+{% block contenu %}
+<div class="max-w-3xl mx-auto px-4 py-10">
+  <div class="mb-8">
+    <a href="{% url 'articles_liste_interne' %}" class="inline-flex items-center gap-2 text-slate-500 hover:text-[#C81E6E]">
+      ← Retour à la gestion
+    </a>
+    <h1 class="mt-6 text-3xl font-bold text-slate-900">{{ titre_page }}</h1>
+    <p class="mt-2 text-slate-500">Renseignez les informations de l'article pour la vitrine.</p>
+  </div>
+
+  <div class="bg-white border border-slate-200 rounded-3xl shadow-sm p-8">
+    <form method="post" enctype="multipart/form-data" class="space-y-6">
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+
+      <div>
+        <label class="block text-sm font-semibold text-slate-700">Titre</label>
+        {{ form.titre }}
+        {{ form.titre.errors }}
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold text-slate-700">Image de couverture</label>
+        {{ form.image }}
+        {{ form.image.errors }}
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold text-slate-700">Contenu</label>
+        {{ form.contenu }}
+        {{ form.contenu.errors }}
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold text-slate-700">Lien vidéo</label>
+        {{ form.lien_video }}
+        {{ form.lien_video.errors }}
+      </div>
+
+      <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+        <div>
+          <label class="block text-sm font-semibold text-slate-700">Date de publication</label>
+          {{ form.date_publication }}
+          {{ form.date_publication.errors }}
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700">Publication</label>
+          {{ form.publie }}
+          {{ form.publie.errors }}
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3 pt-4">
+        <button type="submit" class="rounded-full bg-[#C81E6E] text-white px-6 py-3 font-semibold hover:bg-[#a81759] transition">Enregistrer</button>
+        <a href="{% url 'articles_liste_interne' %}" class="rounded-full border border-slate-200 px-6 py-3 text-slate-600 hover:bg-slate-50 transition">Annuler</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
