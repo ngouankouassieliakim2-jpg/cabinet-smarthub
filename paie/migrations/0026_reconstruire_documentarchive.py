@@ -58,7 +58,6 @@ def reconstruire(apps, schema_editor):
 
 
 def inverse(apps, schema_editor):
-    # Pas de retour arriere utile : la table etait deja incoherente.
     pass
 
 
