@@ -64,11 +64,11 @@
         </div>
       </a>
 
-      <button id="nav-left" onclick="scrollNav(-200)" class="shrink-0 w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all text-sm" title="Défiler à gauche">
+      <button id="nav-left" onclick="scrollNav(-200)" class="hidden lg:flex shrink-0 w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 items-center justify-center transition-all text-sm" title="Défiler à gauche">
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" /></svg>
       </button>
 
-      <div id="nav-modules" class="nav-scroll flex items-center gap-2 text-sm overflow-x-auto flex-1 scroll-smooth">
+      <div id="nav-modules" class="nav-scroll hidden lg:flex items-center gap-2 text-sm overflow-x-auto flex-1 scroll-smooth">
         {% for m in modules_nav_auto %}
         <a href="{{ m.url }}"
            class="px-4 py-2 rounded-lg whitespace-nowrap transition-all duration-200 {% if module_actif and m.cle == module_actif.cle %}bg-[#C81E6E] text-white font-semibold shadow-md shadow-[#C81E6E]/20{% else %}text-slate-300 hover:text-white hover:bg-white/10{% endif %}">
@@ -77,7 +77,14 @@
         {% endfor %}
       </div>
 
-      <button id="nav-right" onclick="scrollNav(200)" class="shrink-0 w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all text-sm" title="Défiler à droite">
+      <button onclick="toggleSelecteurModule()" class="lg:hidden flex-1 flex items-center justify-between gap-2 bg-white/5 hover:bg-white/10 rounded-lg px-3 py-2 transition-all">
+        <span class="flex items-center gap-2 text-sm font-semibold text-white truncate">
+          {{ module_actif.icone|default:"🏛️" }} {{ module_actif.nom|default:"Direction" }}
+        </span>
+        <svg class="w-4 h-4 text-slate-300 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
+      </button>
+
+      <button id="nav-right" onclick="scrollNav(200)" class="hidden lg:flex shrink-0 w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 items-center justify-center transition-all text-sm" title="Défiler à droite">
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
       </button>
 
@@ -116,7 +123,13 @@
     </div>
   </nav>
 
-  <div class="flex-1 flex relative">
+  <div id="selecteur-module" class="no-print lg:hidden hidden bg-[#16171C] border-b border-white/10 max-h-72 overflow-y-auto">
+    {% for m in modules_nav_auto %}
+    <a href="{{ m.url }}" class="flex items-center gap-3 px-4 py-3 text-sm border-b border-white/5 {% if module_actif and m.cle == module_actif.cle %}bg-white/10 text-white font-semibold{% else %}text-slate-300{% endif %}">
+      {{ m.icone }} {{ m.nom }}
+    </a>
+    {% endfor %}
+  </div>
 
     <div id="sidebar-backdrop" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-30 hidden lg:hidden" onclick="toggleSidebar()"></div>
 
@@ -214,6 +227,11 @@
         sidebar.classList.toggle("-translate-x-full");
         backdrop.classList.toggle("hidden");
       }
+    }
+
+    function toggleSelecteurModule() {
+      const menu = document.getElementById("selecteur-module");
+      if (menu) menu.classList.toggle("hidden");
     }
 
     // Défilement horizontal des modules d'en-tête
