@@ -84,9 +84,10 @@
         {% endfor %}
       </div>
 
-      <button onclick="toggleSelecteurModule()" class="lg:hidden flex-1 flex items-center justify-between gap-2 bg-white/5 hover:bg-white/10 rounded-lg px-3 py-2 transition-all">
-        <span class="flex items-center gap-2 text-sm font-semibold text-white truncate">
-          {{ module_actif.icone|default:"🏛️" }} {{ module_actif.nom|default:"Direction" }}
+      <button onclick="toggleSelecteurModule()" class="lg:hidden flex items-center justify-between gap-1.5 bg-white/5 hover:bg-white/10 rounded-lg px-2.5 py-2 transition-all min-w-0 max-w-[45vw]">
+        <span class="flex items-center gap-1.5 text-sm font-semibold text-white truncate min-w-0">
+          <span class="shrink-0">{{ module_actif.icone|default:"🛠️" }}</span>
+          <span class="truncate">{{ module_actif.nom|default:"Direction" }}</span>
         </span>
         <svg class="w-4 h-4 text-slate-300 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
       </button>
@@ -95,7 +96,7 @@
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
       </button>
 
-      <div class="shrink-0 flex items-center gap-1.5 sm:gap-3.5 pl-2 sm:pl-4 border-l border-white/10">
+      <div class="shrink-0 flex items-center gap-1 sm:gap-3.5 pl-1.5 sm:pl-4 border-l border-white/10">
         
         <a href="{% url 'messagerie_liste' %}" class="relative w-9 h-9 rounded-lg hover:bg-white/10 flex items-center justify-center text-slate-300 hover:text-white transition-all" title="Messagerie">
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
