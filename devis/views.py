@@ -1,9 +1,25 @@
 import json
 from datetime import date
+from itertools import chain
+from operator import attrgetter
 from django.shortcuts import render, get_object_or_404, redirect
-from django.forms import modelform_factory
+from django.forms import modelform_factory, modelformset_factory
 from django import forms
-from .models import Devis, LignePrestation, Associe, Facture, LigneFacture
+from django.db.models import Sum, F, DecimalField, Value, Case, When, BooleanField, Q
+from django.db.models.functions import Coalesce
+from django.utils import timezone
+from django.core.exceptions import PermissionDenied
+from django.contrib.auth.models import User
+from django.contrib.contenttypes.models import ContentType
+from .models import Devis, LignePrestation, Associe, Facture, LigneFacture, EtapeRelance, Litige, ActionRecouvrement, Paiement, Avoir, Remboursement, Compensation, Fournisseur, ContratFournisseur, CategorieDepense, Depense, PaiementDepense, DocumentDepense, Relance
+from .forms import (
+    PaiementForm, TransitionStatutForm, AvoirForm,
+    RemboursementForm, CompensationForm, EtapeRelanceForm,
+    LitigeForm, CommentaireLitigeForm, PieceJointeLitigeForm,
+    AffectationRecouvreurForm, ActionRecouvrementForm,
+    ResolutionLitigeForm, FournisseurForm, ContratFournisseurForm,
+    DepenseForm, DocumentDepenseForm, PaiementDepenseForm, NoteInterneForm,
+)
 from .ia import generer_note_explicative, analyser_dossier
 from parametres.models import CategoriePrestation, PrestationCatalogue
 from django.http import HttpResponse
@@ -12,7 +28,247 @@ from .pdf import generer_pdf_devis
 from django.contrib.auth.decorators import login_required
 from comptes.decorators import role_requis
 from comptes.models import Profil
-from pilotage.modules_data import charger_sous_modules
+from pilotage.modules_data import charger_sous_modules, get_module_info
+from core.audit import journaliser
+from core.exports import exporter_csv, exporter_excel
+from core.models import NoteInterne
+from parametres.emails import envoyer_email as notifier_email
+from .kpi import (
+    delai_moyen_paiement, taux_impayes, taux_recouvrement,
+    clients_a_risque, encaissements_mensuels, creances_par_anciennete,
+)
+from .previsions import previsions_encaissements, repartition_par_anciennete
+
+
+@login_required
+def tableau_kpi(request):
+    debut_annee = date(date.today().year, 1, 1)
+    context = {
+        "module_actif": get_module_info("recouvrement"),
+        "delai_moyen": delai_moyen_paiement(),
+        "taux_impayes": taux_impayes(depuis=debut_annee),
+        "taux_recouvrement": taux_recouvrement(depuis=debut_annee),
+        "clients_risque": clients_a_risque(),
+        "encaissements": encaissements_mensuels(),
+        "anciennete": creances_par_anciennete(),
+    }
+    return render(request, "devis/creances/tableau_kpi.html", context)
+
+
+@login_required
+def liste_fournisseurs(request):
+    recherche = request.GET.get("q", "").strip()
+    fournisseurs = Fournisseur.objects.all()
+    if recherche:
+        fournisseurs = fournisseurs.filter(raison_sociale__icontains=recherche)
+
+    context = {
+        "module_actif": get_module_info("recouvrement"),
+        "fournisseurs": fournisseurs,
+        "recherche": recherche,
+    }
+    return render(request, "devis/depenses/liste_fournisseurs.html", context)
+
+
+@login_required
+def creer_fournisseur(request):
+    if request.method == "POST":
+        form = FournisseurForm(request.POST)
+        if form.is_valid():
+            fournisseur = form.save()
+            messages.success(request, "Fournisseur créé.")
+            return redirect("devis:detail_fournisseur", fournisseur_id=fournisseur.id)
+    else:
+        form = FournisseurForm()
+    return render(request, "devis/depenses/form_fournisseur.html", {
+        "module_actif": get_module_info("recouvrement"), "form": form, "creation": True})
+
+
+@login_required
+def modifier_fournisseur(request, fournisseur_id):
+    fournisseur = get_object_or_404(Fournisseur, pk=fournisseur_id)
+    if request.method == "POST":
+        form = FournisseurForm(request.POST, instance=fournisseur)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Fournisseur mis à jour.")
+            return redirect("devis:detail_fournisseur", fournisseur_id=fournisseur.id)
+    else:
+        form = FournisseurForm(instance=fournisseur)
+    return render(request, "devis/depenses/form_fournisseur.html", {
+        "module_actif": get_module_info("recouvrement"), "form": form, "creation": False, "fournisseur": fournisseur})
+
+
+@login_required
+def detail_fournisseur(request, fournisseur_id):
+    fournisseur = get_object_or_404(Fournisseur, pk=fournisseur_id)
+    contrat_form = ContratFournisseurForm()
+
+    if request.method == "POST" and "ajouter_contrat" in request.POST:
+        contrat_form = ContratFournisseurForm(request.POST, request.FILES)
+        if contrat_form.is_valid():
+            ContratFournisseur.objects.create(fournisseur=fournisseur, **contrat_form.cleaned_data)
+            messages.success(request, "Contrat ajouté.")
+            return redirect("devis:detail_fournisseur", fournisseur_id=fournisseur.id)
+
+    context = {
+        "module_actif": get_module_info("recouvrement"),
+        "fournisseur": fournisseur,
+        "contrats": fournisseur.contrats.all(),
+        "contrat_form": contrat_form,
+    }
+    return render(request, "devis/depenses/detail_fournisseur.html", context)
+
+
+@login_required
+def liste_depenses(request):
+    depenses = Depense.objects.select_related("fournisseur", "categorie").order_by("-date_facture")
+
+    statut = request.GET.get("statut", "")
+    if statut:
+        depenses = depenses.filter(statut=statut)
+
+    fournisseur_id = request.GET.get("fournisseur", "")
+    if fournisseur_id:
+        depenses = depenses.filter(fournisseur_id=fournisseur_id)
+
+    context = {
+        "module_actif": get_module_info("recouvrement"),
+        "depenses": depenses,
+        "statuts": Depense.STATUT_CHOICES,
+        "fournisseurs": Fournisseur.objects.filter(actif=True),
+        "filtre_statut": statut,
+        "filtre_fournisseur": fournisseur_id,
+    }
+    return render(request, "devis/depenses/liste_depenses.html", context)
+
+
+@login_required
+def creer_depense(request):
+    if request.method == "POST":
+        form = DepenseForm(request.POST)
+        if form.is_valid():
+            depense = form.save(commit=False)
+            depense.cree_par = request.user
+            depense.save()
+            messages.success(request, "Dépense enregistrée.")
+            return redirect("devis:detail_depense", depense_id=depense.id)
+    else:
+        form = DepenseForm()
+    return render(request, "devis/depenses/form_depense.html", {
+        "module_actif": get_module_info("recouvrement"), "form": form})
+
+
+@login_required
+def detail_depense(request, depense_id):
+    depense = get_object_or_404(Depense, pk=depense_id)
+    document_form = DocumentDepenseForm()
+    paiement_form = PaiementDepenseForm(depense=depense)
+
+    if request.method == "POST":
+        if "ajouter_document" in request.POST:
+            document_form = DocumentDepenseForm(request.POST, request.FILES)
+            if document_form.is_valid():
+                DocumentDepense.objects.create(depense=depense, **document_form.cleaned_data)
+                messages.success(request, "Document ajouté.")
+                return redirect("devis:detail_depense", depense_id=depense.id)
+
+        elif "enregistrer_paiement" in request.POST:
+            paiement_form = PaiementDepenseForm(request.POST, request.FILES, depense=depense)
+            if paiement_form.is_valid():
+                depense.enregistrer_paiement(
+                    montant=paiement_form.cleaned_data["montant"],
+                    utilisateur=request.user,
+                    date_paiement=paiement_form.cleaned_data["date_paiement"],
+                    mode_paiement=paiement_form.cleaned_data["mode_paiement"],
+                    reference_bancaire=paiement_form.cleaned_data["reference_bancaire"],
+                    justificatif=paiement_form.cleaned_data["justificatif"],
+                    commentaire=paiement_form.cleaned_data["commentaire"],
+                )
+                messages.success(request, "Paiement enregistré.")
+                return redirect("devis:detail_depense", depense_id=depense.id)
+
+    context = {
+        "module_actif": get_module_info("recouvrement"),
+        "depense": depense,
+        "document_form": document_form,
+        "paiement_form": paiement_form,
+        "documents": depense.documents.all(),
+        "paiements": depense.paiements.select_related("utilisateur").order_by("-date_paiement"),
+        "historique": depense.historique_statuts.select_related("utilisateur").order_by("-date_changement"),
+    }
+    return render(request, "devis/depenses/detail_depense.html", context)
+
+
+@role_requis(Profil.Role.DIRECTION, Profil.Role.CADRE, Profil.Role.COLLABORATEUR)
+def journal_paiements(request):
+    avoirs = Avoir.objects.select_related("facture", "cree_par").all()
+    remboursements = Remboursement.objects.select_related("facture", "utilisateur").all()
+    compensations = Compensation.objects.select_related("facture_source", "facture_cible", "utilisateur").all()
+
+    recherche = request.GET.get("q", "").strip()
+    if recherche:
+        avoirs = avoirs.filter(facture__numero_facture__icontains=recherche)
+        remboursements = remboursements.filter(facture__numero_facture__icontains=recherche)
+        compensations = compensations.filter(
+            Q(facture_source__numero_facture__icontains=recherche) |
+            Q(facture_cible__numero_facture__icontains=recherche))
+
+    type_filtre = request.GET.get("type", "")
+
+    mouvements = list(chain(
+        ({
+            "type": "Avoir",
+            "date": a.date_creation,
+            "facture": a.facture,
+            "montant": -a.montant,
+            "detail": a.get_type_avoir_display(),
+            "par": a.cree_par,
+        } for a in avoirs) if type_filtre in ("", "AVOIR") else [] ,
+        ({
+            "type": "Remboursement",
+            "date": r.date_enregistrement,
+            "facture": r.facture,
+            "montant": -r.montant,
+            "detail": r.get_mode_remboursement_display(),
+            "par": r.utilisateur,
+        } for r in remboursements) if type_filtre in ("", "REMBOURSEMENT") else [],
+        ({
+            "type": "Compensation",
+            "date": c.date_creation,
+            "facture": c.facture_cible,
+            "montant": c.montant,
+            "detail": f"depuis {c.facture_source.numero_facture}",
+            "par": c.utilisateur,
+        } for c in compensations) if type_filtre in ("", "COMPENSATION") else [],
+    ))
+
+    mouvements.sort(key=attrgetter("date"), reverse=True)
+
+    if "export" in request.GET:
+        colonnes = [
+            ("Type", lambda m: m["type"]),
+            ("Date", lambda m: m["date"].strftime("%d/%m/%Y")),
+            ("Facture", lambda m: m["facture"].numero_facture),
+            ("Montant", lambda m: m["montant"]),
+            ("Détail", lambda m: m["detail"]),
+            ("Enregistré par", lambda m: str(m["par"]) if m["par"] else "—"),
+        ]
+        journaliser(request, "EXPORT", description="Export journal des paiements")
+        if request.GET["export"] == "excel":
+            return exporter_excel(mouvements, colonnes, "journal_paiements")
+        return exporter_csv(mouvements, colonnes, "journal_paiements")
+
+    context = {
+        "module_actif": get_module_info("recouvrement"),
+        "mouvements": mouvements,
+        "filtre_recherche": recherche,
+        "filtre_type": type_filtre,
+        "total_avoirs": avoirs.aggregate(t=Sum("montant"))["t"] or 0,
+        "total_remboursements": remboursements.aggregate(t=Sum("montant"))["t"] or 0,
+        "total_compensations": compensations.aggregate(t=Sum("montant"))["t"] or 0,
+    }
+    return render(request, "devis/creances/journal_paiements.html", context)
 
 
 @role_requis(Profil.Role.DIRECTION, Profil.Role.CADRE, Profil.Role.COLLABORATEUR)
@@ -68,6 +324,46 @@ def facture_certifier(request, facture_id):
     })
 
 
+@login_required
+def previsions_tresorerie(request):
+    debut_annee = date(date.today().year, 1, 1)
+    previsions = previsions_encaissements()
+    anciennete = creances_par_anciennete()
+
+    if "export" in request.GET:
+        lignes = [
+            {"categorie": "Cette semaine (brut)", "montant": previsions["semaine"]["brut"]},
+            {"categorie": "Cette semaine (pondéré)", "montant": previsions["semaine"]["pondere"]},
+            {"categorie": "Ce mois (brut)", "montant": previsions["mois"]["brut"]},
+            {"categorie": "Ce mois (pondéré)", "montant": previsions["mois"]["pondere"]},
+            {"categorie": "Ce trimestre (brut)", "montant": previsions["trimestre"]["brut"]},
+            {"categorie": "Ce trimestre (pondéré)", "montant": previsions["trimestre"]["pondere"]},
+            {"categorie": "Ancienneté 0-30j", "montant": anciennete["j0_30"]},
+            {"categorie": "Ancienneté 31-60j", "montant": anciennete["j31_60"]},
+            {"categorie": "Ancienneté 61-90j", "montant": anciennete["j61_90"]},
+            {"categorie": "Ancienneté 90+j", "montant": anciennete["j90_plus"]},
+        ]
+        colonnes = [("Catégorie", lambda l: l["categorie"]), ("Montant (FCFA)", lambda l: l["montant"])]
+        journaliser(request, "EXPORT", description="Export prévisions de trésorerie")
+        if request.GET["export"] == "excel":
+            return exporter_excel(lignes, colonnes, "previsions_tresorerie")
+        return exporter_csv(lignes, colonnes, "previsions_tresorerie")
+
+    journaliser(request, "CONSULTATION", description="Consultation prévisions de trésorerie")
+
+    context = {
+        "module_actif": get_module_info("recouvrement"),
+        "previsions": previsions,
+        "anciennete": anciennete,
+    }
+    return render(request, "devis/creances/previsions_tresorerie.html", context)
+
+
+def _direction_ou_cadre(user):
+    profil = getattr(user, "profil", None)
+    return profil and profil.role in (Profil.Role.DIRECTION, Profil.Role.CADRE)
+
+
 def _contexte_devis(actif_sous="devis", extra=None):
     base = {
         "actif": "devis",
@@ -83,6 +379,720 @@ def _contexte_devis(actif_sous="devis", extra=None):
     if extra:
         base.update(extra)
     return base
+
+
+STATUTS_EN_RETARD_POSSIBLES = ["EN_ATTENTE_PAIEMENT", "PARTIELLEMENT_PAYEE"]
+
+
+def _factures_avec_soldes():
+    """Annotate montant_paye/solde_restant en une seule requête (évite le
+    N+1 de la property Python sur une liste)."""
+    return Facture.objects.annotate(
+        montant_paye_calc=Coalesce(
+            Sum("paiements__montant"), Value(0), output_field=DecimalField()
+        )
+    ).annotate(
+        solde_restant_calc=F("montant_ttc") - F("montant_paye_calc"),
+        en_retard=Case(
+            When(
+                statut__in=STATUTS_EN_RETARD_POSSIBLES,
+                date_echeance__lt=timezone.now().date(),
+                then=Value(True),
+            ),
+            default=Value(False),
+            output_field=BooleanField(),
+        ),
+    )
+
+
+@role_requis(Profil.Role.DIRECTION, Profil.Role.CADRE, Profil.Role.COLLABORATEUR)
+def liste_creances(request):
+    aujourdhui = timezone.now().date()
+
+    factures = _factures_avec_soldes().select_related("devis_source").order_by("-date_emission")
+
+    voir_archivees = request.GET.get("archivees") == "1"
+    factures = factures.filter(archive=voir_archivees)
+
+    statut = request.GET.get("statut", "")
+    if statut:
+        factures = factures.filter(statut=statut)
+
+    recherche = request.GET.get("q", "").strip()
+    if recherche:
+        factures = factures.filter(
+            Q(numero_facture__icontains=recherche) | Q(client_nom__icontains=recherche)
+        )
+
+    client = request.GET.get("client", "").strip()
+    if client:
+        factures = factures.filter(client_nom__icontains=client)
+
+    en_retard_seulement = request.GET.get("en_retard") == "1"
+    if en_retard_seulement:
+        factures = factures.filter(
+            statut__in=STATUTS_EN_RETARD_POSSIBLES,
+            date_echeance__lt=aujourdhui,
+        )
+
+    if "export" in request.GET:
+        colonnes = [
+            ("N° facture", lambda f: f.numero_facture),
+            ("Client", lambda f: f.client_nom),
+            ("Échéance", lambda f: f.date_echeance),
+            ("Montant TTC", lambda f: f.montant_ttc),
+            ("Solde restant", lambda f: f.solde_restant_calc),
+            ("Statut", lambda f: f.get_statut_display()),
+        ]
+        journaliser(request, "EXPORT", description="Export liste des créances")
+        if request.GET["export"] == "excel":
+            return exporter_excel(factures, colonnes, "creances")
+        return exporter_csv(factures, colonnes, "creances")
+
+    factures = list(factures)
+    for f in factures:
+        f.est_en_retard_affichage = (
+            f.statut in STATUTS_EN_RETARD_POSSIBLES
+            and f.date_echeance is not None
+            and f.date_echeance < aujourdhui
+        )
+
+    total_creances = sum((f.montant_ttc for f in factures), 0)
+    total_solde = sum((f.solde_restant_calc for f in factures), 0)
+
+    context = {
+        "module_actif": get_module_info("recouvrement"),
+        "factures": factures,
+        "statuts": Facture.STATUT_CHOICES,
+        "filtre_statut": statut,
+        "filtre_recherche": recherche,
+        "filtre_client": client,
+        "filtre_en_retard": en_retard_seulement,
+        "voir_archivees": voir_archivees,
+        "total_creances": total_creances,
+        "total_solde": total_solde,
+        "aujourdhui": aujourdhui,
+    }
+    return render(request, "devis/creances/liste.html", context)
+
+
+@role_requis(Profil.Role.DIRECTION, Profil.Role.CADRE, Profil.Role.COLLABORATEUR)
+def kanban_creances(request):
+    STATUTS_KANBAN = ["EN_ATTENTE_PAIEMENT", "PARTIELLEMENT_PAYEE", "CONTESTEE", "EN_LITIGE", "EN_RETARD", "PAYEE"]
+    colonnes = []
+    for code in STATUTS_KANBAN:
+        factures = Facture.objects.filter(statut=code, archive=False).select_related("devis_source")[:50]
+        colonnes.append({
+            "code": code,
+            "libelle": dict(Facture.STATUT_CHOICES)[code],
+            "factures": factures,
+        })
+    return render(request, "devis/creances/kanban.html", {
+        "module_actif": get_module_info("recouvrement"),
+        "colonnes": colonnes,
+    })
+
+
+@role_requis(Profil.Role.DIRECTION, Profil.Role.CADRE, Profil.Role.COLLABORATEUR)
+def detail_creance(request, facture_id):
+    facture = get_object_or_404(Facture, pk=facture_id)
+    facture_ct = ContentType.objects.get_for_model(Facture)
+
+    paiement_form = PaiementForm(facture=facture)
+    transition_form = TransitionStatutForm(facture=facture, user=request.user)
+    avoir_form = AvoirForm(facture=facture)
+    remboursement_form = RemboursementForm(facture=facture)
+    compensation_form = CompensationForm(facture=facture)
+    litige_form = LitigeForm()
+    affectation_form = AffectationRecouvreurForm(initial={"recouvreur": facture.recouvreur})
+    action_form = ActionRecouvrementForm()
+    commentaire_form = CommentaireLitigeForm()
+    piece_form = PieceJointeLitigeForm()
+    resolution_form = ResolutionLitigeForm()
+    note_form = NoteInterneForm()
+
+    if request.method == "POST":
+        if "enregistrer_paiement" in request.POST:
+            paiement_form = PaiementForm(request.POST, request.FILES, facture=facture)
+            if paiement_form.is_valid():
+                facture.enregistrer_paiement(
+                    montant=paiement_form.cleaned_data["montant"],
+                    utilisateur=request.user,
+                    date_paiement=paiement_form.cleaned_data["date_paiement"],
+                    mode_paiement=paiement_form.cleaned_data["mode_paiement"],
+                    banque=paiement_form.cleaned_data["banque"],
+                    reference_bancaire=paiement_form.cleaned_data["reference_bancaire"],
+                    justificatif=paiement_form.cleaned_data["justificatif"],
+                    commentaire=paiement_form.cleaned_data["commentaire"],
+                )
+                journaliser(request, "ACTION_METIER", objet=facture, description="Paiement enregistré")
+                if facture.solde_restant <= 0 and facture.client_email:
+                    succes_email, erreur_email = notifier_email(
+                        facture.client_email,
+                        f"Facture {facture.numero_facture} soldée",
+                        f"Votre facture {facture.numero_facture} a été intégralement réglée. Merci."
+                    )
+                    if not succes_email:
+                        messages.warning(request, f"Notification email non envoyée : {erreur_email}")
+                    else:
+                        messages.success(request, "Email de clôture envoyé au client.")
+                messages.success(request, "Paiement enregistré.")
+                return redirect("devis:detail_creance", facture_id=facture.id)
+
+        elif "changer_statut" in request.POST:
+            transition_form = TransitionStatutForm(request.POST, facture=facture, user=request.user)
+            if transition_form.is_valid():
+                facture.changer_statut(
+                    transition_form.cleaned_data["nouveau_statut"],
+                    utilisateur=request.user,
+                    commentaire=transition_form.cleaned_data["commentaire"],
+                )
+                journaliser(request, "ACTION_METIER", objet=facture, description="Statut de facture modifié")
+                messages.success(request, "Statut mis à jour.")
+                return redirect("devis:detail_creance", facture_id=facture.id)
+
+        elif "enregistrer_avoir" in request.POST:
+            avoir_form = AvoirForm(request.POST, facture=facture)
+            if avoir_form.is_valid():
+                try:
+                    avoir = facture.enregistrer_avoir(
+                        montant=avoir_form.cleaned_data["montant"],
+                        type_avoir=avoir_form.cleaned_data["type_avoir"],
+                        motif=avoir_form.cleaned_data["motif"],
+                        utilisateur=request.user,
+                    )
+                    journaliser(request, "ACTION_METIER", objet=avoir, description=f"Avoir émis : {avoir.montant} FCFA")
+                    messages.success(request, "Avoir enregistré (non certifié FNE — voir COMMENTAIRES.md).")
+                    return redirect("devis:detail_creance", facture_id=facture.id)
+                except ValueError as e:
+                    avoir_form.add_error(None, str(e))
+
+        elif "enregistrer_remboursement" in request.POST:
+            remboursement_form = RemboursementForm(request.POST, request.FILES, facture=facture)
+            if remboursement_form.is_valid():
+                try:
+                    remboursement = facture.enregistrer_remboursement(
+                        montant=remboursement_form.cleaned_data["montant"],
+                        utilisateur=request.user,
+                        date_remboursement=remboursement_form.cleaned_data["date_remboursement"],
+                        mode_remboursement=remboursement_form.cleaned_data["mode_remboursement"],
+                        reference=remboursement_form.cleaned_data["reference"],
+                        justificatif=remboursement_form.cleaned_data["justificatif"],
+                        commentaire=remboursement_form.cleaned_data["commentaire"],
+                    )
+                    journaliser(request, "ACTION_METIER", objet=remboursement, description=f"Remboursement émis : {remboursement.montant} FCFA")
+                    messages.success(request, "Remboursement enregistré.")
+                    return redirect("devis:detail_creance", facture_id=facture.id)
+                except ValueError as e:
+                    remboursement_form.add_error(None, str(e))
+
+        elif "enregistrer_compensation" in request.POST:
+            compensation_form = CompensationForm(request.POST, facture=facture)
+            if compensation_form.is_valid():
+                try:
+                    compensation = facture.enregistrer_compensation(
+                        facture_cible=compensation_form.cleaned_data["facture_cible"],
+                        montant=compensation_form.cleaned_data["montant"],
+                        utilisateur=request.user,
+                        commentaire=compensation_form.cleaned_data["commentaire"],
+                    )
+                    journaliser(request, "ACTION_METIER", objet=compensation, description=f"Compensation émise : {compensation.montant} FCFA")
+                    messages.success(request, "Compensation appliquée.")
+                    return redirect("devis:detail_creance", facture_id=facture.id)
+                except ValueError as e:
+                    compensation_form.add_error(None, str(e))
+
+        elif "affecter_recouvreur" in request.POST:
+            if not _direction_ou_cadre(request.user):
+                raise PermissionDenied
+            affectation_form = AffectationRecouvreurForm(request.POST)
+            if affectation_form.is_valid():
+                facture.recouvreur = affectation_form.cleaned_data["recouvreur"]
+                facture.save(update_fields=["recouvreur"])
+                description = f"Recouvreur affecté : {facture.recouvreur or 'aucun'}"
+                journaliser(request, "MODIFICATION", objet=facture, description=description)
+                messages.success(request, "Recouvreur affecté.")
+                return redirect("devis:detail_creance", facture_id=facture.id)
+
+        elif "ajouter_action" in request.POST:
+            action_form = ActionRecouvrementForm(request.POST)
+            if action_form.is_valid():
+                action = ActionRecouvrement.objects.create(
+                    facture=facture, recouvreur=request.user,
+                    type_action=action_form.cleaned_data["type_action"],
+                    commentaire=action_form.cleaned_data["commentaire"],
+                )
+                journaliser(request, "ACTION_METIER", objet=action, description=f"Action recouvrement : {action.get_type_action_display()}")
+                messages.success(request, "Action enregistrée.")
+                return redirect("devis:detail_creance", facture_id=facture.id)
+
+        elif "ouvrir_litige" in request.POST:
+            litige_form = LitigeForm(request.POST)
+            if litige_form.is_valid():
+                try:
+                    litige = facture.ouvrir_litige(
+                        motif_type=litige_form.cleaned_data["motif_type"],
+                        description=litige_form.cleaned_data["description"],
+                        utilisateur=request.user,
+                    )
+                    journaliser(request, "ACTION_METIER", objet=litige, description="Litige ouvert")
+                    messages.success(request, "Litige ouvert.")
+                    return redirect("devis:detail_litige", litige_id=litige.id)
+                except ValueError as e:
+                    litige_form.add_error(None, str(e))
+
+        elif "passer_en_cours" in request.POST:
+            litige_id = request.POST.get("litige_id")
+            litige = get_object_or_404(Litige, pk=litige_id, facture=facture)
+            try:
+                litige.passer_en_cours(utilisateur=request.user)
+                journaliser(request, "ACTION_METIER", objet=facture, description="Litige passé en cours")
+                messages.success(request, "Litige passé en cours.")
+                return redirect("devis:detail_creance", facture_id=facture.id)
+            except ValueError as e:
+                messages.error(request, str(e))
+
+        elif "resoudre_litige" in request.POST:
+            resolution_form = ResolutionLitigeForm(request.POST)
+            litige_id = request.POST.get("litige_id")
+            litige = get_object_or_404(Litige, pk=litige_id, facture=facture)
+            if resolution_form.is_valid():
+                try:
+                    litige.resoudre(
+                        commentaire=resolution_form.cleaned_data["commentaire"],
+                        utilisateur=request.user,
+                    )
+                    journaliser(request, "ACTION_METIER", objet=facture, description="Litige résolu")
+                    messages.success(request, "Litige résolu.")
+                    return redirect("devis:detail_creance", facture_id=facture.id)
+                except ValueError as e:
+                    resolution_form.add_error(None, str(e))
+
+        elif "abandonner_litige" in request.POST:
+            litige_id = request.POST.get("litige_id")
+            litige = get_object_or_404(Litige, pk=litige_id, facture=facture)
+            try:
+                litige.abandonner(utilisateur=request.user)
+                journaliser(request, "ACTION_METIER", objet=facture, description="Litige abandonné")
+                messages.success(request, "Litige abandonné.")
+                return redirect("devis:detail_creance", facture_id=facture.id)
+            except ValueError as e:
+                messages.error(request, str(e))
+
+        elif "ajouter_note" in request.POST:
+            note_form = NoteInterneForm(request.POST)
+            if note_form.is_valid():
+                NoteInterne.objects.create(
+                    content_type=facture_ct,
+                    object_id=facture.id,
+                    auteur=request.user,
+                    message=note_form.cleaned_data["message"],
+                )
+                journaliser(request, "ACTION_METIER", objet=facture, description="Note interne ajoutée")
+                return redirect("devis:detail_creance", facture_id=facture.id)
+
+        elif "ajouter_commentaire" in request.POST:
+            commentaire_form = CommentaireLitigeForm(request.POST)
+            litige_id = request.POST.get("litige_id")
+            litige = get_object_or_404(Litige, pk=litige_id, facture=facture)
+            if commentaire_form.is_valid():
+                commentaire = commentaire_form.save(commit=False)
+                commentaire.litige = litige
+                commentaire.auteur = request.user
+                commentaire.save()
+                messages.success(request, "Commentaire ajouté au litige.")
+                return redirect("devis:detail_creance", facture_id=facture.id)
+
+        elif "ajouter_piece" in request.POST:
+            piece_form = PieceJointeLitigeForm(request.POST, request.FILES)
+            litige_id = request.POST.get("litige_id")
+            litige = get_object_or_404(Litige, pk=litige_id, facture=facture)
+            if piece_form.is_valid():
+                piece = piece_form.save(commit=False)
+                piece.litige = litige
+                piece.ajoute_par = request.user
+                piece.save()
+                messages.success(request, "Pièce jointe ajoutée au litige.")
+                return redirect("devis:detail_creance", facture_id=facture.id)
+
+        elif "archiver" in request.POST:
+            if not _direction_ou_cadre(request.user):
+                raise PermissionDenied
+            try:
+                facture.archiver(utilisateur=request.user)
+                journaliser(request, "ACTION_METIER", objet=facture, description="Facture archivée")
+                messages.success(request, "Facture archivée.")
+            except ValueError as e:
+                messages.error(request, str(e))
+            return redirect("devis:liste_creances")
+
+    journaliser(request, "CONSULTATION", objet=facture, description="Consultation de la fiche facture")
+
+    context = {
+        "module_actif": get_module_info("recouvrement"),
+        "facture": facture,
+        "form": paiement_form,
+        "transition_form": transition_form,
+        "avoir_form": avoir_form,
+        "remboursement_form": remboursement_form,
+        "compensation_form": compensation_form,
+        "paiements": facture.paiements.select_related("utilisateur").order_by("-date_paiement"),
+        "avoirs": facture.avoirs.select_related("cree_par").order_by("-date_creation"),
+        "remboursements": facture.remboursements.select_related("utilisateur").order_by("-date_remboursement"),
+        "compensations_emises": facture.compensations_emises.order_by("-date_creation"),
+        "compensations_recues": facture.compensations_recues.order_by("-date_creation"),
+        "historique": facture.historique_statuts.select_related("utilisateur").order_by("-date_changement"),
+        "litiges": facture.litiges.select_related("ouvert_par").order_by("-date_ouverture"),
+        "litige_form": litige_form,
+        "affectation_form": affectation_form,
+        "action_form": action_form,
+        "actions_recouvrement": facture.actions_recouvrement.select_related("recouvreur").order_by("-date_action"),
+        "commentaire_form": commentaire_form,
+        "piece_form": piece_form,
+        "resolution_form": resolution_form,
+        "note_form": note_form,
+        "notes": NoteInterne.objects.filter(content_type=facture_ct, object_id=facture.id).select_related("auteur"),
+        "peut_ouvrir_litige": not facture.litiges.filter(statut__in=["OUVERT", "EN_COURS"]).exists()
+            and facture.statut in Litige.STATUTS_SOURCE_AUTORISES,
+        "peut_affecter": _direction_ou_cadre(request.user),
+        "peut_archiver": _direction_ou_cadre(request.user) and facture.statut in ("PAYEE", "ANNULEE", "IRRECOUVRABLE"),
+    }
+    return render(request, "devis/creances/detail.html", context)
+
+
+@login_required
+def detail_litige(request, litige_id):
+    litige = get_object_or_404(Litige, pk=litige_id)
+    commentaire_form = CommentaireLitigeForm()
+    piece_form = PieceJointeLitigeForm()
+    resolution_form = ResolutionLitigeForm()
+
+    if request.method == "POST":
+        if "ajouter_commentaire" in request.POST:
+            commentaire_form = CommentaireLitigeForm(request.POST)
+            if commentaire_form.is_valid():
+                commentaire = commentaire_form.save(commit=False)
+                commentaire.litige = litige
+                commentaire.auteur = request.user
+                commentaire.save()
+                journaliser(request, "ACTION_METIER", objet=litige, description="Commentaire ajouté au litige")
+                messages.success(request, "Commentaire ajouté au litige.")
+                return redirect("devis:detail_litige", litige_id=litige.id)
+
+        elif "ajouter_piece" in request.POST:
+            piece_form = PieceJointeLitigeForm(request.POST, request.FILES)
+            if piece_form.is_valid():
+                piece = piece_form.save(commit=False)
+                piece.litige = litige
+                piece.ajoute_par = request.user
+                piece.save()
+                journaliser(request, "ACTION_METIER", objet=litige, description=f"Pièce jointe ajoutée : {piece.libelle}")
+                messages.success(request, "Pièce jointe ajoutée au litige.")
+                return redirect("devis:detail_litige", litige_id=litige.id)
+
+        elif "passer_en_cours" in request.POST:
+            try:
+                litige.passer_en_cours(utilisateur=request.user)
+                journaliser(request, "ACTION_METIER", objet=litige, description="Litige passé en instruction")
+                messages.success(request, "Litige passé en instruction.")
+            except ValueError as e:
+                messages.error(request, str(e))
+            return redirect("devis:detail_litige", litige_id=litige.id)
+
+        elif "resoudre_litige" in request.POST:
+            resolution_form = ResolutionLitigeForm(request.POST)
+            if resolution_form.is_valid():
+                try:
+                    litige.resoudre(
+                        commentaire=resolution_form.cleaned_data["commentaire"],
+                        utilisateur=request.user,
+                    )
+                    journaliser(request, "ACTION_METIER", objet=litige, description="Litige résolu")
+                    messages.success(request, "Litige résolu.")
+                    return redirect("devis:detail_creance", facture_id=litige.facture.id)
+                except ValueError as e:
+                    resolution_form.add_error(None, str(e))
+
+        elif "abandonner_litige" in request.POST:
+            resolution_form = ResolutionLitigeForm(request.POST)
+            if resolution_form.is_valid():
+                try:
+                    litige.abandonner(
+                        utilisateur=request.user,
+                        commentaire=resolution_form.cleaned_data["commentaire"],
+                    )
+                    journaliser(request, "ACTION_METIER", objet=litige, description="Litige abandonné")
+                    messages.success(request, "Litige abandonné.")
+                    return redirect("devis:detail_creance", facture_id=litige.facture.id)
+                except ValueError as e:
+                    resolution_form.add_error(None, str(e))
+
+    journaliser(request, "CONSULTATION", objet=litige)
+    return render(request, "devis/creances/detail_litige.html", {
+        "module_actif": get_module_info("recouvrement"),
+        "litige": litige,
+        "facture": litige.facture,
+        "commentaire_form": commentaire_form,
+        "piece_form": piece_form,
+        "resolution_form": resolution_form,
+    })
+
+
+@login_required
+def liste_litiges(request):
+    litiges = Litige.objects.select_related("facture", "ouvert_par").order_by("-date_ouverture")
+
+    statut = request.GET.get("statut", "")
+    if statut:
+        litiges = litiges.filter(statut=statut)
+
+    recherche = request.GET.get("q", "").strip()
+    if recherche:
+        litiges = litiges.filter(
+            Q(facture__numero_facture__icontains=recherche) | Q(facture__client_nom__icontains=recherche)
+        )
+
+    if "export" in request.GET:
+        colonnes = [
+            ("Facture", lambda l: l.facture.numero_facture),
+            ("Client", lambda l: l.facture.client_nom),
+            ("Motif", lambda l: l.get_motif_type_display()),
+            ("Statut", lambda l: l.get_statut_display()),
+            ("Ouvert le", lambda l: l.date_ouverture.strftime("%d/%m/%Y")),
+            ("Ouvert par", lambda l: str(l.ouvert_par) if l.ouvert_par else "—"),
+        ]
+        journaliser(request, "EXPORT", description="Export liste des litiges")
+        if request.GET["export"] == "excel":
+            return exporter_excel(litiges, colonnes, "litiges")
+        return exporter_csv(litiges, colonnes, "litiges")
+
+    context = {
+        "module_actif": get_module_info("recouvrement"),
+        "litiges": litiges,
+        "statuts": Litige.STATUT_CHOICES,
+        "filtre_statut": statut,
+        "filtre_recherche": recherche,
+        "nb_ouverts": Litige.objects.filter(statut__in=["OUVERT", "EN_COURS"]).count(),
+    }
+    return render(request, "devis/creances/liste_litiges.html", context)
+
+
+@login_required
+def kanban_litiges(request):
+    colonnes = []
+    for code, libelle in Litige.STATUT_CHOICES:
+        litiges = Litige.objects.filter(statut=code).select_related("facture")[:50]
+        colonnes.append({"code": code, "libelle": libelle, "litiges": litiges})
+    context = {"module_actif": get_module_info("recouvrement"), "colonnes": colonnes}
+    return render(request, "devis/creances/kanban_litiges.html", context)
+
+
+@role_requis(Profil.Role.DIRECTION, Profil.Role.CADRE, Profil.Role.COLLABORATEUR)
+def mon_portefeuille(request):
+    factures = _factures_avec_soldes().filter(
+        recouvreur=request.user
+    ).exclude(statut__in=["PAYEE", "ANNULEE", "IRRECOUVRABLE"]).order_by("date_echeance")
+
+    return render(request, "devis/creances/mon_portefeuille.html", {
+        "module_actif": get_module_info("recouvrement"),
+        "factures": factures,
+    })
+
+
+@role_requis(Profil.Role.DIRECTION, Profil.Role.CADRE, Profil.Role.COLLABORATEUR)
+def kpi_recouvreurs(request):
+    if not _direction_ou_cadre(request.user):
+        raise PermissionDenied
+
+    recouvreurs = User.objects.filter(portefeuille_creances__isnull=False).distinct()
+    donnees = []
+    for r in recouvreurs:
+        factures_qs = Facture.objects.filter(recouvreur=r)
+        montant_recupere = Paiement.objects.filter(
+            facture__recouvreur=r
+        ).aggregate(total=Sum("montant"))["total"] or 0
+        donnees.append({
+            "recouvreur": r,
+            "nb_factures": factures_qs.count(),
+            "nb_appels": ActionRecouvrement.objects.filter(facture__recouvreur=r, type_action="APPEL").count(),
+            "nb_emails": ActionRecouvrement.objects.filter(facture__recouvreur=r, type_action="EMAIL").count(),
+            "montant_recupere": montant_recupere,
+        })
+
+    return render(request, "devis/creances/kpi_recouvreurs.html", {
+        "module_actif": get_module_info("recouvrement"),
+        "donnees": donnees,
+    })
+
+
+EtapeRelanceFormSet = modelformset_factory(EtapeRelance, form=EtapeRelanceForm, extra=0)
+
+
+@login_required
+def config_relances(request):
+    profil = getattr(request.user, "profil", None)
+    est_direction_cadre = profil and profil.role in (Profil.Role.DIRECTION, Profil.Role.CADRE)
+    if not est_direction_cadre:
+        raise PermissionDenied
+
+    queryset = EtapeRelance.objects.all().order_by("delai_jours")
+
+    if request.method == "POST":
+        formset = EtapeRelanceFormSet(request.POST, queryset=queryset)
+        if formset.is_valid():
+            formset.save()
+            journaliser(request, "MODIFICATION", description="Configuration des étapes de relance modifiée")
+            messages.success(request, "Étapes de relance mises à jour.")
+            return redirect("devis:config_relances")
+    else:
+        formset = EtapeRelanceFormSet(queryset=queryset)
+
+    return render(request, "devis/creances/config_relances.html", {
+        "module_actif": get_module_info("recouvrement"),
+        "formset": formset,
+    })
+
+
+@login_required
+def journal_relances(request):
+    relances = Relance.objects.select_related("facture", "etape").order_by("-date_declenchement")
+
+    etape_filtre = request.GET.get("etape", "")
+    if etape_filtre:
+        relances = relances.filter(etape_id=etape_filtre)
+
+    recherche = request.GET.get("q", "").strip()
+    if recherche:
+        relances = relances.filter(facture__numero_facture__icontains=recherche)
+
+    if "export" in request.GET:
+        colonnes = [
+            ("Date", lambda r: r.date_declenchement.strftime("%d/%m/%Y %H:%M")),
+            ("Facture", lambda r: r.facture.numero_facture),
+            ("Étape", lambda r: r.etape.nom),
+            ("Résultat", lambda r: "OK" if r.reussie else f"Échec : {r.erreur}"),
+        ]
+        journaliser(request, "EXPORT", description="Export journal des relances")
+        if request.GET["export"] == "excel":
+            return exporter_excel(relances, colonnes, "journal_relances")
+        return exporter_csv(relances, colonnes, "journal_relances")
+
+    total = relances.count()
+    echecs = relances.filter(reussie=False).count()
+    taux_succes = round((total - echecs) / total * 100, 1) if total else None
+
+    context = {
+        "module_actif": get_module_info("recouvrement"),
+        "relances": relances[:200],
+        "etapes": EtapeRelance.objects.all().order_by("delai_jours"),
+        "filtre_etape": etape_filtre,
+        "filtre_recherche": recherche,
+        "total": total,
+        "echecs": echecs,
+        "taux_succes": taux_succes,
+    }
+    return render(request, "devis/creances/journal_relances.html", context)
+
+
+@login_required
+def journal_actions_recouvrement(request):
+    actions = ActionRecouvrement.objects.select_related("facture", "recouvreur").order_by("-date_action")
+
+    recouvreur_id = request.GET.get("recouvreur", "")
+    if recouvreur_id:
+        actions = actions.filter(recouvreur_id=recouvreur_id)
+
+    recherche = request.GET.get("q", "").strip()
+    if recherche:
+        actions = actions.filter(facture__numero_facture__icontains=recherche)
+
+    if "export" in request.GET:
+        colonnes = [
+            ("Date", lambda a: a.date_action.strftime("%d/%m/%Y %H:%M")),
+            ("Facture", lambda a: a.facture.numero_facture),
+            ("Type", lambda a: a.get_type_action_display()),
+            ("Recouvreur", lambda a: str(a.recouvreur) if a.recouvreur else "—"),
+            ("Commentaire", lambda a: a.commentaire),
+        ]
+        journaliser(request, "EXPORT", description="Export journal des actions de recouvrement")
+        if request.GET["export"] == "excel":
+            return exporter_excel(actions, colonnes, "actions_recouvrement")
+        return exporter_csv(actions, colonnes, "actions_recouvrement")
+
+    context = {
+        "module_actif": get_module_info("recouvrement"),
+        "actions": actions[:200],
+        "recouvreurs": User.objects.filter(portefeuille_creances__isnull=False).distinct(),
+        "filtre_recouvreur": recouvreur_id,
+        "filtre_recherche": recherche,
+    }
+    return render(request, "devis/creances/journal_actions.html", context)
+
+
+@login_required
+def affectation_masse(request):
+    if not _direction_ou_cadre(request.user):
+        raise PermissionDenied
+
+    factures_ouvertes = Facture.objects.exclude(
+        statut__in=["PAYEE", "ANNULEE", "IRRECOUVRABLE"]
+    ).select_related("recouvreur")
+
+    client_filtre = request.GET.get("client", "").strip()
+    if client_filtre:
+        factures_ouvertes = factures_ouvertes.filter(client_nom__icontains=client_filtre)
+
+    if request.method == "POST":
+        recouvreur_id = request.POST.get("recouvreur") or None
+        facture_ids = request.POST.getlist("factures")
+        if facture_ids:
+            nb = Facture.objects.filter(id__in=facture_ids).update(recouvreur_id=recouvreur_id)
+            recouvreur = User.objects.filter(id=recouvreur_id).first() if recouvreur_id else None
+            journaliser(request, "MODIFICATION", description=f"Affectation en masse : {nb} facture(s) → recouvreur {recouvreur or 'aucun'}")
+            messages.success(request, f"{nb} facture(s) affectée(s).")
+            return redirect("devis:affectation_masse")
+
+    context = {
+        "module_actif": get_module_info("recouvrement"),
+        "factures": factures_ouvertes,
+        "recouvreurs": User.objects.filter(portefeuille_creances__isnull=False).distinct(),
+        "filtre_client": client_filtre,
+    }
+    return render(request, "devis/creances/affectation_masse.html", context)
+
+
+@login_required
+def calendrier_relances(request):
+    from collections import defaultdict
+    from datetime import timedelta
+
+    aujourdhui = timezone.now().date()
+    horizon = aujourdhui + timedelta(days=60)
+
+    etapes = list(EtapeRelance.objects.filter(actif=True))
+    factures = Facture.objects.filter(
+        statut__in=["EN_ATTENTE_PAIEMENT", "PARTIELLEMENT_PAYEE", "EN_RETARD"],
+        date_echeance__isnull=False,
+    )
+
+    par_jour = defaultdict(list)
+    for f in factures:
+        deja_declenchees = set(Relance.objects.filter(facture=f).values_list("etape_id", flat=True))
+        for etape in etapes:
+            if etape.id in deja_declenchees:
+                continue
+            date_prevue = f.date_echeance + timedelta(days=etape.delai_jours)
+            if aujourdhui <= date_prevue <= horizon:
+                par_jour[date_prevue].append({"facture": f, "etape": etape})
+
+    jours_tries = sorted(par_jour.items())
+
+    context = {
+        "module_actif": get_module_info("recouvrement"),
+        "jours": jours_tries,
+        "aujourdhui": aujourdhui,
+    }
+    return render(request, "devis/creances/calendrier_relances.html", context)
 
 
 @role_requis(Profil.Role.DIRECTION, Profil.Role.CADRE, Profil.Role.COLLABORATEUR)

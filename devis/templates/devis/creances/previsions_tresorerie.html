@@ -1,0 +1,77 @@
+{% extends "base_pilotage.html" %}
+
+{% block contenu %}
+<div class="p-6 max-w-3xl">
+    <h1 class="text-xl font-semibold mb-1">Prévisions de trésorerie</h1>
+    <p class="text-sm text-gray-500 mb-4">
+        Estimation basée sur les dates d'échéance, pondérée par l'ancienneté du retard.
+        ⚠️ Provisoire : ne tient pas encore compte des promesses de paiement (sous-module non construit).
+    </p>
+
+    <div class="grid grid-cols-3 gap-4 mb-8">
+        <div class="border rounded p-4">
+            <div class="text-gray-500 text-sm">Cette semaine</div>
+            <div class="text-lg font-semibold">{{ previsions.semaine.pondere }} FCFA</div>
+            <div class="text-xs text-gray-400">Brut : {{ previsions.semaine.brut }} FCFA</div>
+        </div>
+        <div class="border rounded p-4">
+            <div class="text-gray-500 text-sm">Ce mois</div>
+            <div class="text-lg font-semibold">{{ previsions.mois.pondere }} FCFA</div>
+            <div class="text-xs text-gray-400">Brut : {{ previsions.mois.brut }} FCFA</div>
+        </div>
+        <div class="border rounded p-4">
+            <div class="text-gray-500 text-sm">Ce trimestre</div>
+            <div class="text-lg font-semibold">{{ previsions.trimestre.pondere }} FCFA</div>
+            <div class="text-xs text-gray-400">Brut : {{ previsions.trimestre.brut }} FCFA</div>
+        </div>
+    </div>
+
+    <canvas id="chartEncaissements" class="mb-8" height="100"></canvas>
+
+    <h2 class="font-semibold mb-2">Vieillissement des créances</h2>
+    <table class="w-full text-sm border-collapse mb-4">
+        <thead>
+            <tr class="text-left border-b">
+                <th class="py-2">0-30 jours</th>
+                <th>31-60 jours</th>
+                <th>61-90 jours</th>
+                <th>90+ jours</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="py-2">{{ anciennete.j0_30 }} FCFA</td>
+                <td>{{ anciennete.j31_60 }} FCFA</td>
+                <td>{{ anciennete.j61_90 }} FCFA</td>
+                <td class="text-red-600">{{ anciennete.j90_plus }} FCFA</td>
+            </tr>
+        </tbody>
+    </table>
+    <canvas id="chartAnciennete" height="100"></canvas>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+new Chart(document.getElementById('chartEncaissements'), {
+    type: 'bar',
+    data: {
+        labels: ['Semaine', 'Mois', 'Trimestre'],
+        datasets: [
+            { label: 'Brut', data: [{{ previsions.semaine.brut }}, {{ previsions.mois.brut }}, {{ previsions.trimestre.brut }}], backgroundColor: '#93c5fd' },
+            { label: 'Pondéré', data: [{{ previsions.semaine.pondere }}, {{ previsions.mois.pondere }}, {{ previsions.trimestre.pondere }}], backgroundColor: '#2563eb' },
+        ]
+    },
+    options: { plugins: { title: { display: true, text: 'Encaissements attendus (FCFA)' } } }
+});
+
+new Chart(document.getElementById('chartAnciennete'), {
+    type: 'bar',
+    data: {
+        labels: ['0-30 j', '31-60 j', '61-90 j', '90+ j'],
+        datasets: [{ label: 'Montant', data: [{{ anciennete.j0_30 }}, {{ anciennete.j31_60 }}, {{ anciennete.j61_90 }}, {{ anciennete.j90_plus }}], backgroundColor: ['#22c55e', '#eab308', '#f97316', '#ef4444'] }]
+    },
+    options: { plugins: { title: { display: true, text: 'Vieillissement des créances (FCFA)' }, legend: { display: false } } }
+});
+</script>
+</div>
+{% endblock %}

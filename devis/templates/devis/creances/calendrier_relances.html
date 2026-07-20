@@ -1,0 +1,29 @@
+{% extends "base_pilotage.html" %}
+{% block contenu %}
+<div class="p-6">
+    <h1 class="text-xl font-semibold mb-2">Calendrier prévisionnel des relances</h1>
+    <p class="text-sm text-gray-500 mb-6">Projection sur 60 jours des prochaines relances, calculée à partir des échéances de factures ouvertes.</p>
+
+    {% if jours %}
+        {% for jour, items in jours %}
+            <div class="mb-5">
+                <div class="flex items-center justify-between mb-2">
+                    <h2 class="text-lg font-medium">{{ jour|date:"l d F Y" }}</h2>
+                    {% if jour == aujourdhui %}<span class="text-sm text-blue-600">aujourd'hui</span>{% endif %}
+                </div>
+                <ul class="space-y-2">
+                    {% for item in items %}
+                        <li class="border rounded p-3 bg-white shadow-sm">
+                            <a href="{% url 'devis:detail_creance' item.facture.id %}" class="text-blue-600 font-semibold underline">{{ item.facture.numero_facture }}</a>
+                            — {{ item.etape.nom }}<br>
+                            <span class="text-sm text-gray-500">{{ item.facture.client_nom }}</span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p class="text-gray-500">Aucune relance prévue sur les 60 prochains jours.</p>
+    {% endif %}
+</div>
+{% endblock %}

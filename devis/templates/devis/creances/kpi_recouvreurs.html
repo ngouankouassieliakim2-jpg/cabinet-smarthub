@@ -1,0 +1,38 @@
+{% extends "base_pilotage.html" %}
+
+{% block contenu %}
+<div class="p-6">
+    <h1 class="text-xl font-semibold mb-4">KPI des recouvreurs</h1>
+    <div class="grid grid-cols-3 gap-4 mb-6 text-sm">
+        <div class="border rounded p-3 bg-white">
+            <div class="text-gray-500">Recouvreurs suivis</div>
+            <div class="text-lg font-semibold">{{ donnees|length }}</div>
+        </div>
+    </div>
+
+    <table class="w-full text-sm border-collapse">
+        <thead>
+            <tr class="text-left border-b">
+                <th class="py-2">Recouvreur</th>
+                <th>Factures</th>
+                <th>Appels</th>
+                <th>Emails</th>
+                <th>Montant récupéré</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ligne in donnees %}
+            <tr class="border-b hover:bg-gray-50">
+                <td class="py-2">{{ ligne.recouvreur }}</td>
+                <td>{{ ligne.nb_factures }}</td>
+                <td>{{ ligne.nb_appels }}</td>
+                <td>{{ ligne.nb_emails }}</td>
+                <td>{{ ligne.montant_recupere }} FCFA</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="py-4 text-center text-gray-400">Aucun recouvreur trouvé.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

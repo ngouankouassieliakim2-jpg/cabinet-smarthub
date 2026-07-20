@@ -9,6 +9,9 @@ class Notification(models.Model):
     TYPE_CHOICES = [
         ("cdd_echeance", "CDD/Stage — échéance proche"),
         ("fin_essai", "Fin de période d'essai proche"),
+        ("relance_notification_interne", "Recouvrement — notification interne"),
+        ("relance_escalade_direction", "Recouvrement — escalade Direction"),
+        ("relance_alerte_contentieux", "Recouvrement — alerte contentieux"),
     ]
     type_notification = models.CharField("Type", max_length=30, choices=TYPE_CHOICES)
     titre = models.CharField("Titre", max_length=200)

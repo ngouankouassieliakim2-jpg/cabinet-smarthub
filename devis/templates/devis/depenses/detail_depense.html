@@ -1,0 +1,114 @@
+{% extends "base_pilotage.html" %}
+
+{% block contenu %}
+<div class="p-6 space-y-6">
+    <div class="flex justify-between items-start gap-4">
+        <div>
+            <h1 class="text-xl font-semibold">{{ depense.numero_depense }}</h1>
+            <p class="text-sm text-gray-500">{{ depense.fournisseur.raison_sociale }}</p>
+        </div>
+        <span class="px-3 py-1 rounded bg-gray-100 text-sm">{{ depense.get_statut_display }}</span>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white border rounded p-4 text-sm">
+        <div>
+            <div class="text-gray-500">Catégorie</div>
+            <div>{{ depense.categorie.nom }}</div>
+        </div>
+        <div>
+            <div class="text-gray-500">Montant TTC</div>
+            <div>{{ depense.montant_ttc }} FCFA</div>
+        </div>
+        <div>
+            <div class="text-gray-500">Montant payé</div>
+            <div>{{ depense.montant_paye }} FCFA</div>
+        </div>
+        <div>
+            <div class="text-gray-500">Solde restant</div>
+            <div>{{ depense.solde_restant }} FCFA</div>
+        </div>
+        <div>
+            <div class="text-gray-500">Date facture</div>
+            <div>{{ depense.date_facture }}</div>
+        </div>
+        <div>
+            <div class="text-gray-500">Date échéance</div>
+            <div>{{ depense.date_echeance|default:'—' }}</div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <section class="bg-white border rounded p-4">
+            <h2 class="text-lg font-semibold mb-3">Documents</h2>
+            <ul class="space-y-2 mb-4">
+                {% for doc in documents %}
+                <li class="flex justify-between items-center border rounded p-3">
+                    <div>
+                        <div class="font-medium">{{ doc.get_type_document_display }}</div>
+                        <div class="text-xs text-gray-500">Ajouté le {{ doc.date_ajout }}</div>
+                    </div>
+                    <a href="{{ doc.fichier.url }}" class="text-blue-600 underline text-sm">Télécharger</a>
+                </li>
+                {% empty %}
+                <li class="text-gray-400">Aucun document.</li>
+                {% endfor %}
+            </ul>
+
+            <form method="post" enctype="multipart/form-data" class="space-y-3">
+                {% csrf_token %}
+                {{ document_form.as_p }}
+                <button type="submit" name="ajouter_document" class="bg-gray-700 text-white rounded px-4 py-2 text-sm">Ajouter un document</button>
+            </form>
+        </section>
+
+        <section class="bg-white border rounded p-4">
+            <h2 class="text-lg font-semibold mb-3">Paiements</h2>
+            <div class="mb-4 text-sm text-gray-600">Solde restant : <strong>{{ depense.solde_restant }} FCFA</strong></div>
+            <table class="w-full text-sm border-collapse mb-4">
+                <thead>
+                    <tr class="text-left border-b">
+                        <th class="py-2">Date</th>
+                        <th>Montant</th>
+                        <th>Référence</th>
+                        <th>Par</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for paiement in paiements %}
+                    <tr class="border-b">
+                        <td class="py-2">{{ paiement.date_paiement }}</td>
+                        <td>{{ paiement.montant }} FCFA</td>
+                        <td>{{ paiement.reference_bancaire|default:'—' }}</td>
+                        <td>{{ paiement.utilisateur.get_full_name|default:paiement.utilisateur.username }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" class="py-4 text-center text-gray-400">Aucun paiement enregistré.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <form method="post" class="space-y-3">
+                {% csrf_token %}
+                {{ paiement_form.as_p }}
+                <button type="submit" name="enregistrer_paiement" class="bg-blue-600 text-white rounded px-4 py-2 text-sm">Enregistrer le paiement</button>
+            </form>
+        </section>
+    </div>
+
+    <section class="bg-white border rounded p-4">
+        <h2 class="text-lg font-semibold mb-3">Historique de statut</h2>
+        <ul class="space-y-2 text-sm text-gray-700">
+            {% for event in historique %}
+            <li class="border rounded p-3">
+                <div class="text-sm text-gray-500">{{ event.date_changement }}</div>
+                <div>{{ event.ancien_statut }} → {{ event.nouveau_statut }}</div>
+                <div class="text-xs text-gray-500">par {{ event.utilisateur.get_full_name|default:event.utilisateur.username }}</div>
+                {% if event.commentaire %}<div class="mt-1 text-xs">{{ event.commentaire }}</div>{% endif %}
+            </li>
+            {% empty %}
+            <li class="text-gray-400">Aucune historique disponible.</li>
+            {% endfor %}
+        </ul>
+    </section>
+</div>
+{% endblock %}

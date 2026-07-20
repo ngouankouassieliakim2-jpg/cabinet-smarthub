@@ -1,0 +1,78 @@
+{% extends "base_pilotage.html" %}
+
+{% block contenu %}
+<div class="p-6">
+    <h1 class="text-xl font-semibold mb-4">Gestion des créances</h1>
+
+    <form method="get" class="flex flex-wrap gap-3 mb-4 items-end">
+        <div>
+            <label class="block text-sm text-gray-600">Statut</label>
+            <select name="statut" class="border rounded px-2 py-1">
+                <option value="">Tous</option>
+                {% for code, libelle in statuts %}
+                <option value="{{ code }}" {% if code == filtre_statut %}selected{% endif %}>{{ libelle }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="block text-sm text-gray-600">Recherche</label>
+            <input type="text" name="q" value="{{ filtre_recherche }}" placeholder="N° facture ou client..." class="border rounded px-2 py-1">
+        </div>
+        <div>
+            <label class="block text-sm text-gray-600">Client</label>
+            <input type="text" name="client" value="{{ filtre_client }}" class="border rounded px-2 py-1">
+        </div>
+        <div class="flex items-center gap-2">
+            <input type="checkbox" name="en_retard" value="1" id="en_retard" {% if filtre_en_retard %}checked{% endif %}>
+            <label for="en_retard" class="text-sm text-gray-600">En retard uniquement</label>
+        </div>
+        <div class="flex items-center gap-2">
+            <input type="checkbox" name="archivees" value="1" id="archivees" {% if voir_archivees %}checked{% endif %}>
+            <label for="archivees" class="text-sm text-gray-600">Voir les archivées</label>
+        </div>
+        <button type="submit" class="bg-blue-600 text-white rounded px-4 py-1">Filtrer</button>
+    </form>
+    <div class="flex gap-2 mb-4 text-sm">
+        <a href="{% url 'devis:kanban_creances' %}" class="text-blue-600 underline">Vue Kanban</a>
+        <a href="?{{ request.GET.urlencode }}&export=csv" class="text-gray-600 underline">Export CSV</a>
+        <a href="?{{ request.GET.urlencode }}&export=excel" class="text-gray-600 underline">Export Excel</a>
+    </div>
+
+    <div class="flex gap-6 mb-4 text-sm">
+        <div><span class="text-gray-500">Total créances :</span> <strong>{{ total_creances }} FCFA</strong></div>
+        <div><span class="text-gray-500">Solde restant dû :</span> <strong>{{ total_solde }} FCFA</strong></div>
+    </div>
+
+    <table class="w-full text-sm border-collapse">
+        <thead>
+            <tr class="text-left border-b">
+                <th class="py-2">N° facture</th>
+                <th>Client</th>
+                <th>Échéance</th>
+                <th>Montant TTC</th>
+                <th>Solde restant</th>
+                <th>Statut</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for facture in factures %}
+            <tr class="border-b hover:bg-gray-50 cursor-pointer"
+                onclick="window.location='{% url 'devis:detail_creance' facture.id %}'">
+                <td class="py-2">{{ facture.numero_facture }}</td>
+                <td>{{ facture.client_nom }}</td>
+                <td class="{% if facture.est_en_retard_affichage %}text-red-600 font-semibold{% endif %}">
+                    {{ facture.date_echeance|default:"—" }}
+                </td>
+                <td>{{ facture.montant_ttc }} FCFA</td>
+                <td>{{ facture.solde_restant_calc }} FCFA</td>
+                <td>
+                    <span class="px-2 py-0.5 rounded text-xs bg-gray-100">{{ facture.get_statut_display }}</span>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="py-4 text-center text-gray-400">Aucune créance trouvée.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

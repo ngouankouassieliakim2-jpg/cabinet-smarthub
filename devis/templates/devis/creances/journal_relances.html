@@ -1,0 +1,79 @@
+{% extends "base_pilotage.html" %}
+{% block contenu %}
+<div class="p-6">
+    <h1 class="text-xl font-semibold mb-4">Journal des relances</h1>
+
+    <div class="grid grid-cols-3 gap-4 mb-4 text-sm">
+        <div class="border rounded p-3">
+            <div class="text-gray-500">Total déclenchées</div>
+            <div class="text-lg font-semibold">{{ total }}</div>
+        </div>
+        <div class="border rounded p-3">
+            <div class="text-gray-500">Échecs</div>
+            <div class="text-lg font-semibold {% if echecs %}text-red-600{% endif %}">{{ echecs }}</div>
+        </div>
+        <div class="border rounded p-3">
+            <div class="text-gray-500">Taux de succès</div>
+            <div class="text-lg font-semibold">{% if taux_succes is not None %}{{ taux_succes }} %{% else %}—{% endif %}</div>
+        </div>
+    </div>
+
+    <form method="get" class="flex flex-wrap gap-3 mb-4 items-end">
+        <div>
+            <label class="block text-xs text-gray-500">Recherche</label>
+            <input type="text" name="q" value="{{ filtre_recherche }}" placeholder="N° facture..." class="border rounded px-2 py-1 w-64">
+        </div>
+        <div>
+            <label class="block text-xs text-gray-500">Étape</label>
+            <select name="etape" class="border rounded px-2 py-1 w-56">
+                <option value="">Toutes étapes</option>
+                {% for e in etapes %}
+                    <option value="{{ e.id }}" {% if filtre_etape == e.id|stringformat:"s" %}selected{% endif %}>{{ e.nom }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="flex gap-2">
+            <button type="submit" class="bg-gray-800 text-white rounded px-4 py-2">Filtrer</button>
+            <a href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}export=csv" class="text-blue-600 underline py-2">CSV</a>
+            <a href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}export=excel" class="text-blue-600 underline py-2">Excel</a>
+        </div>
+    </form>
+
+    <div class="overflow-x-auto border rounded">
+        <table class="min-w-full text-sm border-collapse">
+            <thead class="bg-gray-100">
+                <tr class="text-left text-gray-700">
+                    <th class="px-3 py-2">Date</th>
+                    <th class="px-3 py-2">Facture</th>
+                    <th class="px-3 py-2">Étape</th>
+                    <th class="px-3 py-2">Résultat</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in relances %}
+                <tr class="border-t hover:bg-gray-50 cursor-pointer" onclick="window.location='{% url 'devis:detail_creance' r.facture.id %}'">
+                    <td class="px-3 py-2">{{ r.date_declenchement|date:"d/m/Y H:i" }}</td>
+                    <td class="px-3 py-2">{{ r.facture.numero_facture }}</td>
+                    <td class="px-3 py-2">{{ r.etape.nom }}</td>
+                    <td class="px-3 py-2">
+                        {% if r.reussie %}
+                            <span class="text-green-600">OK</span>
+                        {% else %}
+                            <span class="text-red-600">Échec</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="px-3 py-6 text-center text-gray-500">Aucune relance trouvée.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if relances|length == 200 %}
+        <p class="text-xs text-gray-500 mt-2">Affichage limité aux 200 plus récentes.</p>
+    {% endif %}
+</div>
+{% endblock %}

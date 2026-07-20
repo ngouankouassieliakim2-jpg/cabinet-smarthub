@@ -1,0 +1,35 @@
+{% extends "base_pilotage.html" %}
+
+{% block contenu %}
+<div class="p-6">
+    <h1 class="text-xl font-semibold mb-4">Mon portefeuille</h1>
+    <p class="text-gray-600 mb-6">Factures qui vous sont affectées et qui restent à recouvrer.</p>
+
+    <table class="w-full text-sm border-collapse">
+        <thead>
+            <tr class="text-left border-b">
+                <th class="py-2">N° facture</th>
+                <th>Client</th>
+                <th>Échéance</th>
+                <th>Montant TTC</th>
+                <th>Solde restant</th>
+                <th>Statut</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for facture in factures %}
+            <tr class="border-b hover:bg-gray-50 cursor-pointer" onclick="window.location='{% url 'devis:detail_creance' facture.id %}'">
+                <td class="py-2">{{ facture.numero_facture }}</td>
+                <td>{{ facture.client_nom }}</td>
+                <td>{{ facture.date_echeance|default:'—' }}</td>
+                <td>{{ facture.montant_ttc }} FCFA</td>
+                <td>{{ facture.solde_restant_calc }} FCFA</td>
+                <td><span class="px-2 py-0.5 rounded text-xs bg-gray-100">{{ facture.get_statut_display }}</span></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="py-4 text-center text-gray-400">Aucune facture en portefeuille.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

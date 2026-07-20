@@ -1,0 +1,43 @@
+{% extends "base_pilotage.html" %}
+
+{% block contenu %}
+<div class="p-6 max-w-2xl">
+    <div class="flex justify-between items-start mb-4">
+        <div>
+            <h1 class="text-xl font-semibold">{{ fournisseur.raison_sociale }}</h1>
+            <p class="text-gray-500 text-sm">{{ fournisseur.ncc|default:'NCC non renseigné' }}</p>
+        </div>
+        <a href="{% url 'devis:modifier_fournisseur' fournisseur.id %}" class="text-blue-600 text-sm underline">Modifier</a>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4 mb-6 text-sm">
+        <div><span class="text-gray-500">Contact :</span> {{ fournisseur.contact_nom|default:'—' }}</div>
+        <div><span class="text-gray-500">Téléphone :</span> {{ fournisseur.telephone|default:'—' }}</div>
+        <div><span class="text-gray-500">Email :</span> {{ fournisseur.email|default:'—' }}</div>
+        <div><span class="text-gray-500">Délai de paiement :</span> {{ fournisseur.delai_paiement_jours }} jours</div>
+        <div><span class="text-gray-500">Notation :</span> {{ fournisseur.notation|default:'—' }}/5</div>
+        <div><span class="text-gray-500">Adresse :</span> {{ fournisseur.adresse|default:'—' }}</div>
+    </div>
+
+    <div class="border rounded p-4 bg-gray-50 mb-6 text-sm text-gray-500">
+        Historique des achats, total acheté et factures liées : disponibles dès
+        que le sous-module "Dépenses" sera construit et rattaché à ce fournisseur.
+    </div>
+
+    <h2 class="font-semibold mb-2">Contrats</h2>
+    <ul class="mb-4 text-sm">
+        {% for c in contrats %}
+        <li class="mb-2"><a href="{{ c.fichier.url }}" class="text-blue-600 underline">{{ c.libelle }}</a>
+            {% if c.date_fin %}<span class="text-gray-400">(jusqu'au {{ c.date_fin }})</span>{% endif %}</li>
+        {% empty %}
+        <li class="text-gray-400">Aucun contrat.</li>
+        {% endfor %}
+    </ul>
+
+    <form method="post" enctype="multipart/form-data" class="grid gap-4">
+        {% csrf_token %}
+        {{ contrat_form.as_p }}
+        <button type="submit" name="ajouter_contrat" value="1" class="bg-gray-700 text-white rounded px-3 py-2 text-sm">Ajouter un contrat</button>
+    </form>
+</div>
+{% endblock %}

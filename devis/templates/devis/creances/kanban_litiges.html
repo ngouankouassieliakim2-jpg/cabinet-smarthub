@@ -1,0 +1,28 @@
+{% extends "base_pilotage.html" %}
+{% block contenu %}
+<div class="p-6 overflow-x-auto">
+    <div class="flex items-center justify-between mb-4">
+        <h1 class="text-xl font-semibold">Litiges — vue Kanban</h1>
+        <a href="{% url 'devis:liste_litiges' %}" class="text-blue-600 underline">Retour à la liste</a>
+    </div>
+    <div class="flex gap-4 min-w-[900px]">
+        {% for col in colonnes %}
+        <div class="flex-1 bg-gray-50 rounded p-3 shadow-sm">
+            <h2 class="font-medium text-sm mb-3">{{ col.libelle }} ({{ col.litiges|length }})</h2>
+            <div class="space-y-2">
+                {% for l in col.litiges %}
+                <a href="{% url 'devis:detail_litige' l.id %}" class="block bg-white border rounded p-3 hover:shadow">
+                    <div class="font-medium">{{ l.facture.numero_facture }}</div>
+                    <div class="text-gray-500 text-xs">{{ l.facture.client_nom }}</div>
+                    <div class="text-gray-700 text-sm">{{ l.get_motif_type_display }}</div>
+                </a>
+                {% endfor %}
+                {% if col.litiges|length == 0 %}
+                <div class="text-gray-500 text-sm">Aucun litige</div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

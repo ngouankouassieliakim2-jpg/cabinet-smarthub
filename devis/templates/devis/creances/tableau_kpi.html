@@ -1,0 +1,64 @@
+{% extends "base_pilotage.html" %}
+
+{% block contenu %}
+<div class="p-6 max-w-4xl">
+    <h1 class="text-xl font-semibold mb-4">KPI recouvrement</h1>
+
+    <div class="grid grid-cols-3 gap-4 mb-8">
+        <div class="border rounded p-4">
+            <div class="text-gray-500 text-sm">Délai moyen de paiement</div>
+            <div class="text-lg font-semibold">
+                {% if delai_moyen %}{{ delai_moyen }} jours{% else %}—{% endif %}
+            </div>
+            <div class="text-xs text-gray-400">12 derniers mois</div>
+        </div>
+        <div class="border rounded p-4">
+            <div class="text-gray-500 text-sm">Taux d'impayés (année)</div>
+            <div class="text-lg font-semibold {% if taux_impayes > 20 %}text-red-600{% endif %}">{{ taux_impayes }} %</div>
+        </div>
+        <div class="border rounded p-4">
+            <div class="text-gray-500 text-sm">Taux de recouvrement (année)</div>
+            <div class="text-lg font-semibold">{{ taux_recouvrement }} %</div>
+        </div>
+    </div>
+
+    <h2 class="font-semibold mb-2">Créances par ancienneté</h2>
+    <table class="w-full text-sm border-collapse mb-8">
+        <thead>
+            <tr class="text-left border-b"><th class="py-2">0-30 j</th><th>31-60 j</th><th>61-90 j</th><th>90+ j</th></tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="py-2">{{ anciennete.j0_30 }} FCFA</td>
+                <td>{{ anciennete.j31_60 }} FCFA</td>
+                <td>{{ anciennete.j61_90 }} FCFA</td>
+                <td class="text-red-600">{{ anciennete.j90_plus }} FCFA</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2 class="font-semibold mb-2">Clients à risque (retard ≥ 60 jours)</h2>
+    <table class="w-full text-sm border-collapse mb-8">
+        <thead><tr class="text-left border-b"><th class="py-2">Client</th><th>Montant impayé</th></tr></thead>
+        <tbody>
+            {% for nom, montant in clients_risque %}
+            <tr class="border-b"><td class="py-2">{{ nom }}</td><td>{{ montant }} FCFA</td></tr>
+            {% empty %}
+            <tr><td colspan="2" class="py-2 text-gray-400">Aucun client à risque.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h2 class="font-semibold mb-2">Encaissements mensuels</h2>
+    <table class="w-full text-sm border-collapse">
+        <thead><tr class="text-left border-b"><th class="py-2">Mois</th><th>Total encaissé</th></tr></thead>
+        <tbody>
+            {% for e in encaissements %}
+            <tr class="border-b"><td class="py-2">{{ e.mois|date:"F Y" }}</td><td>{{ e.total }} FCFA</td></tr>
+            {% empty %}
+            <tr><td colspan="2" class="py-2 text-gray-400">Aucun encaissement sur la période.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

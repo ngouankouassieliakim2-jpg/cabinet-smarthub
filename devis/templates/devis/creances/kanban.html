@@ -1,0 +1,23 @@
+{% extends "base_pilotage.html" %}
+
+{% block contenu %}
+<div class="p-6 overflow-x-auto">
+    <h1 class="text-xl font-semibold mb-4">Créances — vue Kanban</h1>
+    <div class="flex gap-4" style="min-width:1200px">
+        {% for col in colonnes %}
+        <div class="flex-1 bg-gray-50 rounded p-3">
+            <h2 class="font-medium text-sm mb-2">{{ col.libelle }} ({{ col.factures|length }})</h2>
+            <div class="space-y-2">
+                {% for f in col.factures %}
+                <a href="{% url 'devis:detail_creance' f.id %}" class="block bg-white border rounded p-2 text-xs hover:shadow">
+                    <div class="font-medium">{{ f.numero_facture }}</div>
+                    <div class="text-gray-500">{{ f.client_nom }}</div>
+                    <div>{{ f.montant_ttc }} FCFA</div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

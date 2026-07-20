@@ -1,0 +1,12 @@
+{% extends "base_pilotage.html" %}
+
+{% block contenu %}
+<div class="p-6 max-w-xl">
+    <h1 class="text-xl font-semibold mb-4">{% if creation %}Nouveau fournisseur{% else %}Modifier {{ fournisseur.raison_sociale }}{% endif %}</h1>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="bg-blue-600 text-white rounded px-4 py-2">Enregistrer</button>
+    </form>
+</div>
+{% endblock %}

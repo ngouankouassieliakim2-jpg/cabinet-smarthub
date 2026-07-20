@@ -1,0 +1,54 @@
+{% extends "base_pilotage.html" %}
+{% block contenu %}
+<div class="p-6">
+    <div class="flex items-center justify-between mb-4">
+        <div>
+            <h1 class="text-xl font-semibold">Litiges</h1>
+            <p class="text-sm text-gray-500">{{ nb_ouverts }} litige(s) ouverts ou en cours</p>
+        </div>
+        <a href="{% url 'devis:kanban_litiges' %}" class="text-blue-600 underline">Vue Kanban</a>
+    </div>
+
+    <form method="get" class="flex flex-wrap gap-3 mb-4">
+        <input type="text" name="q" value="{{ filtre_recherche }}" placeholder="N° facture ou client..." class="border rounded px-2 py-1 w-72">
+        <select name="statut" class="border rounded px-2 py-1">
+            <option value="">Tous statuts</option>
+            {% for code, libelle in statuts %}
+                <option value="{{ code }}" {% if code == filtre_statut %}selected{% endif %}>{{ libelle }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="bg-gray-800 text-white rounded px-4 py-2">Filtrer</button>
+        <a href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}export=csv" class="text-sm text-blue-600 underline self-center">CSV</a>
+        <a href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}export=excel" class="text-sm text-blue-600 underline self-center">Excel</a>
+    </form>
+
+    <div class="overflow-x-auto border rounded bg-white">
+        <table class="min-w-full text-sm border-collapse">
+            <thead class="bg-gray-100">
+                <tr class="text-left text-gray-700">
+                    <th class="px-3 py-2">Facture</th>
+                    <th class="px-3 py-2">Client</th>
+                    <th class="px-3 py-2">Motif</th>
+                    <th class="px-3 py-2">Statut</th>
+                    <th class="px-3 py-2">Ouvert le</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for l in litiges %}
+                <tr class="border-t hover:bg-gray-50 cursor-pointer" onclick="window.location='{% url 'devis:detail_litige' l.id %}'">
+                    <td class="px-3 py-2">{{ l.facture.numero_facture }}</td>
+                    <td class="px-3 py-2">{{ l.facture.client_nom }}</td>
+                    <td class="px-3 py-2">{{ l.get_motif_type_display }}</td>
+                    <td class="px-3 py-2"><span class="px-2 py-1 rounded bg-gray-100 text-xs">{{ l.get_statut_display }}</span></td>
+                    <td class="px-3 py-2">{{ l.date_ouverture|date:"d/m/Y" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="px-3 py-6 text-center text-gray-500">Aucun litige trouvé.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

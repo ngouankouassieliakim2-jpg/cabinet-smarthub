@@ -1,0 +1,33 @@
+{% extends "base_pilotage.html" %}
+
+{% block contenu %}
+<div class="p-6">
+    <div class="flex justify-between items-center mb-4">
+        <h1 class="text-xl font-semibold">Fournisseurs</h1>
+        <a href="{% url 'devis:creer_fournisseur' %}" class="bg-blue-600 text-white rounded px-4 py-2 text-sm">+ Nouveau fournisseur</a>
+    </div>
+
+    <form method="get" class="mb-4">
+        <input type="text" name="q" value="{{ recherche }}" placeholder="Rechercher..." class="border rounded px-2 py-1 w-full max-w-md">
+    </form>
+
+    <table class="w-full text-sm border-collapse">
+        <thead>
+            <tr class="text-left border-b"><th class="py-2">Raison sociale</th><th>Contact</th><th>Téléphone</th><th>Notation</th><th>Statut</th></tr>
+        </thead>
+        <tbody>
+            {% for f in fournisseurs %}
+            <tr class="border-b hover:bg-gray-50 cursor-pointer" onclick="window.location='{% url 'devis:detail_fournisseur' f.id %}'">
+                <td class="py-2">{{ f.raison_sociale }}</td>
+                <td>{{ f.contact_nom|default:'—' }}</td>
+                <td>{{ f.telephone|default:'—' }}</td>
+                <td>{{ f.notation|default:'—' }}</td>
+                <td>{% if f.actif %}Actif{% else %}<span class="text-gray-400">Inactif</span>{% endif %}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="py-4 text-center text-gray-400">Aucun fournisseur.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

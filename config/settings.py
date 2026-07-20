@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "parametres",
     "pilotage",
     "comptes",
+    "core",
     "vitrine",
     "collaborateurs",
     "portail",

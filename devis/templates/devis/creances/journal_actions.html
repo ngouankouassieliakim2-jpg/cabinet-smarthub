@@ -1,0 +1,49 @@
+{% extends "base_pilotage.html" %}
+{% block contenu %}
+<div class="p-6">
+    <h1 class="text-xl font-semibold mb-4">Journal des actions de recouvrement</h1>
+
+    <form method="get" class="flex gap-3 mb-4">
+        <input type="text" name="q" value="{{ filtre_recherche }}" placeholder="N° facture..." class="border rounded px-2 py-1">
+        <select name="recouvreur" class="border rounded px-2 py-1">
+            <option value="">Tous recouvreurs</option>
+            {% for r in recouvreurs %}
+                <option value="{{ r.id }}" {% if filtre_recouvreur == r.id|stringformat:"s" %}selected{% endif %}>{{ r }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="bg-gray-700 text-white rounded px-4 py-1">Filtrer</button>
+        <a href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}export=csv" class="text-sm text-blue-600 underline self-center">CSV</a>
+        <a href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}export=excel" class="text-sm text-blue-600 underline self-center">Excel</a>
+    </form>
+
+    <table class="w-full text-sm border-collapse">
+        <thead>
+            <tr class="text-left border-b">
+                <th class="py-2">Date</th>
+                <th class="py-2">Facture</th>
+                <th class="py-2">Type</th>
+                <th class="py-2">Recouvreur</th>
+                <th class="py-2">Commentaire</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for a in actions %}
+            <tr class="border-b hover:bg-gray-50 cursor-pointer" onclick="window.location='{% url 'devis:detail_creance' a.facture.id %}'">
+                <td class="py-2">{{ a.date_action|date:"d/m/Y H:i" }}</td>
+                <td>{{ a.facture.numero_facture }}</td>
+                <td>{{ a.get_type_action_display }}</td>
+                <td>{{ a.recouvreur|default:"—" }}</td>
+                <td>{{ a.commentaire|default:"—"|truncatechars:60 }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="py-4 text-center text-gray-400">Aucune action.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% if actions|length == 200 %}
+        <p class="text-xs text-gray-400 mt-2">Affichage limité aux 200 plus récentes.</p>
+    {% endif %}
+</div>
+{% endblock %}

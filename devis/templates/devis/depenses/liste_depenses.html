@@ -1,0 +1,66 @@
+{% extends "base_pilotage.html" %}
+
+{% block contenu %}
+<div class="p-6">
+    <div class="flex justify-between items-center mb-4">
+        <div>
+            <h1 class="text-xl font-semibold">Dépenses fournisseurs</h1>
+            <p class="text-sm text-gray-500">Liste des dépenses enregistrées et filtrables.</p>
+        </div>
+        <a href="{% url 'devis:creer_depense' %}" class="bg-blue-600 text-white rounded px-4 py-2 text-sm">+ Nouvelle dépense</a>
+    </div>
+
+    <form method="get" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div>
+            <label class="block text-sm text-gray-600">Statut</label>
+            <select name="statut" class="border rounded px-2 py-1 w-full">
+                <option value="">Tous</option>
+                {% for code, libelle in statuts %}
+                <option value="{{ code }}" {% if code == filtre_statut %}selected{% endif %}>{{ libelle }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="block text-sm text-gray-600">Fournisseur</label>
+            <select name="fournisseur" class="border rounded px-2 py-1 w-full">
+                <option value="">Tous</option>
+                {% for f in fournisseurs %}
+                <option value="{{ f.id }}" {% if f.id|stringformat:"s" == filtre_fournisseur %}selected{% endif %}>{{ f.raison_sociale }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="flex items-end">
+            <button type="submit" class="bg-blue-600 text-white rounded px-4 py-2 text-sm w-full">Filtrer</button>
+        </div>
+    </form>
+
+    <table class="w-full text-sm border-collapse">
+        <thead>
+            <tr class="text-left border-b">
+                <th class="py-2">N° dépense</th>
+                <th>Fournisseur</th>
+                <th>Catégorie</th>
+                <th>Date facture</th>
+                <th>Échéance</th>
+                <th>Montant TTC</th>
+                <th>Statut</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for depense in depenses %}
+            <tr class="border-b hover:bg-gray-50 cursor-pointer" onclick="window.location='{% url 'devis:detail_depense' depense.id %}'">
+                <td class="py-2">{{ depense.numero_depense }}</td>
+                <td>{{ depense.fournisseur.raison_sociale }}</td>
+                <td>{{ depense.categorie.nom }}</td>
+                <td>{{ depense.date_facture }}</td>
+                <td>{{ depense.date_echeance|default:'—' }}</td>
+                <td>{{ depense.montant_ttc }} FCFA</td>
+                <td><span class="px-2 py-0.5 rounded text-xs bg-gray-100">{{ depense.get_statut_display }}</span></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7" class="py-4 text-center text-gray-400">Aucune dépense trouvée.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

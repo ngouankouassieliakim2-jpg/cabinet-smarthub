@@ -1,6 +1,7 @@
 ﻿from datetime import date, timedelta
 from decimal import Decimal
 from django.db import models
+from django.db.models import Sum
 from django.utils import timezone
 
 
@@ -417,19 +418,51 @@ class Facture(models.Model):
         ("ANNUEL", "Annuel"),
     ]
     STATUT_CHOICES = [
+        # Flux principal
         ("BROUILLON", "Brouillon"),
-        ("A_CERTIFIER", "À certifier"),
-        ("CERTIFIEE", "Certifiée DGI"),
-        ("ENVOYEE", "Envoyée"),
+        ("EMISE", "Émise (FNE)"),
+        ("EN_ATTENTE_PAIEMENT", "En attente de paiement"),
+        ("PARTIELLEMENT_PAYEE", "Partiellement payée"),
         ("PAYEE", "Payée"),
+
+        # Branche contestation
+        ("CONTESTEE", "Contestée"),
+        ("EN_LITIGE", "En litige"),
+        ("CORRIGEE", "Corrigée"),
+
+        # Retard (calculé automatiquement)
+        ("EN_RETARD", "En retard"),
+
+        # Statuts d'exception / terminaux
+        ("EN_CONTENTIEUX", "En contentieux"),
+        ("IRRECOUVRABLE", "Irrécouvrable"),
         ("ANNULEE", "Annulée"),
     ]
+
+    TRANSITIONS_AUTORISEES = {
+        "EN_ATTENTE_PAIEMENT": ["EN_CONTENTIEUX", "ANNULEE"],
+        "PARTIELLEMENT_PAYEE": ["EN_CONTENTIEUX"],
+        "EN_RETARD": ["EN_CONTENTIEUX", "IRRECOUVRABLE"],
+        "EN_CONTENTIEUX": ["IRRECOUVRABLE", "EN_ATTENTE_PAIEMENT"],
+        "BROUILLON": ["ANNULEE"],
+        # CONTESTEE / EN_LITIGE / CORRIGEE retirés : gérés exclusivement par
+        # le cycle de vie de Litige (ouvrir_litige/passer_en_cours/resoudre/
+        # abandonner) — un seul point de passage, cf. Litiges sous-module.
+    }
+
+    TRANSITIONS_RESTREINTES = {"EN_CONTENTIEUX", "IRRECOUVRABLE", "ANNULEE"}
+
+    DELAI_ECHEANCE_DEFAUT_JOURS = 30  # ajustable ; deviendra un paramètre configurable au sous-module Paramétrage
 
     numero_facture = models.CharField("Numéro", max_length=30, unique=True, blank=True)
     devis_source = models.ForeignKey(
         "Devis", on_delete=models.PROTECT,
         related_name="factures", null=True, blank=True,
         verbose_name="Lettre de mission / devis source",
+    )
+    recouvreur = models.ForeignKey(
+        "auth.User", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="portefeuille_creances", verbose_name="Recouvreur affecté"
     )
 
     client_nom = models.CharField("Client", max_length=255)
@@ -456,6 +489,24 @@ class Facture(models.Model):
 
     date_creation = models.DateTimeField(auto_now_add=True)
     date_emission = models.DateField(null=True, blank=True)
+    date_echeance = models.DateField(
+        "Date d'échéance", null=True, blank=True,
+        help_text="Calculée automatiquement à l'émission (voir save()), modifiable au cas par cas.")
+
+    archive = models.BooleanField("Archivée", default=False)
+    date_archivage = models.DateTimeField("Date d'archivage", null=True, blank=True)
+
+    def archiver(self, utilisateur=None):
+        if self.statut not in ("PAYEE", "ANNULEE", "IRRECOUVRABLE"):
+            raise ValueError("Seule une facture soldée, annulée ou irrécouvrable peut être archivée.")
+        self.archive = True
+        self.date_archivage = timezone.now()
+        self.save(update_fields=["archive", "date_archivage"])
+
+    def restaurer(self, utilisateur=None):
+        self.archive = False
+        self.date_archivage = None
+        self.save(update_fields=["archive", "date_archivage"])
 
     # ============================================================
     # CHAMPS FNE — DGI (voir PROCEDURE D'INTERFACAGE PAR API, mai 2025)
@@ -550,7 +601,672 @@ class Facture(models.Model):
             else:
                 dernier_num = 0
             self.numero_facture = f"{prefix}{dernier_num + 1:04d}"
+
+        if self.date_emission and not self.date_echeance:
+            self.date_echeance = self.date_emission + timedelta(days=self.DELAI_ECHEANCE_DEFAUT_JOURS)
+
         super().save(*args, **kwargs)
+
+    @property
+    def total_avoirs(self):
+        return self.avoirs.aggregate(total=Sum("montant"))["total"] or Decimal("0")
+
+    @property
+    def montant_du(self):
+        return self.montant_ttc - self.total_avoirs
+
+    @property
+    def montant_paye(self):
+        paiements = self.paiements.aggregate(total=Sum("montant"))["total"] or Decimal("0")
+        compensations_recues = self.compensations_recues.aggregate(total=Sum("montant"))["total"] or Decimal("0")
+        return paiements + compensations_recues
+
+    @property
+    def solde_restant(self):
+        return self.montant_du - self.montant_paye
+
+    @property
+    def trop_percu_brut(self):
+        solde = self.solde_restant
+        return -solde if solde < 0 else Decimal("0")
+
+    @property
+    def trop_percu_utilise(self):
+        remb = self.remboursements.aggregate(total=Sum("montant"))["total"] or Decimal("0")
+        comp = self.compensations_emises.aggregate(total=Sum("montant"))["total"] or Decimal("0")
+        return remb + comp
+
+    @property
+    def trop_percu_disponible(self):
+        return self.trop_percu_brut - self.trop_percu_utilise
+
+    def enregistrer_avoir(self, montant, type_avoir, motif, utilisateur=None):
+        if montant <= 0:
+            raise ValueError("Le montant de l'avoir doit être supérieur à zéro.")
+        if montant > self.montant_du:
+            raise ValueError("L'avoir dépasse le montant restant dû sur la facture.")
+        avoir = Avoir.objects.create(
+            facture=self, montant=montant, type_avoir=type_avoir,
+            motif=motif, cree_par=utilisateur,
+        )
+        if self.solde_restant <= 0:
+            self.changer_statut("PAYEE", utilisateur=utilisateur, commentaire=f"Soldée par avoir {avoir.numero_avoir}")
+        return avoir
+
+    def enregistrer_remboursement(self, montant, utilisateur=None, **kwargs):
+        if montant <= 0:
+            raise ValueError("Le montant du remboursement doit être supérieur à zéro.")
+        if montant > self.trop_percu_disponible:
+            raise ValueError("Le remboursement dépasse le trop-perçu disponible.")
+        return Remboursement.objects.create(
+            facture=self, montant=montant, utilisateur=utilisateur, **kwargs)
+
+    def enregistrer_compensation(self, facture_cible, montant, utilisateur=None, commentaire=""):
+        if montant <= 0:
+            raise ValueError("Le montant de la compensation doit être supérieur à zéro.")
+        if montant > self.trop_percu_disponible:
+            raise ValueError("La compensation dépasse le trop-perçu disponible sur cette facture.")
+        if montant > facture_cible.solde_restant:
+            raise ValueError("La compensation dépasse le solde restant dû sur la facture cible.")
+
+        compensation = Compensation.objects.create(
+            facture_source=self, facture_cible=facture_cible,
+            montant=montant, utilisateur=utilisateur, commentaire=commentaire,
+        )
+
+        if facture_cible.solde_restant <= 0:
+            facture_cible.changer_statut(
+                "PAYEE", utilisateur=utilisateur,
+                commentaire=f"Soldée par compensation depuis {self.numero_facture}")
+        else:
+            facture_cible.changer_statut(
+                "PARTIELLEMENT_PAYEE", utilisateur=utilisateur,
+                commentaire=f"Paiement partiel par compensation depuis {self.numero_facture}")
+
+        return compensation
+
+    def ouvrir_litige(self, motif_type, description, utilisateur=None):
+        from .models import Litige  # évite un souci d'ordre de déclaration si déplacé un jour
+        if self.statut not in Litige.STATUTS_SOURCE_AUTORISES:
+            raise ValueError("Un litige ne peut pas être ouvert depuis ce statut de facture.")
+        if self.litiges.filter(statut__in=["OUVERT", "EN_COURS"]).exists():
+            raise ValueError("Un litige est déjà en cours sur cette facture.")
+        litige = Litige.objects.create(
+            facture=self, motif_type=motif_type, description=description, ouvert_par=utilisateur)
+        self.changer_statut(
+            "CONTESTEE", utilisateur=utilisateur,
+            commentaire=f"Litige #{litige.id} ouvert ({litige.get_motif_type_display()})")
+        return litige
+
+    def transitions_possibles(self, user=None):
+        possibles = self.TRANSITIONS_AUTORISEES.get(self.statut, [])
+        if user is not None:
+            profil = getattr(user, "profil", None)
+            from comptes.models import Profil
+            est_direction_cadre = profil and profil.role in (Profil.Role.DIRECTION, Profil.Role.CADRE)
+            if not est_direction_cadre:
+                possibles = [p for p in possibles if p not in self.TRANSITIONS_RESTREINTES]
+        return possibles
+
+    def peut_transitionner_vers(self, nouveau_statut, user=None):
+        return nouveau_statut in self.transitions_possibles(user=user)
+
+
+class EtapeRelance(models.Model):
+    TYPE_ACTION_CHOICES = [
+        ("EMAIL_COURTOIS", "Email courtois"),
+        ("EMAIL_FERME", "Email plus ferme"),
+        ("NOTIFICATION_INTERNE", "Notification interne"),
+        ("LETTRE_PDF", "Lettre PDF"),
+        ("ESCALADE_DIRECTION", "Escalade Direction"),
+        ("ALERTE_CONTENTIEUX", "Alerte contentieux (décision Direction requise)"),
+    ]
+
+    nom = models.CharField("Nom de l'étape", max_length=100)
+    delai_jours = models.PositiveIntegerField(
+        "Déclenchement à J+", help_text="Jours après la date d'échéance"
+    )
+    type_action = models.CharField(max_length=25, choices=TYPE_ACTION_CHOICES)
+    sujet_email = models.CharField("Sujet (si email)", max_length=200, blank=True)
+    corps_message = models.TextField(
+        "Corps du message", blank=True,
+        help_text="Variables disponibles : {client_nom}, {numero_facture}, {montant_du}, {jours_retard}"
+    )
+    actif = models.BooleanField("Étape active", default=True)
+
+    def __str__(self):
+        return f"J+{self.delai_jours} — {self.nom}"
+
+    class Meta:
+        verbose_name = "Étape de relance"
+        verbose_name_plural = "Étapes de relance"
+        ordering = ["delai_jours"]
+
+
+class Relance(models.Model):
+    facture = models.ForeignKey(Facture, on_delete=models.CASCADE, related_name="relances")
+    etape = models.ForeignKey(
+        EtapeRelance, on_delete=models.PROTECT, related_name="relances_declenchees"
+    )
+    date_declenchement = models.DateTimeField(auto_now_add=True)
+    reussie = models.BooleanField(default=True)
+    erreur = models.TextField(blank=True)
+    document_genere = models.FileField(upload_to="relances/lettres/", blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.etape.nom} — {self.facture.numero_facture} ({self.date_declenchement:%d/%m/%Y})"
+
+    class Meta:
+        verbose_name = "Relance déclenchée"
+        verbose_name_plural = "Relances déclenchées"
+        ordering = ["-date_declenchement"]
+        unique_together = ("facture", "etape")
+
+
+class ActionRecouvrement(models.Model):
+    TYPE_CHOICES = [
+        ("APPEL", "Appel téléphonique"),
+        ("EMAIL", "Email envoyé"),
+        ("VISITE", "Visite / rendez-vous"),
+        ("AUTRE", "Autre action"),
+    ]
+
+    facture = models.ForeignKey(Facture, on_delete=models.CASCADE, related_name="actions_recouvrement")
+    recouvreur = models.ForeignKey("auth.User", on_delete=models.SET_NULL, null=True, blank=True)
+    type_action = models.CharField(max_length=10, choices=TYPE_CHOICES)
+    commentaire = models.TextField(blank=True)
+    date_action = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.get_type_action_display()} — {self.facture.numero_facture} ({self.date_action:%d/%m/%Y})"
+
+    class Meta:
+        verbose_name = "Action de recouvrement"
+        verbose_name_plural = "Actions de recouvrement"
+        ordering = ["-date_action"]
+
+
+class Litige(models.Model):
+    MOTIF_CHOICES = [
+        ("ERREUR_FACTURE", "Erreur de facture"),
+        ("PRESTATION_INCOMPLETE", "Prestation incomplète"),
+        ("DESACCORD", "Désaccord"),
+        ("AUTRE", "Autre"),
+    ]
+    STATUT_CHOICES = [
+        ("OUVERT", "Ouvert"),
+        ("EN_COURS", "En cours d'instruction"),
+        ("RESOLU", "Résolu"),
+        ("ABANDONNE", "Abandonné"),
+    ]
+    STATUTS_SOURCE_AUTORISES = ["EN_ATTENTE_PAIEMENT", "PARTIELLEMENT_PAYEE", "EN_RETARD"]
+
+    facture = models.ForeignKey(Facture, on_delete=models.CASCADE, related_name="litiges")
+    motif_type = models.CharField("Motif", max_length=25, choices=MOTIF_CHOICES)
+    description = models.TextField("Description")
+    statut = models.CharField(max_length=15, choices=STATUT_CHOICES, default="OUVERT")
+
+    ouvert_par = models.ForeignKey("auth.User", on_delete=models.SET_NULL, null=True, blank=True, related_name="litiges_ouverts")
+    date_ouverture = models.DateTimeField(auto_now_add=True)
+
+    date_resolution = models.DateTimeField(null=True, blank=True)
+    resolution_commentaire = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"Litige #{self.id} — {self.facture.numero_facture} ({self.get_statut_display()})"
+
+    def passer_en_cours(self, utilisateur=None):
+        if self.statut != "OUVERT":
+            raise ValueError("Seul un litige ouvert peut passer en instruction.")
+        self.statut = "EN_COURS"
+        self.save(update_fields=["statut"])
+        self.facture.changer_statut(
+            "EN_LITIGE", utilisateur=utilisateur,
+            commentaire=f"Litige #{self.id} en cours d'instruction")
+
+    def resoudre(self, commentaire, utilisateur=None):
+        if self.statut != "EN_COURS":
+            raise ValueError("Seul un litige en instruction peut être résolu.")
+        self.statut = "RESOLU"
+        self.date_resolution = timezone.now()
+        self.resolution_commentaire = commentaire
+        self.save(update_fields=["statut", "date_resolution", "resolution_commentaire"])
+        self.facture.changer_statut(
+            "CORRIGEE", utilisateur=utilisateur,
+            commentaire=f"Litige #{self.id} résolu : {commentaire}")
+
+    def abandonner(self, utilisateur=None, commentaire=""):
+        if self.statut not in ("OUVERT", "EN_COURS"):
+            raise ValueError("Ce litige ne peut plus être abandonné.")
+        self.statut = "ABANDONNE"
+        self.date_resolution = timezone.now()
+        self.resolution_commentaire = commentaire
+        self.save(update_fields=["statut", "date_resolution", "resolution_commentaire"])
+        self.facture.changer_statut(
+            "EN_ATTENTE_PAIEMENT", utilisateur=utilisateur,
+            commentaire=f"Litige #{self.id} abandonné" + (f" : {commentaire}" if commentaire else ""))
+
+    class Meta:
+        verbose_name = "Litige"
+        verbose_name_plural = "Litiges"
+        ordering = ["-date_ouverture"]
+
+
+class PieceJointeLitige(models.Model):
+    litige = models.ForeignKey(Litige, on_delete=models.CASCADE, related_name="pieces")
+    libelle = models.CharField("Libellé", max_length=200)
+    fichier = models.FileField("Fichier", upload_to="litiges/pieces/")
+    ajoute_par = models.ForeignKey("auth.User", on_delete=models.SET_NULL, null=True, blank=True)
+    date_ajout = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.libelle
+
+    class Meta:
+        verbose_name = "Pièce jointe (litige)"
+        verbose_name_plural = "Pièces jointes (litiges)"
+        ordering = ["-date_ajout"]
+
+
+class CommentaireLitige(models.Model):
+    litige = models.ForeignKey(Litige, on_delete=models.CASCADE, related_name="commentaires")
+    auteur = models.ForeignKey("auth.User", on_delete=models.SET_NULL, null=True, blank=True)
+    message = models.TextField()
+    date_creation = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.auteur} — {self.date_creation:%d/%m/%Y}"
+
+    class Meta:
+        verbose_name = "Commentaire (litige)"
+        verbose_name_plural = "Commentaires (litiges)"
+        ordering = ["date_creation"]
+
+
+class HistoriqueStatutFacture(models.Model):
+    facture = models.ForeignKey(
+        "Facture", on_delete=models.CASCADE, related_name="historique_statuts")
+    ancien_statut = models.CharField(max_length=25, blank=True)
+    nouveau_statut = models.CharField(max_length=25)
+    date_changement = models.DateTimeField(auto_now_add=True)
+    utilisateur = models.ForeignKey(
+        "auth.User", on_delete=models.SET_NULL, null=True, blank=True)
+    commentaire = models.CharField(max_length=255, blank=True)
+
+    def __str__(self):
+        return f"{self.facture.numero_facture} : {self.ancien_statut} → {self.nouveau_statut}"
+
+    class Meta:
+        verbose_name = "Historique de statut (facture)"
+        verbose_name_plural = "Historiques de statuts (factures)"
+        ordering = ["date_changement"]
+
+
+class Paiement(models.Model):
+    MODE_CHOICES = [
+        ("ESPECES", "Espèces"),
+        ("CHEQUE", "Chèque"),
+        ("VIREMENT", "Virement bancaire"),
+        ("MOBILE_MONEY", "Mobile Money"),
+        ("CARTE", "Carte bancaire"),
+    ]
+    OPERATEUR_MOBILE_MONEY_CHOICES = [
+        ("", "—"),
+        ("WAVE", "Wave"),
+        ("ORANGE_MONEY", "Orange Money"),
+        ("AUTRE", "Autre"),
+    ]
+
+    facture = models.ForeignKey(
+        Facture, on_delete=models.PROTECT, related_name="paiements")
+    montant = models.DecimalField("Montant", max_digits=12, decimal_places=0)
+    date_paiement = models.DateField("Date du paiement", default=date.today)
+    mode_paiement = models.CharField(max_length=15, choices=MODE_CHOICES, blank=True)
+    operateur_mobile_money = models.CharField(
+        "Opérateur mobile money", max_length=15, choices=OPERATEUR_MOBILE_MONEY_CHOICES, blank=True)
+    reference_transaction_externe = models.CharField(
+        "Référence transaction (API opérateur)", max_length=100, blank=True,
+        help_text="ID de transaction Wave/Orange Money — rempli manuellement pour l'instant, automatiquement une fois l'API branchée")
+    banque = models.CharField("Banque / établissement", max_length=100, blank=True)
+    reference_bancaire = models.CharField("Référence bancaire", max_length=100, blank=True)
+    justificatif = models.FileField(
+        "Justificatif", upload_to="paiements/justificatifs/", blank=True, null=True)
+    commentaire = models.CharField(max_length=255, blank=True)
+    reconcilie_automatiquement = models.BooleanField(
+        "Réconcilié automatiquement via API", default=False,
+        help_text="Toujours False tant que l'intégration API n'existe pas — sert de marqueur pour distinguer les paiements saisis à la main de ceux confirmés par webhook, une fois construit")
+
+    utilisateur = models.ForeignKey(
+        "auth.User", on_delete=models.SET_NULL, null=True, blank=True)
+    date_enregistrement = models.DateTimeField("Enregistré le", auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.montant} FCFA — {self.facture.numero_facture} ({self.date_paiement})"
+
+    class Meta:
+        verbose_name = "Paiement"
+        verbose_name_plural = "Paiements"
+        ordering = ["date_paiement"]
+
+
+class Avoir(models.Model):
+    TYPE_CHOICES = [
+        ("CORRECTION", "Correction d'erreur de facturation"),
+        ("GESTE_COMMERCIAL", "Geste commercial"),
+        ("ANNULATION_PARTIELLE", "Annulation partielle de prestation"),
+        ("RESOLUTION_LITIGE", "Résolution de litige"),
+    ]
+
+    numero_avoir = models.CharField("Numéro", max_length=30, unique=True, blank=True)
+    facture = models.ForeignKey(Facture, on_delete=models.PROTECT, related_name="avoirs")
+    montant = models.DecimalField("Montant", max_digits=12, decimal_places=0)
+    type_avoir = models.CharField(max_length=25, choices=TYPE_CHOICES)
+    motif = models.TextField("Motif")
+
+    certifie_fne = models.BooleanField("Certifié FNE", default=False)
+
+    cree_par = models.ForeignKey("auth.User", on_delete=models.SET_NULL, null=True, blank=True)
+    date_creation = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if not self.numero_avoir:
+            annee = date.today().year
+            prefix = f"AV-{annee}-"
+            dernier = Avoir.objects.filter(numero_avoir__startswith=prefix).order_by("-numero_avoir").first()
+            dernier_num = int(dernier.numero_avoir.split("-")[-1]) if dernier else 0
+            self.numero_avoir = f"{prefix}{dernier_num + 1:04d}"
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.numero_avoir} — {self.montant} FCFA sur {self.facture.numero_facture}"
+
+    class Meta:
+        verbose_name = "Avoir"
+        verbose_name_plural = "Avoirs"
+        ordering = ["-date_creation"]
+
+
+class Remboursement(models.Model):
+    MODE_CHOICES = Paiement.MODE_CHOICES
+
+    facture = models.ForeignKey(Facture, on_delete=models.PROTECT, related_name="remboursements")
+    montant = models.DecimalField("Montant", max_digits=12, decimal_places=0)
+    date_remboursement = models.DateField(default=date.today)
+    mode_remboursement = models.CharField(max_length=15, choices=MODE_CHOICES, blank=True)
+    reference = models.CharField("Référence", max_length=100, blank=True)
+    justificatif = models.FileField(upload_to="remboursements/justificatifs/", blank=True, null=True)
+    commentaire = models.CharField(max_length=255, blank=True)
+
+    utilisateur = models.ForeignKey("auth.User", on_delete=models.SET_NULL, null=True, blank=True)
+    date_enregistrement = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Remboursement {self.montant} FCFA — {self.facture.numero_facture}"
+
+    class Meta:
+        verbose_name = "Remboursement"
+        verbose_name_plural = "Remboursements"
+        ordering = ["-date_remboursement"]
+
+
+class Compensation(models.Model):
+    """Trop-perçu d'une facture appliqué au solde restant d'une autre facture
+    (même client). Compte comme un paiement côté facture_cible."""
+    facture_source = models.ForeignKey(
+        Facture, on_delete=models.PROTECT, related_name="compensations_emises",
+        verbose_name="Facture en trop-perçu")
+    facture_cible = models.ForeignKey(
+        Facture, on_delete=models.PROTECT, related_name="compensations_recues",
+        verbose_name="Facture soldée")
+    montant = models.DecimalField("Montant", max_digits=12, decimal_places=0)
+    commentaire = models.CharField(max_length=255, blank=True)
+
+    utilisateur = models.ForeignKey("auth.User", on_delete=models.SET_NULL, null=True, blank=True)
+    date_creation = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.montant} FCFA : {self.facture_source.numero_facture} → {self.facture_cible.numero_facture}"
+
+    class Meta:
+        verbose_name = "Compensation"
+        verbose_name_plural = "Compensations"
+        ordering = ["-date_creation"]
+
+
+class Fournisseur(models.Model):
+    NOTATION_CHOICES = [(i, str(i)) for i in range(1, 6)]
+
+    raison_sociale = models.CharField("Raison sociale", max_length=200)
+    ncc = models.CharField("NCC", max_length=20, blank=True)
+    contact_nom = models.CharField("Nom du contact", max_length=150, blank=True)
+    telephone = models.CharField("Téléphone", max_length=30, blank=True)
+    email = models.EmailField("Email", blank=True)
+    adresse = models.CharField("Adresse", max_length=255, blank=True)
+
+    delai_paiement_jours = models.PositiveIntegerField(
+        "Délai de paiement négocié (jours)", default=30, null=True, blank=True)
+    notation = models.PositiveSmallIntegerField(
+        "Notation", choices=NOTATION_CHOICES, null=True, blank=True)
+    actif = models.BooleanField("Actif", default=True)
+    notes = models.TextField("Notes internes", blank=True)
+
+    date_creation = models.DateTimeField(auto_now_add=True)
+
+    # NOTE : historique / total acheté / factures liées ne sont PAS des champs
+    # stockés ici — ce seront des propriétés calculées depuis les dépenses liées,
+    # dès que le sous-module "Dépenses" (le suivant) existera. Voir COMMENTAIRES.md.
+
+    @property
+    def total_achete(self):
+        return self.depenses.exclude(statut="ANNULEE").aggregate(
+            total=Sum("montant_ht"))["total"] or Decimal("0")
+
+    @property
+    def nombre_factures(self):
+        return self.depenses.exclude(statut="ANNULEE").count()
+
+    def __str__(self):
+        return self.raison_sociale
+
+    class Meta:
+        verbose_name = "Fournisseur"
+        verbose_name_plural = "Fournisseurs"
+        ordering = ["raison_sociale"]
+
+
+class ContratFournisseur(models.Model):
+    fournisseur = models.ForeignKey(Fournisseur, on_delete=models.CASCADE, related_name="contrats")
+    libelle = models.CharField("Libellé", max_length=200)
+    fichier = models.FileField("Fichier", upload_to="fournisseurs/contrats/")
+    date_debut = models.DateField("Date de début", null=True, blank=True)
+    date_fin = models.DateField("Date de fin", null=True, blank=True)
+    date_ajout = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.libelle} — {self.fournisseur}"
+
+    class Meta:
+        verbose_name = "Contrat fournisseur"
+        verbose_name_plural = "Contrats fournisseurs"
+        ordering = ["-date_ajout"]
+
+
+class CategorieDepense(models.Model):
+    nom = models.CharField("Nom", max_length=100)
+    parent = models.ForeignKey(
+        "self", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="sous_categories", verbose_name="Catégorie parente")
+
+    def __str__(self):
+        return f"{self.parent} > {self.nom}" if self.parent else self.nom
+
+    class Meta:
+        verbose_name = "Catégorie de dépense"
+        verbose_name_plural = "Catégories de dépenses"
+        ordering = ["nom"]
+
+
+class Depense(models.Model):
+    MODE_PAIEMENT_CHOICES = Paiement.MODE_CHOICES
+
+    STATUT_CHOICES = [
+        ("A_PAYER", "À payer"),
+        ("PROGRAMME", "Programmé"),
+        ("PARTIELLEMENT_PAYEE", "Partiellement payée"),
+        ("PAYEE", "Payée"),
+        ("EN_RETARD", "En retard"),
+        ("ANNULEE", "Annulée"),
+    ]
+
+    numero_depense = models.CharField("Numéro", max_length=30, unique=True, blank=True)
+    fournisseur = models.ForeignKey(
+        Fournisseur, on_delete=models.PROTECT, related_name="depenses")
+    categorie = models.ForeignKey(
+        CategorieDepense, on_delete=models.PROTECT, related_name="depenses")
+
+    montant_ht = models.DecimalField("Montant HT", max_digits=12, decimal_places=0)
+    taux_tva = models.CharField(
+        "Taux de TVA", max_length=2, choices=LignePrestation.TVA_CHOICES, default="18")
+
+    date_facture = models.DateField("Date de la facture fournisseur")
+    date_echeance = models.DateField("Date d'échéance", null=True, blank=True)
+
+    mode_paiement = models.CharField(max_length=15, choices=MODE_PAIEMENT_CHOICES, blank=True)
+    compte_bancaire = models.CharField("Compte bancaire", max_length=100, blank=True)
+    observations = models.TextField(blank=True)
+
+    statut = models.CharField(max_length=25, choices=STATUT_CHOICES, default="A_PAYER")
+
+    est_recurrente = models.BooleanField("Dépense récurrente", default=False)
+
+    cree_par = models.ForeignKey("auth.User", on_delete=models.SET_NULL, null=True, blank=True)
+    date_creation = models.DateTimeField(auto_now_add=True)
+
+    DELAI_ECHEANCE_DEFAUT_JOURS = 30
+
+    @property
+    def montant_tva(self):
+        return self.montant_ht * (Decimal(self.taux_tva) / Decimal("100"))
+
+    @property
+    def montant_ttc(self):
+        return self.montant_ht + self.montant_tva
+
+    @property
+    def montant_paye(self):
+        return self.paiements.aggregate(total=Sum("montant"))["total"] or Decimal("0")
+
+    @property
+    def solde_restant(self):
+        return self.montant_ttc - self.montant_paye
+
+    def save(self, *args, **kwargs):
+        if not self.numero_depense:
+            annee = date.today().year
+            prefix = f"DEP-{annee}-"
+            derniere = Depense.objects.filter(numero_depense__startswith=prefix).order_by("-numero_depense").first()
+            dernier_num = int(derniere.numero_depense.split("-")[-1]) if derniere else 0
+            self.numero_depense = f"{prefix}{dernier_num + 1:04d}"
+
+        if self.date_facture and not self.date_echeance:
+            delai = self.fournisseur.delai_paiement_jours or self.DELAI_ECHEANCE_DEFAUT_JOURS
+            self.date_echeance = self.date_facture + timedelta(days=delai)
+
+        super().save(*args, **kwargs)
+
+    def changer_statut(self, nouveau_statut, utilisateur=None, commentaire=""):
+        ancien_statut = self.statut
+        if ancien_statut == nouveau_statut:
+            return
+        self.statut = nouveau_statut
+        self.save(update_fields=["statut"])
+        HistoriqueStatutDepense.objects.create(
+            depense=self, ancien_statut=ancien_statut, nouveau_statut=nouveau_statut,
+            utilisateur=utilisateur, commentaire=commentaire,
+        )
+
+    def enregistrer_paiement(self, montant, utilisateur=None, **kwargs):
+        PaiementDepense.objects.create(depense=self, montant=montant, utilisateur=utilisateur, **kwargs)
+        if self.solde_restant <= 0:
+            self.changer_statut("PAYEE", utilisateur=utilisateur)
+        else:
+            self.changer_statut("PARTIELLEMENT_PAYEE", utilisateur=utilisateur)
+
+    def __str__(self):
+        return f"{self.numero_depense} — {self.fournisseur} ({self.montant_ttc} FCFA)"
+
+    class Meta:
+        verbose_name = "Dépense"
+        verbose_name_plural = "Dépenses"
+        ordering = ["-date_facture"]
+
+
+class PaiementDepense(models.Model):
+    depense = models.ForeignKey(Depense, on_delete=models.PROTECT, related_name="paiements")
+    montant = models.DecimalField("Montant", max_digits=12, decimal_places=0)
+    date_paiement = models.DateField("Date du paiement", default=date.today)
+    mode_paiement = models.CharField(max_length=15, choices=Paiement.MODE_CHOICES, blank=True)
+    operateur_mobile_money = models.CharField(
+        "Opérateur mobile money", max_length=15, choices=Paiement.OPERATEUR_MOBILE_MONEY_CHOICES, blank=True)
+    reference_transaction_externe = models.CharField(
+        "Référence transaction (API opérateur)", max_length=100, blank=True,
+        help_text="ID de transaction Wave/Orange Money — rempli manuellement pour l'instant, automatiquement une fois l'API branchée")
+    reference_bancaire = models.CharField("Référence bancaire", max_length=100, blank=True)
+    justificatif = models.FileField(upload_to="depenses/paiements/", blank=True, null=True)
+    commentaire = models.CharField(max_length=255, blank=True)
+    reconcilie_automatiquement = models.BooleanField(
+        "Réconcilié automatiquement via API", default=False,
+        help_text="Toujours False tant que l'intégration API n'existe pas — sert de marqueur pour distinguer les paiements saisis à la main de ceux confirmés par webhook, une fois construit")
+
+    utilisateur = models.ForeignKey("auth.User", on_delete=models.SET_NULL, null=True, blank=True)
+    date_enregistrement = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.montant} FCFA — {self.depense.numero_depense}"
+
+    class Meta:
+        verbose_name = "Paiement (dépense)"
+        verbose_name_plural = "Paiements (dépenses)"
+        ordering = ["-date_paiement"]
+
+
+class DocumentDepense(models.Model):
+    TYPE_CHOICES = [
+        ("FACTURE", "Facture PDF"),
+        ("RECU", "Reçu"),
+        ("PHOTO", "Photo"),
+        ("DEVIS", "Devis"),
+        ("BON_COMMANDE", "Bon de commande"),
+    ]
+    depense = models.ForeignKey(Depense, on_delete=models.CASCADE, related_name="documents")
+    type_document = models.CharField(max_length=15, choices=TYPE_CHOICES)
+    fichier = models.FileField(upload_to="depenses/documents/")
+    date_ajout = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.get_type_document_display()} — {self.depense.numero_depense}"
+
+    class Meta:
+        verbose_name = "Document (dépense)"
+        verbose_name_plural = "Documents (dépenses)"
+        ordering = ["-date_ajout"]
+
+
+class HistoriqueStatutDepense(models.Model):
+    depense = models.ForeignKey(Depense, on_delete=models.CASCADE, related_name="historique_statuts")
+    ancien_statut = models.CharField(max_length=25, blank=True)
+    nouveau_statut = models.CharField(max_length=25)
+    date_changement = models.DateTimeField(auto_now_add=True)
+    utilisateur = models.ForeignKey("auth.User", on_delete=models.SET_NULL, null=True, blank=True)
+    commentaire = models.CharField(max_length=255, blank=True)
+
+    def __str__(self):
+        return f"{self.depense.numero_depense} : {self.ancien_statut} → {self.nouveau_statut}"
+
+    class Meta:
+        verbose_name = "Historique de statut (dépense)"
+        verbose_name_plural = "Historiques de statuts (dépenses)"
+        ordering = ["date_changement"]
 
 
 class LigneFacture(models.Model):

@@ -1,0 +1,45 @@
+{% extends "base_pilotage.html" %}
+{% block contenu %}
+<div class="p-6">
+    <h1 class="text-xl font-semibold mb-4">Journal des paiements (avoirs, remboursements, compensations)</h1>
+
+    <div class="grid grid-cols-3 gap-4 mb-4 text-sm">
+        <div class="border rounded p-3"><div class="text-gray-500">Total avoirs</div><div class="text-lg font-semibold">{{ total_avoirs }} FCFA</div></div>
+        <div class="border rounded p-3"><div class="text-gray-500">Total remboursements</div><div class="text-lg font-semibold">{{ total_remboursements }} FCFA</div></div>
+        <div class="border rounded p-3"><div class="text-gray-500">Total compensations</div><div class="text-lg font-semibold">{{ total_compensations }} FCFA</div></div>
+    </div>
+
+    <form method="get" class="flex gap-3 mb-4">
+        <input type="text" name="q" value="{{ filtre_recherche }}" placeholder="N° facture..." class="border rounded px-2 py-1">
+        <select name="type" class="border rounded px-2 py-1">
+            <option value="">Tous types</option>
+            <option value="AVOIR" {% if filtre_type == "AVOIR" %}selected{% endif %}>Avoirs</option>
+            <option value="REMBOURSEMENT" {% if filtre_type == "REMBOURSEMENT" %}selected{% endif %}>Remboursements</option>
+            <option value="COMPENSATION" {% if filtre_type == "COMPENSATION" %}selected{% endif %}>Compensations</option>
+        </select>
+        <button type="submit" class="bg-gray-700 text-white rounded px-4 py-1">Filtrer</button>
+        <a href="?{{ request.GET.urlencode }}&export=csv" class="text-sm text-blue-600 underline self-center">CSV</a>
+        <a href="?{{ request.GET.urlencode }}&export=excel" class="text-sm text-blue-600 underline self-center">Excel</a>
+    </form>
+
+    <table class="w-full text-sm border-collapse">
+        <thead>
+            <tr class="text-left border-b"><th class="py-2">Type</th><th>Date</th><th>Facture</th><th>Montant</th><th>Détail</th><th>Par</th></tr>
+        </thead>
+        <tbody>
+            {% for m in mouvements %}
+            <tr class="border-b hover:bg-gray-50 cursor-pointer" onclick="window.location='{% url 'devis:detail_creance' m.facture.id %}'">
+                <td class="py-2">{{ m.type }}</td>
+                <td>{{ m.date|date:"d/m/Y H:i" }}</td>
+                <td>{{ m.facture.numero_facture }}</td>
+                <td class="{% if m.montant < 0 %}text-red-600{% else %}text-green-600{% endif %}">{{ m.montant }} FCFA</td>
+                <td>{{ m.detail }}</td>
+                <td>{{ m.par|default:"—" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="py-4 text-center text-gray-400">Aucun mouvement.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
