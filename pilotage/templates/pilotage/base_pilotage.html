@@ -49,6 +49,12 @@
   <nav class="no-print bg-[#16171CEB] backdrop-blur-md text-white sticky top-0 z-50 shadow-lg shadow-black/10 border-b border-white/5">
     <div class="flex items-center gap-4 px-4 py-2.5">
       
+      <button onclick="history.back()" class="lg:hidden shrink-0 w-9 h-9 rounded-lg hover:bg-white/10 flex items-center justify-center transition-colors" title="Retour">
+        <svg class="w-5 h-5 text-slate-200" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+        </svg>
+      </button>
+
       <button onclick="toggleSidebar()" class="lg:hidden shrink-0 w-9 h-9 rounded-lg hover:bg-white/10 flex items-center justify-center transition-colors" title="Menu principal">
         <svg class="w-6 h-6 text-slate-200" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
@@ -145,7 +151,7 @@
 
     {% block sidebar %}
       {% if sous_modules %}
-      <aside id="app-sidebar" class="no-print w-64 bg-white border-r border-slate-200 shrink-0 fixed lg:static inset-y-0 left-0 z-40 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out h-full lg:h-[calc(100vh-56px)] lg:sticky lg:top-14 overflow-y-auto">
+      <aside id="app-sidebar" class="no-print w-64 bg-white border-r border-slate-200 shrink-0 fixed lg:static bottom-0 left-0 z-40 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out lg:h-[calc(100vh-56px)] lg:sticky lg:top-14 overflow-y-auto" style="top: var(--hauteur-nav, 56px);">
         
         <div class="p-4 border-b border-slate-100 bg-slate-50/70">
           <div class="flex items-start gap-3">
@@ -238,6 +244,15 @@
         backdrop.classList.toggle("hidden");
       }
     }
+
+    function ajusterHauteurNav() {
+      const nav = document.querySelector("nav.no-print");
+      if (nav) {
+        document.documentElement.style.setProperty("--hauteur-nav", nav.offsetHeight + "px");
+      }
+    }
+    ajusterHauteurNav();
+    window.addEventListener("resize", ajusterHauteurNav);
 
     function toggleSelecteurModule() {
       const menu = document.getElementById("selecteur-module");
