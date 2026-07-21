@@ -1,94 +1,190 @@
-{% extends "pilotage/base_recouvrement.html" %}
+﻿{% extends "pilotage/base_recouvrement.html" %}
+
 {% block titre %}Facturation — Recouvrement{% endblock %}
 
+
+
 {% block contenu %}
+
 <div class="max-w-6xl mx-auto p-4 sm:p-8">
 
+
+
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+
     <div>
+
       <h1 class="text-2xl font-bold text-gray-800">Facturation</h1>
+
       <p class="text-gray-500 text-sm mt-1">Factures ponctuelles et récurrentes, à partir des lettres de mission</p>
+
     </div>
-    <a href="{% url 'facture_creer' %}" class="inline-flex items-center justify-center bg-[#C81E6E] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#a81659]">+ Nouvelle facture</a>
+
+    <a href="{% url 'devis:facture_creer' %}" class="inline-flex items-center justify-center bg-[#C81E6E] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#a81659]">+ Nouvelle facture</a>
+
     <p class="text-blue-800">La certification FNE (QR code + sticker DGI) s'activera dès l'obtention de la clé API de la DGI. En attendant, les factures peuvent être préparées et la proforma générée.</p>
+
   </div>
+
+
 
   <!-- Stats -->
+
   <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8">
+
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+
       <p class="text-xs text-gray-500 uppercase tracking-wide">Total factures</p>
+
       <p class="text-2xl font-bold text-gray-800 mt-1">{{ nb_total }}</p>
+
     </div>
+
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+
       <p class="text-xs text-gray-500 uppercase tracking-wide">À certifier</p>
+
       <p class="text-2xl font-bold text-amber-600 mt-1">{{ nb_a_certifier }}</p>
+
     </div>
+
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+
       <p class="text-xs text-gray-500 uppercase tracking-wide">Montant facturé</p>
+
       <p class="text-xl font-bold text-gray-800 mt-1">{{ montant_facture }} <span class="text-sm font-normal text-gray-400">F</span></p>
+
     </div>
+
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+
       <p class="text-xs text-gray-500 uppercase tracking-wide">Encaissé</p>
+
       <p class="text-xl font-bold text-emerald-600 mt-1">{{ montant_paye }} <span class="text-sm font-normal text-gray-400">F</span></p>
+
     </div>
+
   </div>
+
+
 
   {% if factures %}
+
   <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+
     <!-- Tableau (ordi) -->
+
     <div class="hidden md:block overflow-x-auto">
+
       <table class="w-full text-sm text-left">
+
         <thead class="bg-gray-50 text-gray-500 border-b">
+
           <tr>
+
             <th class="px-4 py-3">Numéro</th>
+
             <th class="px-4 py-3">Client</th>
+
             <th class="px-4 py-3">Type</th>
+
             <th class="px-4 py-3 text-right">Montant TTC</th>
+
             <th class="px-4 py-3">Statut</th>
+
             <th class="px-4 py-3">Actions</th>
+
           </tr>
+
         </thead>
+
         <tbody>
+
           {% for f in factures %}
+
           <tr class="border-b last:border-0 hover:bg-gray-50">
+
             <td class="px-4 py-3 font-medium text-gray-800">{{ f.numero_facture }}</td>
+
             <td class="px-4 py-3 text-gray-700">{{ f.client_nom }}</td>
+
             <td class="px-4 py-3"><span class="px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-600">{{ f.get_type_facturation_display }}{% if f.type_facturation == 'RECURRENTE' and f.frequence %} · {{ f.get_frequence_display }}{% endif %}</span></td>
+
             <td class="px-4 py-3 text-right font-medium text-gray-800">{{ f.montant_ttc|floatformat:0 }} F</td>
+
             <td class="px-4 py-3"><span class="px-2 py-1 rounded-full text-xs {{ f.badge }}">{{ f.get_statut_display }}</span></td>
+
             <td class="px-4 py-3 text-right whitespace-nowrap">
-              <a href="{% url 'apercu_facture' f.id %}" class="text-[#C81E6E] text-xs font-medium hover:underline">Voir</a>
-              {% if f.fne_statut != "CERTIFIEE" %} · <a href="{% url 'facture_certifier' f.id %}" class="text-gray-500 text-xs font-medium hover:underline">Certifier</a>{% endif %}
+
+              <a href="{% url 'devis:apercu_facture' f.id %}" class="text-[#C81E6E] text-xs font-medium hover:underline">Voir</a>
+
+              {% if f.fne_statut != "CERTIFIEE" %} · <a href="{% url 'devis:facture_certifier' f.id %}" class="text-gray-500 text-xs font-medium hover:underline">Certifier</a>{% endif %}
+
             </td>
+
           </tr>
+
           {% endfor %}
+
         </tbody>
+
       </table>
+
     </div>
+
     <!-- Cartes (mobile) -->
+
     <div class="md:hidden divide-y divide-gray-100">
+
       {% for f in factures %}
+
       <div class="p-4">
+
         <div class="flex justify-between items-start">
+
           <p class="font-medium text-gray-800 text-sm">{{ f.numero_facture }}</p>
+
           <span class="px-2 py-1 rounded-full text-xs {{ f.badge }}">{{ f.get_statut_display }}</span>
+
         </div>
+
         <p class="text-sm text-gray-600 mt-1">{{ f.client_nom }}</p>
+
         <div class="flex flex-wrap gap-3 mt-2 text-xs text-gray-500">
+
           <span>{{ f.get_type_facturation_display }}</span>
+
           <span class="font-medium text-gray-800">{{ f.montant_ttc|floatformat:0 }} F</span>
+
         </div>
+
       </div>
+
       {% endfor %}
+
     </div>
+
   </div>
+
   {% else %}
+
   <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-10 text-center">
+
     <div class="text-5xl mb-3">🧾</div>
+
     <p class="text-gray-600 font-medium">Aucune facture pour le moment</p>
+
     <p class="text-gray-400 text-sm mt-1 max-w-md mx-auto">La création de factures depuis les lettres de mission arrive à l'étape suivante. Pour tester dès maintenant, ajoute une facture via l'administration Django.</p>
+
   </div>
+
   {% endif %}
 
+
+
 </div>
+
 {% endblock %}
+
+
+

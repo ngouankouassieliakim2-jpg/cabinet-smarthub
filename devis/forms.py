@@ -1,10 +1,13 @@
 from django import forms
 from django.contrib.auth.models import User
+from comptes.models import Profil
 from .models import (
     Paiement, Facture, Avoir, Remboursement, Compensation,
     EtapeRelance, Litige, PieceJointeLitige, CommentaireLitige,
     ActionRecouvrement, Fournisseur, ContratFournisseur,
-    CategorieDepense, Depense, PaiementDepense, DocumentDepense,
+    CategorieDepense, Depense, PaiementDepense, DocumentDepense, Budget,
+    SeuilApprobation, DepenseRecurrente, NoteDeFrais, LigneNoteDeFrais,
+    PromessePaiement,
 )
 
 
@@ -167,8 +170,17 @@ class PieceJointeLitigeForm(forms.ModelForm):
 
 class AffectationRecouvreurForm(forms.Form):
     recouvreur = forms.ModelChoiceField(
-        queryset=User.objects.filter(is_active=True), required=False, label="Recouvreur"
+        queryset=User.objects.none(), required=False, label="Recouvreur"
     )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        utilisateurs = User.objects.filter(is_active=True).select_related("profil").prefetch_related("profil__postes_secondaires")
+        recouvreurs = [
+            utilisateur for utilisateur in utilisateurs
+            if getattr(getattr(utilisateur, "profil", None), "est_recouvreur", lambda: False)()
+        ]
+        self.fields["recouvreur"].queryset = User.objects.filter(pk__in=[u.pk for u in recouvreurs])
 
 
 class ActionRecouvrementForm(forms.ModelForm):
@@ -210,6 +222,16 @@ class ContratFournisseurForm(forms.ModelForm):
         }
 
 
+class PromessePaiementForm(forms.ModelForm):
+    class Meta:
+        model = PromessePaiement
+        fields = ["montant_promis", "date_promise", "commentaire"]
+        widgets = {
+            "date_promise": forms.DateInput(attrs={"type": "date"}),
+            "commentaire": forms.Textarea(attrs={"rows": 2}),
+        }
+
+
 class DepenseForm(forms.ModelForm):
     class Meta:
         model = Depense
@@ -221,6 +243,65 @@ class DepenseForm(forms.ModelForm):
             "date_echeance": forms.DateInput(attrs={"type": "date"}),
             "observations": forms.Textarea(attrs={"rows": 2}),
         }
+
+
+class RejetDepenseForm(forms.Form):
+    motif = forms.CharField(widget=forms.Textarea(attrs={"rows": 3}), label="Motif du rejet")
+
+
+class DepenseRecurrenteForm(forms.ModelForm):
+    class Meta:
+        model = DepenseRecurrente
+        fields = [
+            "libelle", "fournisseur", "categorie", "montant_ht", "taux_tva",
+            "frequence", "jour_generation", "mois_generation", "date_debut", "date_fin", "actif"
+        ]
+        widgets = {
+            "date_debut": forms.DateInput(attrs={"type": "date"}),
+            "date_fin": forms.DateInput(attrs={"type": "date"}),
+        }
+
+
+class SeuilApprobationForm(forms.ModelForm):
+    class Meta:
+        model = SeuilApprobation
+        fields = ["borne_min", "borne_max", "niveau_requis", "actif"]
+
+
+class NoteDeFraisForm(forms.ModelForm):
+    class Meta:
+        model = NoteDeFrais
+        fields = ["objet", "periode_debut", "periode_fin"]
+        widgets = {
+            "periode_debut": forms.DateInput(attrs={"type": "date"}),
+            "periode_fin": forms.DateInput(attrs={"type": "date"}),
+        }
+
+
+class LigneNoteDeFraisForm(forms.ModelForm):
+    class Meta:
+        model = LigneNoteDeFrais
+        fields = ["type_frais", "date_depense", "description", "montant"]
+        widgets = {
+            "date_depense": forms.DateInput(attrs={"type": "date"}),
+            "description": forms.Textarea(attrs={"rows": 2}),
+        }
+
+
+class RejetNoteDeFraisForm(forms.Form):
+    motif = forms.CharField(widget=forms.Textarea(attrs={"rows": 3}), label="Motif du rejet")
+
+
+class RemboursementNoteDeFraisForm(forms.Form):
+    mode = forms.ChoiceField(choices=[(code, dict(Paiement.MODE_CHOICES).get(code, code)) for code, _ in Paiement.MODE_CHOICES], label="Mode de remboursement")
+    reference = forms.CharField(required=False, label="Référence")
+    date_remb = forms.DateField(required=False, widget=forms.DateInput(attrs={"type": "date"}), label="Date de remboursement")
+
+
+class BudgetForm(forms.ModelForm):
+    class Meta:
+        model = Budget
+        fields = ["categorie", "exercice", "mois", "montant_alloue", "actif"]
 
 
 class DocumentDepenseForm(forms.ModelForm):

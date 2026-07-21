@@ -1,9 +1,9 @@
-{% extends "pilotage/base_recouvrement.html" %}
+?{% extends "pilotage/base_recouvrement.html" %}
 {% block titre %}Rapport d'analyse — {{ devis.numero_devis }}{% endblock %}
 
 {% block contenu %}
 <div class="max-w-3xl mx-auto p-6">
-  <a href="{% url 'devis_etape4' devis.id %}" class="text-sm text-gray-500 hover:underline">← Retour à la visualisation</a>
+  <a href="{% url 'devis:devis_etape4' devis.id %}" class="text-sm text-gray-500 hover:underline">�? Retour à la visualisation</a>
 
   <div class="bg-white rounded-lg shadow mt-3 overflow-hidden">
     <div class="bg-[#16171C] text-white px-6 py-4">
@@ -47,7 +47,7 @@
       <!-- Points d'attention sur le devis -->
       {% if rapport.points_devis %}
       <div class="mb-5">
-        <h2 class="font-semibold text-gray-800 mb-2 flex items-center gap-2">⚠️ Points d'attention sur le devis</h2>
+        <h2 class="font-semibold text-gray-800 mb-2 flex items-center gap-2">⚠�? Points d'attention sur le devis</h2>
         <ul class="space-y-1">
           {% for item in rapport.points_devis %}
           <li class="text-sm text-gray-700 bg-amber-50 border border-amber-100 rounded px-3 py-2">{{ item }}</li>
@@ -77,3 +77,4 @@
   <p class="text-xs text-gray-400 mt-3">Cette analyse est une aide à la décision générée automatiquement. Elle ne remplace pas votre jugement professionnel.</p>
 </div>
 {% endblock %}
+

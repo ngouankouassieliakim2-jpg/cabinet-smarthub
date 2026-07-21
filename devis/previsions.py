@@ -1,7 +1,9 @@
 from datetime import date, timedelta
 from decimal import Decimal
-from django.db.models import Sum, F, DecimalField, Value
+from django.db.models import Sum, F, DecimalField, Value, Exists, OuterRef
 from django.db.models.functions import Coalesce
+
+from .models import PromessePaiement
 
 from .models import Facture
 
@@ -15,7 +17,11 @@ PONDERATION_PAR_RETARD = [
 ]
 
 
-def _ponderation(jours_retard):
+def _ponderation(jours_retard, a_promesse_active=False):
+    """Une promesse active relève significativement la confiance, sans
+    atteindre 100% (elle peut toujours être rompue)."""
+    if a_promesse_active:
+        return 0.85
     if jours_retard <= 0:
         return PONDERATION_PAR_RETARD[0][1]
     poids = PONDERATION_PAR_RETARD[-1][1]
@@ -27,11 +33,13 @@ def _ponderation(jours_retard):
 
 
 def _factures_attendues():
+    promesse_active = PromessePaiement.objects.filter(facture=OuterRef("pk"), statut="EN_COURS")
     return Facture.objects.filter(
         statut__in=STATUTS_ATTENDUS,
         date_echeance__isnull=False,
     ).annotate(
-        montant_paye_calc=Coalesce(Sum("paiements__montant"), Value(0), output_field=DecimalField())
+        montant_paye_calc=Coalesce(Sum("paiements__montant"), Value(0), output_field=DecimalField()),
+        a_promesse=Exists(promesse_active),
     ).annotate(
         solde_calc=F("montant_ttc") - F("montant_paye_calc")
     )

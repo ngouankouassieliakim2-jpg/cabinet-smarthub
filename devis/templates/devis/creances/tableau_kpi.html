@@ -1,64 +1,112 @@
-{% extends "base_pilotage.html" %}
+{% extends "pilotage/base_pilotage.html" %}
 
 {% block contenu %}
-<div class="p-6 max-w-4xl">
-    <h1 class="text-xl font-semibold mb-4">KPI recouvrement</h1>
 
-    <div class="grid grid-cols-3 gap-4 mb-8">
-        <div class="border rounded p-4">
-            <div class="text-gray-500 text-sm">Délai moyen de paiement</div>
-            <div class="text-lg font-semibold">
-                {% if delai_moyen %}{{ delai_moyen }} jours{% else %}—{% endif %}
+<div class="min-h-screen bg-slate-50 text-slate-900 p-6 lg:p-10">
+    <div class="max-w-6xl mx-auto space-y-8">
+        <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between mb-6">
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-900">KPI recouvrement</h1>
+                    <p class="text-sm text-slate-500 mt-1">Indicateurs clés de performance pour l'année sélectionnée.</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-3 text-sm">
+                    <form method="get" class="flex gap-2">
+                        <select name="annee" onchange="this.form.submit()" class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-900">
+                            {% for a in annees_disponibles %}
+                                <option value="{{ a }}" {% if a == annee %}selected{% endif %}>{{ a }}</option>
+                            {% endfor %}
+                        </select>
+                    </form>
+                    <a href="?annee={{ annee }}&export=csv" class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">CSV</a>
+                    <a href="?annee={{ annee }}&export=excel" class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Excel</a>
+                </div>
             </div>
-            <div class="text-xs text-gray-400">12 derniers mois</div>
-        </div>
-        <div class="border rounded p-4">
-            <div class="text-gray-500 text-sm">Taux d'impayés (année)</div>
-            <div class="text-lg font-semibold {% if taux_impayes > 20 %}text-red-600{% endif %}">{{ taux_impayes }} %</div>
-        </div>
-        <div class="border rounded p-4">
-            <div class="text-gray-500 text-sm">Taux de recouvrement (année)</div>
-            <div class="text-lg font-semibold">{{ taux_recouvrement }} %</div>
-        </div>
+
+            <div class="grid gap-4 lg:grid-cols-3 mb-8">
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                    <div class="text-sm text-slate-500">Délai moyen de paiement</div>
+                    <div class="mt-2 text-xl font-semibold text-slate-900">{% if delai_moyen %}{{ delai_moyen }} jours{% else %}—{% endif %}</div>
+                    <div class="text-xs text-slate-400 mt-1">12 derniers mois</div>
+                </div>
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                    <div class="text-sm text-slate-500">Taux d'impayés ({{ annee }})</div>
+                    <div class="mt-2 text-xl font-semibold {% if taux_impayes > 20 %}text-red-600{% endif %}">{{ taux_impayes }} %</div>
+                </div>
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                    <div class="text-sm text-slate-500">Taux de recouvrement ({{ annee }})</div>
+                    <div class="mt-2 text-xl font-semibold text-slate-900">{{ taux_recouvrement }} %</div>
+                </div>
+            </div>
+
+            <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm mb-8">
+                <h2 class="text-lg font-semibold mb-4">Encaissements mensuels</h2>
+                <canvas id="chartEncaissements" class="w-full" height="90"></canvas>
+            </div>
+
+            <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm mb-8">
+                <h2 class="text-lg font-semibold mb-4">Créances par ancienneté</h2>
+                <canvas id="chartAnciennete" class="w-full" height="90"></canvas>
+            </div>
+
+            <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm mb-8">
+                <h2 class="text-lg font-semibold mb-4">Top clients à risque (retard ≥ 60 jours)</h2>
+                <canvas id="chartClientsRisque" class="w-full" height="120"></canvas>
+            </div>
+
+            <div class="overflow-x-auto rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <table class="min-w-full divide-y divide-slate-200 text-sm">
+                    <thead class="bg-slate-50 text-slate-700">
+                        <tr>
+                            <th class="px-4 py-3 text-left">Client</th>
+                            <th class="px-4 py-3 text-left">Montant impayé</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200 bg-white">
+                        {% for nom, montant in clients_risque %}
+                            <tr>
+                                <td class="px-4 py-3">{{ nom }}</td>
+                                <td class="px-4 py-3">{{ montant }} FCFA</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="2" class="px-4 py-8 text-center text-slate-500">Aucun client à risque.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
     </div>
-
-    <h2 class="font-semibold mb-2">Créances par ancienneté</h2>
-    <table class="w-full text-sm border-collapse mb-8">
-        <thead>
-            <tr class="text-left border-b"><th class="py-2">0-30 j</th><th>31-60 j</th><th>61-90 j</th><th>90+ j</th></tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td class="py-2">{{ anciennete.j0_30 }} FCFA</td>
-                <td>{{ anciennete.j31_60 }} FCFA</td>
-                <td>{{ anciennete.j61_90 }} FCFA</td>
-                <td class="text-red-600">{{ anciennete.j90_plus }} FCFA</td>
-            </tr>
-        </tbody>
-    </table>
-
-    <h2 class="font-semibold mb-2">Clients à risque (retard ≥ 60 jours)</h2>
-    <table class="w-full text-sm border-collapse mb-8">
-        <thead><tr class="text-left border-b"><th class="py-2">Client</th><th>Montant impayé</th></tr></thead>
-        <tbody>
-            {% for nom, montant in clients_risque %}
-            <tr class="border-b"><td class="py-2">{{ nom }}</td><td>{{ montant }} FCFA</td></tr>
-            {% empty %}
-            <tr><td colspan="2" class="py-2 text-gray-400">Aucun client à risque.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-    <h2 class="font-semibold mb-2">Encaissements mensuels</h2>
-    <table class="w-full text-sm border-collapse">
-        <thead><tr class="text-left border-b"><th class="py-2">Mois</th><th>Total encaissé</th></tr></thead>
-        <tbody>
-            {% for e in encaissements %}
-            <tr class="border-b"><td class="py-2">{{ e.mois|date:"F Y" }}</td><td>{{ e.total }} FCFA</td></tr>
-            {% empty %}
-            <tr><td colspan="2" class="py-2 text-gray-400">Aucun encaissement sur la période.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
 </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+new Chart(document.getElementById('chartEncaissements'), {
+    type: 'line',
+    data: {
+        labels: {{ encaissements_labels|safe }},
+        datasets: [{ label: 'Encaissé (FCFA)', data: {{ encaissements_valeurs|safe }}, borderColor: '#2563eb', backgroundColor: '#93c5fd', fill: true }]
+    }
+});
+
+new Chart(document.getElementById('chartAnciennete'), {
+    type: 'bar',
+    data: {
+        labels: ['0-30 j', '31-60 j', '61-90 j', '90+ j'],
+        datasets: [{ label: 'Montant', data: [{{ anciennete.j0_30 }}, {{ anciennete.j31_60 }}, {{ anciennete.j61_90 }}, {{ anciennete.j90_plus }}], backgroundColor: ['#22c55e', '#eab308', '#f97316', '#ef4444'] }]
+    },
+    options: { plugins: { legend: { display: false } } }
+});
+
+new Chart(document.getElementById('chartClientsRisque'), {
+    type: 'bar',
+    data: {
+        labels: {{ clients_risque_labels|safe }},
+        datasets: [{ label: 'Montant impayé (FCFA)', data: {{ clients_risque_valeurs|safe }}, backgroundColor: '#ef4444' }]
+    },
+    options: { indexAxis: 'y', plugins: { legend: { display: false } } }
+});
+</script>
+
 {% endblock %}

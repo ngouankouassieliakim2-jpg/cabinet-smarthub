@@ -1,0 +1,39 @@
+﻿{% extends "pilotage/base_pilotage.html" %}
+
+{% block contenu %}
+<div class="min-h-screen bg-slate-50 p-6 text-slate-900 lg:p-10">
+    <div class="mx-auto max-w-7xl space-y-6">
+        <section class="rounded-[28px] border border-slate-200 bg-gradient-to-br from-white via-[#FCEEF3]/30 to-white p-6 shadow-sm">
+            <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                    <div class="inline-flex items-center rounded-full bg-[#C81E6E]/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-[#C81E6E]">Validation</div>
+                    <h1 class="mt-3 text-2xl font-semibold tracking-tight text-slate-900">Dépenses en attente de validation</h1>
+                    <p class="mt-2 text-sm text-slate-500">Historique des dépenses soumises et prêtes à être traitées.</p>
+                </div>
+            </div>
+        </section>
+        <section class="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm">
+                    <thead class="bg-slate-50 text-left text-xs uppercase tracking-wider text-slate-500"><tr><th class="px-4 py-3">N°</th><th class="px-4 py-3">Fournisseur</th><th class="px-4 py-3">Montant TTC</th><th class="px-4 py-3">Niveau requis</th><th class="px-4 py-3">Soumise par</th><th class="px-4 py-3">Le</th></tr></thead>
+                    <tbody>
+                        {% for d in depenses %}
+                        <tr class="cursor-pointer border-t border-slate-200 transition hover:bg-slate-50" onclick="window.location='{% url 'devis:valider_depense' d.id %}'">
+                            <td class="px-4 py-4 font-medium text-slate-900">{{ d.numero_depense }}</td>
+                            <td class="px-4 py-4">{{ d.fournisseur }}</td>
+                            <td class="px-4 py-4">{{ d.montant_ttc }} FCFA</td>
+                            <td class="px-4 py-4">{{ d.get_niveau_requis_display }}</td>
+                            <td class="px-4 py-4">{{ d.soumise_par|default:'—' }}</td>
+                            <td class="px-4 py-4">{{ d.date_soumission|date:'d/m/Y' }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="6" class="px-4 py-6 text-center text-slate-500">Aucune dépense en attente.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}
+

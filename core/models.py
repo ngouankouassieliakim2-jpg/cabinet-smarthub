@@ -3,6 +3,36 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 
 
+class JournalExecutionCommande(models.Model):
+    """Trace générique des exécutions de commandes management."""
+
+    ETAT_CHOICES = [
+        ("EN_COURS", "En cours"),
+        ("SUCCES", "Succès"),
+        ("ERREUR", "Erreur"),
+    ]
+
+    commande = models.CharField(max_length=150)
+    description = models.CharField(max_length=255, blank=True)
+    utilisateur = models.ForeignKey("auth.User", on_delete=models.SET_NULL, null=True, blank=True)
+    contexte = models.JSONField(default=dict, blank=True)
+    objet = models.CharField(max_length=255, blank=True, null=True)
+    etat = models.CharField(max_length=20, choices=ETAT_CHOICES, default="EN_COURS")
+    resume = models.TextField(blank=True)
+    erreur = models.TextField(blank=True)
+    date_debut = models.DateTimeField(auto_now_add=True)
+    date_fin = models.DateTimeField(null=True, blank=True)
+    duree_secondes = models.FloatField(default=0.0)
+
+    def __str__(self):
+        return f"{self.commande} — {self.get_etat_display()}"
+
+    class Meta:
+        verbose_name = "Exécution de commande"
+        verbose_name_plural = "Exécutions de commandes"
+        ordering = ["-date_debut"]
+
+
 class JournalAudit(models.Model):
     """Journal d'audit générique : qui a fait quoi, quand, depuis où,
     sur n'importe quel objet (via GenericForeignKey). Complète les

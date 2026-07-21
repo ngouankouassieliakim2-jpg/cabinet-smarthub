@@ -1,28 +1,43 @@
-{% extends "base_pilotage.html" %}
+﻿{% extends "pilotage/base_pilotage.html" %}
+
 {% block contenu %}
-<div class="p-6 overflow-x-auto">
-    <div class="flex items-center justify-between mb-4">
-        <h1 class="text-xl font-semibold">Litiges — vue Kanban</h1>
-        <a href="{% url 'devis:liste_litiges' %}" class="text-blue-600 underline">Retour à la liste</a>
-    </div>
-    <div class="flex gap-4 min-w-[900px]">
-        {% for col in colonnes %}
-        <div class="flex-1 bg-gray-50 rounded p-3 shadow-sm">
-            <h2 class="font-medium text-sm mb-3">{{ col.libelle }} ({{ col.litiges|length }})</h2>
-            <div class="space-y-2">
-                {% for l in col.litiges %}
-                <a href="{% url 'devis:detail_litige' l.id %}" class="block bg-white border rounded p-3 hover:shadow">
-                    <div class="font-medium">{{ l.facture.numero_facture }}</div>
-                    <div class="text-gray-500 text-xs">{{ l.facture.client_nom }}</div>
-                    <div class="text-gray-700 text-sm">{{ l.get_motif_type_display }}</div>
-                </a>
-                {% endfor %}
-                {% if col.litiges|length == 0 %}
-                <div class="text-gray-500 text-sm">Aucun litige</div>
-                {% endif %}
+
+<div class="min-h-screen bg-slate-50 text-slate-900 p-6 lg:p-10">
+    <div class="max-w-full mx-auto space-y-8">
+        <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm overflow-x-auto">
+            <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-900">Litiges — vue Kanban</h1>
+                    <p class="text-sm text-slate-500 mt-1">Organisez les litiges par statut et avancez-les facilement.</p>
+                </div>
+                <a href="{% url 'devis:liste_litiges' %}" class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Retour à la liste</a>
             </div>
-        </div>
-        {% endfor %}
+            <div class="flex gap-4 min-w-[900px]">
+                {% for col in colonnes %}
+                    <div class="flex-1 bg-slate-50 rounded-3xl p-4 border border-slate-200 shadow-sm">
+                        <h2 class="font-semibold text-slate-800 text-sm mb-3">{{ col.libelle }} ({{ col.litiges|length }})</h2>
+                        <div class="space-y-3">
+                            {% for l in col.litiges %}
+                                <a href="{% url 'devis:detail_litige' l.id %}" class="block rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-900 hover:shadow-md">
+                                    <div class="font-medium">{{ l.facture.numero_facture }}</div>
+                                    <div class="text-slate-500 text-xs">{{ l.facture.client_nom }}</div>
+                                    <div class="text-slate-700 text-sm mt-2">{{ l.get_motif_type_display }}</div>
+                                </a>
+                            {% endfor %}
+                            {% if col.litiges|length == 0 %}
+                                <div class="rounded-2xl border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-500">Aucun litige</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </section>
     </div>
 </div>
+
 {% endblock %}
+
+
+
+
+

@@ -1,46 +1,48 @@
-{% extends "pilotage/base_recouvrement.html" %}
-{% block titre %}Créer une facture{% endblock %}
-
-{% block contenu %}
-<div class="max-w-6xl mx-auto p-4 sm:p-8">
-  <div class="flex items-center justify-between gap-4 mb-6">
-    <div>
-      <h1 class="text-2xl font-bold text-gray-800">Créer une facture</h1>
-      <p class="text-gray-500 text-sm mt-1">Choisissez un devis existant pour générer la facture.</p>
-    </div>
-  </div>
-
-  {% if devis_list %}
-  <div class="overflow-x-auto bg-white rounded-xl shadow-sm border border-gray-100">
-    <table class="w-full text-sm text-left">
-      <thead class="bg-gray-50 text-gray-500 border-b">
-        <tr>
-          <th class="px-4 py-3">Devis</th>
-          <th class="px-4 py-3">Client</th>
-          <th class="px-4 py-3">Statut</th>
-          <th class="px-4 py-3 text-right">Action</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for devis in devis_list %}
-        <tr class="border-b last:border-0 hover:bg-gray-50">
-          <td class="px-4 py-3 font-medium text-gray-800">{{ devis.numero_devis }}</td>
-          <td class="px-4 py-3 text-gray-700">{{ devis.pm_raison_sociale|default:devis.pp_nom_prenoms|default:'—' }}</td>
-          <td class="px-4 py-3 text-gray-700">{{ devis.get_statut_display }}</td>
-          <td class="px-4 py-3 text-right">
-            <a href="{% url 'facture_creer' %}?devis_id={{ devis.id }}" class="inline-flex items-center justify-center bg-[#C81E6E] text-white px-3 py-2 rounded text-xs hover:bg-[#a81659]">Créer</a>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  {% else %}
-  <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-10 text-center">
-    <div class="text-5xl mb-3">🧾</div>
-    <p class="text-gray-600 font-medium">Aucun devis trouvé pour générer une facture.</p>
-    <p class="text-gray-400 text-sm mt-1">Créez d'abord un devis dans le module Devis, puis revenez ici pour l'utiliser comme source.</p>
-  </div>
-  {% endif %}
-</div>
-{% endblock %}
+﻿{% extends "pilotage/base_recouvrement.html" %}
+{% block titre %}Créer une facture{% endblock %}
+
+{% block contenu %}
+<div class="max-w-6xl mx-auto p-4 sm:p-8">
+  <div class="flex items-center justify-between gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-800">Créer une facture</h1>
+      <p class="text-gray-500 text-sm mt-1">Choisissez un devis existant pour générer la facture.</p>
+    </div>
+  </div>
+
+  {% if devis_list %}
+  <div class="overflow-x-auto bg-white rounded-xl shadow-sm border border-gray-100">
+    <table class="w-full text-sm text-left">
+      <thead class="bg-gray-50 text-gray-500 border-b">
+        <tr>
+          <th class="px-4 py-3">Devis</th>
+          <th class="px-4 py-3">Client</th>
+          <th class="px-4 py-3">Statut</th>
+          <th class="px-4 py-3 text-right">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for devis in devis_list %}
+        <tr class="border-b last:border-0 hover:bg-gray-50">
+          <td class="px-4 py-3 font-medium text-gray-800">{{ devis.numero_devis }}</td>
+          <td class="px-4 py-3 text-gray-700">{{ devis.pm_raison_sociale|default:devis.pp_nom_prenoms|default:'—' }}</td>
+          <td class="px-4 py-3 text-gray-700">{{ devis.get_statut_display }}</td>
+          <td class="px-4 py-3 text-right">
+            <a href="{% url 'devis:facture_creer' %}?devis_id={{ devis.id }}" class="inline-flex items-center justify-center bg-[#C81E6E] text-white px-3 py-2 rounded text-xs hover:bg-[#a81659]">Créer</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-10 text-center">
+    <div class="text-5xl mb-3">🧾</div>
+    <p class="text-gray-600 font-medium">Aucun devis trouvé pour générer une facture.</p>
+    <p class="text-gray-400 text-sm mt-1">Créez d'abord un devis dans le module Devis, puis revenez ici pour l'utiliser comme source.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+

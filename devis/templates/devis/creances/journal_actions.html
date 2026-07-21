@@ -1,49 +1,104 @@
-{% extends "base_pilotage.html" %}
+﻿{% extends "pilotage/base_pilotage.html" %}
+
 {% block contenu %}
-<div class="p-6">
-    <h1 class="text-xl font-semibold mb-4">Journal des actions de recouvrement</h1>
 
-    <form method="get" class="flex gap-3 mb-4">
-        <input type="text" name="q" value="{{ filtre_recherche }}" placeholder="N° facture..." class="border rounded px-2 py-1">
-        <select name="recouvreur" class="border rounded px-2 py-1">
-            <option value="">Tous recouvreurs</option>
-            {% for r in recouvreurs %}
-                <option value="{{ r.id }}" {% if filtre_recouvreur == r.id|stringformat:"s" %}selected{% endif %}>{{ r }}</option>
-            {% endfor %}
-        </select>
-        <button type="submit" class="bg-gray-700 text-white rounded px-4 py-1">Filtrer</button>
-        <a href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}export=csv" class="text-sm text-blue-600 underline self-center">CSV</a>
-        <a href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}export=excel" class="text-sm text-blue-600 underline self-center">Excel</a>
-    </form>
+<div class="min-h-screen bg-slate-50 text-slate-900 p-6 lg:p-10">
+    <div class="max-w-6xl mx-auto space-y-8">
+        <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between mb-6">
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-900">Journal des actions de recouvrement</h1>
+                    <p class="text-sm text-slate-500 mt-1">Suivi des actions effectuées sur les factures clients.</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-3">
+                    <a href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}export=csv" class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">CSV</a>
+                    <a href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}export=excel" class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Excel</a>
+                </div>
+            </div>
 
-    <table class="w-full text-sm border-collapse">
+            <form method="get" class="grid gap-4 lg:grid-cols-[1.5fr_1fr_auto] mb-6 items-end">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Recherche</label>
+                    <input type="text" name="q" value="{{ filtre_recherche }}" placeholder="N° facture..." class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-900 focus:border-[#C81E6E] focus:ring-2 focus:ring-[#C81E6E]/20" />
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Recouvreur</label>
+                    <select name="recouvreur" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-900 focus:border-[#C81E6E] focus:ring-2 focus:ring-[#C81E6E]/20">
+                        <option value="">Tous recouvreurs</option>
+                        {% for r in recouvreurs %}
+                            <option value="{{ r.id }}" {% if filtre_recouvreur == r.id|stringformat:"s" %}selected{% endif %}>{{ r }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button type="submit" class="inline-flex items-center justify-center rounded-2xl bg-[#C81E6E] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#ad1457]">Filtrer</button>
+                </div>
+            </form>
+
+            <div class="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <table class="min-w-full divide-y divide-slate-200 text-sm">
+
         <thead>
+
             <tr class="text-left border-b">
+
                 <th class="py-2">Date</th>
+
                 <th class="py-2">Facture</th>
+
                 <th class="py-2">Type</th>
+
                 <th class="py-2">Recouvreur</th>
+
                 <th class="py-2">Commentaire</th>
+
             </tr>
+
         </thead>
+
         <tbody>
+
             {% for a in actions %}
+
             <tr class="border-b hover:bg-gray-50 cursor-pointer" onclick="window.location='{% url 'devis:detail_creance' a.facture.id %}'">
+
                 <td class="py-2">{{ a.date_action|date:"d/m/Y H:i" }}</td>
+
                 <td>{{ a.facture.numero_facture }}</td>
+
                 <td>{{ a.get_type_action_display }}</td>
+
                 <td>{{ a.recouvreur|default:"—" }}</td>
+
                 <td>{{ a.commentaire|default:"—"|truncatechars:60 }}</td>
+
             </tr>
+
             {% empty %}
+
             <tr>
+
                 <td colspan="5" class="py-4 text-center text-gray-400">Aucune action.</td>
+
             </tr>
+
             {% endfor %}
+
         </tbody>
+
     </table>
+
     {% if actions|length == 200 %}
+
         <p class="text-xs text-gray-400 mt-2">Affichage limité aux 200 plus récentes.</p>
+
     {% endif %}
+
 </div>
+
 {% endblock %}
+
+
+
+
+

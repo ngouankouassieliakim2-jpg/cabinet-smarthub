@@ -1,4 +1,4 @@
-{% load static %}
+?{% load static %}
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -23,11 +23,12 @@
 <body>
 
   <div class="toolbar">
-    <a href="{% url 'detail_devis' devis.id %}" class="btn-back">&larr; Retour</a>
-    <button class="btn-print" onclick="window.print()">🖨️ Imprimer / PDF</button>
+    <a href="{% url 'devis:detail_devis' devis.id %}" class="btn-back">&larr; Retour</a>
+    <button class="btn-print" onclick="window.print()">🖨�? Imprimer / PDF</button>
   </div>
 
   {% include "devis/_document_devis.html" %}
 
 </body>
 </html>
+

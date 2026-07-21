@@ -1,54 +1,60 @@
-{% extends "base_pilotage.html" %}
+{% extends "pilotage/base_pilotage.html" %}
+
 {% block contenu %}
-<div class="p-6">
-    <h1 class="text-xl font-semibold mb-4">Affectation en masse des recouvreurs</h1>
 
-    <form method="get" class="flex gap-3 mb-4">
-        <input type="text" name="client" value="{{ filtre_client }}" placeholder="Rechercher un client..." class="border rounded px-2 py-1">
-        <button type="submit" class="bg-gray-700 text-white rounded px-4 py-1">Filtrer</button>
-    </form>
-
-    <form method="post">
-        {% csrf_token %}
-        <div class="mb-4">
-            <label class="block text-sm font-medium mb-1">Recouvreur</label>
-            <select name="recouvreur" class="border rounded px-2 py-2 w-full">
-                <option value="">Aucun</option>
-                {% for r in recouvreurs %}
-                    <option value="{{ r.id }}">{{ r }}</option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <table class="w-full text-sm border-collapse">
-            <thead>
-                <tr class="text-left border-b">
-                    <th class="py-2"><input type="checkbox" id="select-all"></th>
-                    <th class="py-2">Facture</th>
-                    <th class="py-2">Client</th>
-                    <th class="py-2">Montant</th>
-                    <th class="py-2">Recouvreur actuel</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for facture in factures %}
-                <tr class="border-b">
-                    <td class="py-2"><input type="checkbox" name="factures" value="{{ facture.id }}"></td>
-                    <td class="py-2">{{ facture.numero_facture }}</td>
-                    <td>{{ facture.client_nom }}</td>
-                    <td>{{ facture.montant_total|floatformat:2 }} €</td>
-                    <td>{{ facture.recouvreur|default:"—" }}</td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="5" class="py-4 text-center text-gray-400">Aucune facture ouverte trouvée.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-
-        <button type="submit" class="mt-4 bg-blue-700 text-white rounded px-4 py-2">Affecter sélection</button>
-    </form>
+<div class="min-h-screen bg-slate-50 text-slate-900 p-6 lg:p-10">
+    <div class="max-w-5xl mx-auto space-y-8">
+        <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="mb-6">
+                <h1 class="text-2xl font-bold text-slate-900">Affectation en masse des recouvreurs</h1>
+            </div>
+            <form method="get" class="flex flex-col gap-4 sm:flex-row sm:items-center mb-6">
+                <input type="text" name="client" value="{{ filtre_client }}" placeholder="Rechercher un client..." class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-900 focus:border-[#C81E6E] focus:ring-2 focus:ring-[#C81E6E]/20" />
+                <button type="submit" class="inline-flex items-center justify-center rounded-2xl bg-[#C81E6E] px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#ad1457]">Filtrer</button>
+            </form>
+            <form method="post" class="space-y-6">
+                {% csrf_token %}
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Recouvreur</label>
+                    <select name="recouvreur" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900">
+                        <option value="">Aucun</option>
+                        {% for r in recouvreurs %}
+                            <option value="{{ r.id }}">{{ r }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="overflow-x-auto rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <table class="min-w-full divide-y divide-slate-200 text-sm">
+                        <thead class="bg-slate-50 text-slate-700">
+                            <tr>
+                                <th class="px-4 py-3 text-left"><input type="checkbox" id="select-all"></th>
+                                <th class="px-4 py-3 text-left">Facture</th>
+                                <th class="px-4 py-3 text-left">Client</th>
+                                <th class="px-4 py-3 text-left">Montant</th>
+                                <th class="px-4 py-3 text-left">Recouvreur actuel</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200 bg-white">
+                            {% for facture in factures %}
+                                <tr>
+                                    <td class="px-4 py-3"><input type="checkbox" name="factures" value="{{ facture.id }}"></td>
+                                    <td class="px-4 py-3">{{ facture.numero_facture }}</td>
+                                    <td class="px-4 py-3">{{ facture.client_nom }}</td>
+                                    <td class="px-4 py-3">{{ facture.montant_total|floatformat:2 }} €</td>
+                                    <td class="px-4 py-3">{{ facture.recouvreur|default:"—" }}</td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="5" class="px-4 py-8 text-center text-slate-500">Aucune facture ouverte trouvée.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <button type="submit" class="inline-flex items-center justify-center rounded-2xl bg-blue-700 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800">Affecter sélection</button>
+            </form>
+        </section>
+    </div>
 </div>
 
 <script>
@@ -62,4 +68,5 @@
         });
     });
 </script>
+
 {% endblock %}

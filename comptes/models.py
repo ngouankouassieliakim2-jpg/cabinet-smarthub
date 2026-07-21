@@ -35,6 +35,12 @@ class Profil(models.Model):
         "pilotage.Poste", on_delete=models.SET_NULL, null=True, blank=True,
         related_name="titulaires", verbose_name="Poste",
     )
+    postes_secondaires = models.ManyToManyField(
+        "pilotage.Poste",
+        blank=True,
+        related_name="titulaires_secondaires",
+        verbose_name="Postes secondaires",
+    )
     derniere_activite = models.DateTimeField("Dernière activité", null=True, blank=True)
 
     class Meta:
@@ -43,6 +49,35 @@ class Profil(models.Model):
 
     def __str__(self):
         return f"{self.user.username} — {self.get_role_display()}"
+
+    def _postes_references(self):
+        postes = []
+        if self.poste:
+            postes.append(self.poste)
+        postes.extend(list(self.postes_secondaires.all()))
+        return [poste for poste in postes if poste is not None]
+
+    def _libelles_postes(self):
+        return [poste.intitule.lower() for poste in self._postes_references() if poste and poste.intitule]
+
+    def est_recouvreur(self):
+        if self.role in (self.Role.DIRECTION, self.Role.CADRE):
+            return True
+        libelles = self._libelles_postes()
+        mots_cles = ["recouvreur", "recouvrement", "créance", "créances", "contentieux", "relance"]
+        return any(any(mot in libelle for mot in mots_cles) for libelle in libelles)
+
+    def ajouter_poste_secondaire(self, poste):
+        if poste is None:
+            return None
+        if self.poste_id == getattr(poste, "id", None):
+            raise ValueError("Le poste secondaire ne peut pas être identique au poste principal.")
+        if self.postes_secondaires.filter(id=poste.id).exists():
+            return poste
+        if self.postes_secondaires.count() >= 2:
+            raise ValueError("Un profil ne peut avoir que deux postes secondaires au maximum.")
+        self.postes_secondaires.add(poste)
+        return poste
 
 
 class SignatureElectronique(models.Model):

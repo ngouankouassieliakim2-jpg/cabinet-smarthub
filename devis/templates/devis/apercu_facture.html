@@ -1,4 +1,4 @@
-{% load static %}
+?{% load static %}
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -29,14 +29,14 @@
 </head>
 <body>
   <div class="toolbar">
-    <a href="{% url 'facturation_accueil' %}" class="btn-back">&larr; Retour à la facturation</a>
+    <a href="{% url 'devis:facturation_accueil' %}" class="btn-back">&larr; Retour à la facturation</a>
     <div style="display:flex;gap:10px;">
       {% if facture.fne_statut != "CERTIFIEE" %}
-      <a href="{% url 'facture_certifier' facture.id %}" class="btn-back" style="background:#16171C;color:#fff;">🧾 Certifier (FNE)</a>
+      <a href="{% url 'devis:facture_certifier' facture.id %}" class="btn-back" style="background:#16171C;color:#fff;">🧾 Certifier (FNE)</a>
       {% else %}
       <span class="btn-back" style="background:#059669;color:#fff;">✓ Certifiée FNE</span>
       {% endif %}
-      <button class="btn-print" onclick="window.print()">🖨️ Imprimer / PDF</button>
+      <button class="btn-print" onclick="window.print()">🖨�? Imprimer / PDF</button>
     </div>
   </div>
 
@@ -102,3 +102,5 @@
   </div>
 </body>
 </html>
+
+

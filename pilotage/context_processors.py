@@ -1,6 +1,21 @@
 from .modules_data import MODULES, charger_sous_modules
 
 
+def sous_modules_auto(request):
+    """Injecte automatiquement les sous-modules de la sidebar, déduits du
+    namespace de l'app courante (ex: 'devis') — évite d'oublier cette clé
+    dans chaque vue. Une vue peut toujours la surcharger explicitement en
+    la passant elle-même dans son contexte (elle aura priorité)."""
+    if not request.user.is_authenticated:
+        return {}
+    resolver_match = getattr(request, "resolver_match", None)
+    app_name = resolver_match.app_name if resolver_match else None
+    if not app_name:
+        return {}
+    from .modules_data import charger_sous_modules
+    return {"sous_modules": charger_sous_modules(app_name, request)}
+
+
 def navigation(request):
     """Injecte la barre du haut (modules) sur toutes les pages, filtrée
     selon le pôle de l'utilisateur connecté."""
@@ -31,8 +46,22 @@ def navigation(request):
 
 
 def notifications_non_lues(request):
-    """Injecte le nombre de notifications non lues sur toutes les pages."""
+    """Injecte le nombre de notifications non lues sur toutes les pages,
+    filtré selon le rôle (même règle que notifications_liste)."""
     if not request.user.is_authenticated:
         return {}
+    from django.db.models import Q
+    from comptes.models import Profil
     from .models import Notification
-    return {"nb_notifications_non_lues": Notification.objects.filter(lue=False).count()}
+
+    profil = getattr(request.user, "profil", None)
+    est_direction_cadre = profil and profil.role in (Profil.Role.DIRECTION, Profil.Role.CADRE)
+
+    if est_direction_cadre:
+        count = Notification.objects.filter(lue=False).count()
+    else:
+        count = Notification.objects.filter(
+            Q(destinataire=request.user) | Q(destinataire__isnull=True), lue=False
+        ).count()
+
+    return {"nb_notifications_non_lues": count}

@@ -3,6 +3,7 @@ from django.http import Http404
 from django.urls import reverse
 from django.utils import timezone
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from comptes.decorators import role_requis
 from comptes.models import Profil
@@ -465,26 +466,35 @@ def organigramme(request):
     })
 
 
-@role_requis(Profil.Role.DIRECTION, Profil.Role.CADRE)
+@login_required
 def notifications_liste(request):
-    """Liste des notifications avec filtres (type, statut de lecture)."""
+    """Liste des notifications, filtrée selon le rôle : Direction/Cadre
+    voient tout ; les autres voient leurs notifications ciblées +
+    les notifications générales (destinataire vide, comme les alertes
+    CDD/fin d'essai déjà existantes côté Paie)."""
+    from django.db.models import Q
     from .models import Notification
-    notifications = Notification.objects.all().order_by("-cree_le")
-    
-    # Filtres
+
+    profil = getattr(request.user, "profil", None)
+    est_direction_cadre = profil and profil.role in (Profil.Role.DIRECTION, Profil.Role.CADRE)
+
+    if est_direction_cadre:
+        notifications = Notification.objects.all().order_by("-cree_le")
+    else:
+        notifications = Notification.objects.filter(
+            Q(destinataire=request.user) | Q(destinataire__isnull=True)
+        ).order_by("-cree_le")
+
     filtre_type = request.GET.get("type", "")
     filtre_statut = request.GET.get("statut", "")
-    
     if filtre_type:
         notifications = notifications.filter(type_notification=filtre_type)
     if filtre_statut == "lues":
         notifications = notifications.filter(lue=True)
     elif filtre_statut == "non_lues":
         notifications = notifications.filter(lue=False)
-    
-    # Types disponibles pour le filtre
+
     types_disponibles = Notification.TYPE_CHOICES
-    
     return render(request, "pilotage/notifications_liste.html", {
         "notifications": notifications[:50],
         "filtre_type": filtre_type,
@@ -496,11 +506,23 @@ def notifications_liste(request):
     })
 
 
-@role_requis(Profil.Role.DIRECTION, Profil.Role.CADRE)
+@login_required
 def notification_marquer_lue(request, notification_id):
-    """Marquer une notification comme lue."""
+    """Marquer une notification comme lue — uniquement la sienne (ciblée
+    ou générale), sauf Direction/Cadre qui peuvent tout marquer."""
+    from django.db.models import Q
     from .models import Notification
-    notif = get_object_or_404(Notification, pk=notification_id)
+
+    profil = getattr(request.user, "profil", None)
+    est_direction_cadre = profil and profil.role in (Profil.Role.DIRECTION, Profil.Role.CADRE)
+
+    if est_direction_cadre:
+        notif = get_object_or_404(Notification, pk=notification_id)
+    else:
+        notif = get_object_or_404(
+            Notification.objects.filter(Q(destinataire=request.user) | Q(destinataire__isnull=True)),
+            pk=notification_id)
+
     notif.lue = True
     notif.save()
     if request.method == "POST" and notif.url:
@@ -508,9 +530,11 @@ def notification_marquer_lue(request, notification_id):
     return redirect("pilotage_notifications")
 
 
+@login_required
 @role_requis(Profil.Role.DIRECTION, Profil.Role.CADRE)
 def notification_supprimer(request, notification_id):
-    """Supprimer une notification."""
+    """Supprimer une notification — reste réservé Direction/Cadre (décision
+    déjà en place, pas modifiée par l'ouverture de la lecture)."""
     from .models import Notification
     notif = get_object_or_404(Notification, pk=notification_id)
     if request.method == "POST":

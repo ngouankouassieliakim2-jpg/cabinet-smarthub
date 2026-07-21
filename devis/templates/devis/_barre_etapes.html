@@ -1,77 +1,78 @@
-<div class="max-w-5xl mx-auto px-4 sm:px-6 pt-6 pb-2">
-  <div class="flex items-center">
-
-    {% comment %} Étape 1 — toujours accessible {% endcomment %}
-    <a href="{% url 'creer_devis' %}" class="flex items-center gap-2 shrink-0 group">
-      <span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition bg-[#C81E6E] text-white {% if etape == 1 %}ring-4 ring-[#FCEEF3]{% else %}group-hover:ring-4 group-hover:ring-[#FCEEF3]{% endif %}">1</span>
-      <span class="hidden sm:inline text-sm font-medium {% if etape == 1 %}text-[#C81E6E]{% else %}text-gray-700{% endif %}">Client</span>
-    </a>
-
-    <div class="flex-1 h-px bg-gray-300 mx-2 sm:mx-3"></div>
-
-    {% comment %} Étape 2 {% endcomment %}
-    <div class="flex items-center gap-2 shrink-0 group">
-      {% if devis.id %}
-      <a href="{% url 'devis_etape2' devis.id %}" class="flex items-center gap-2">
-        <span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition bg-[#C81E6E] text-white {% if etape == 2 %}ring-4 ring-[#FCEEF3]{% else %}group-hover:ring-4 group-hover:ring-[#FCEEF3]{% endif %}">2</span>
-        <span class="hidden sm:inline text-sm font-medium {% if etape == 2 %}text-[#C81E6E]{% else %}text-gray-700{% endif %}">Identification</span>
-      </a>
-      {% else %}
-      <span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold bg-gray-300 text-gray-500">2</span>
-      <span class="hidden sm:inline text-sm font-medium text-gray-400">Identification</span>
-      {% endif %}
-    </div>
-
-    <div class="flex-1 h-px bg-gray-300 mx-2 sm:mx-3"></div>
-
-    {% comment %} Étape 3 {% endcomment %}
-    <div class="flex items-center gap-2 shrink-0 group">
-      {% if devis.id %}
-      <a href="{% url 'devis_etape3' devis.id %}" class="flex items-center gap-2">
-        <span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition bg-[#C81E6E] text-white {% if etape == 3 %}ring-4 ring-[#FCEEF3]{% else %}group-hover:ring-4 group-hover:ring-[#FCEEF3]{% endif %}">3</span>
-        <span class="hidden sm:inline text-sm font-medium {% if etape == 3 %}text-[#C81E6E]{% else %}text-gray-700{% endif %}">Devis</span>
-      </a>
-      {% else %}
-      <span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold bg-gray-300 text-gray-500">3</span>
-      <span class="hidden sm:inline text-sm font-medium text-gray-400">Devis</span>
-      {% endif %}
-    </div>
-
-    <div class="flex-1 h-px bg-gray-300 mx-2 sm:mx-3"></div>
-
-    {% comment %} Étape 4 {% endcomment %}
-    <div class="flex items-center gap-2 shrink-0 group">
-      {% if devis.id %}
-      <a href="{% url 'devis_etape4' devis.id %}" class="flex items-center gap-2">
-        <span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition bg-[#C81E6E] text-white {% if etape == 4 %}ring-4 ring-[#FCEEF3]{% else %}group-hover:ring-4 group-hover:ring-[#FCEEF3]{% endif %}">4</span>
-        <span class="hidden sm:inline text-sm font-medium {% if etape == 4 %}text-[#C81E6E]{% else %}text-gray-700{% endif %}">Visualisation</span>
-      </a>
-      {% else %}
-      <span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold bg-gray-300 text-gray-500">4</span>
-      <span class="hidden sm:inline text-sm font-medium text-gray-400">Visualisation</span>
-      {% endif %}
-    </div>
-
-    <div class="flex-1 h-px bg-gray-300 mx-2 sm:mx-3"></div>
-
-    {% comment %} Étape 5 {% endcomment %}
-    <div class="flex items-center gap-2 shrink-0 group">
-      {% if devis.id %}
-      <a href="{% url 'devis_etape5' devis.id %}" class="flex items-center gap-2">
-        <span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition bg-[#C81E6E] text-white {% if etape == 5 %}ring-4 ring-[#FCEEF3]{% else %}group-hover:ring-4 group-hover:ring-[#FCEEF3]{% endif %}">5</span>
-        <span class="hidden sm:inline text-sm font-medium {% if etape == 5 %}text-[#C81E6E]{% else %}text-gray-700{% endif %}">Validation</span>
-      </a>
-      {% else %}
-      <span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold bg-gray-300 text-gray-500">5</span>
-      <span class="hidden sm:inline text-sm font-medium text-gray-400">Validation</span>
-      {% endif %}
-    </div>
-
-  </div>
-
-  {% comment %} Libellé de l'étape courante — visible sur mobile uniquement {% endcomment %}
-  <p class="sm:hidden text-center text-sm font-medium text-[#C81E6E] mt-3">
-    Étape {{ etape }} sur 5 —
-    {% if etape == 1 %}Client{% elif etape == 2 %}Identification{% elif etape == 3 %}Devis{% elif etape == 4 %}Visualisation{% elif etape == 5 %}Validation{% endif %}
-  </p>
-</div>
+﻿<div class="max-w-5xl mx-auto px-4 sm:px-6 pt-6 pb-2">
+  <div class="flex items-center">
+
+    {% comment %} Étape 1 — toujours accessible {% endcomment %}
+    <a href="{% url 'devis:creer_devis' %}" class="flex items-center gap-2 shrink-0 group">
+      <span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition bg-[#C81E6E] text-white {% if etape == 1 %}ring-4 ring-[#FCEEF3]{% else %}group-hover:ring-4 group-hover:ring-[#FCEEF3]{% endif %}">1</span>
+      <span class="hidden sm:inline text-sm font-medium {% if etape == 1 %}text-[#C81E6E]{% else %}text-gray-700{% endif %}">Client</span>
+    </a>
+
+    <div class="flex-1 h-px bg-gray-300 mx-2 sm:mx-3"></div>
+
+    {% comment %} Étape 2 {% endcomment %}
+    <div class="flex items-center gap-2 shrink-0 group">
+      {% if devis.id %}
+      <a href="{% url 'devis:devis_etape2' devis.id %}" class="flex items-center gap-2">
+        <span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition bg-[#C81E6E] text-white {% if etape == 2 %}ring-4 ring-[#FCEEF3]{% else %}group-hover:ring-4 group-hover:ring-[#FCEEF3]{% endif %}">2</span>
+        <span class="hidden sm:inline text-sm font-medium {% if etape == 2 %}text-[#C81E6E]{% else %}text-gray-700{% endif %}">Identification</span>
+      </a>
+      {% else %}
+      <span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold bg-gray-300 text-gray-500">2</span>
+      <span class="hidden sm:inline text-sm font-medium text-gray-400">Identification</span>
+      {% endif %}
+    </div>
+
+    <div class="flex-1 h-px bg-gray-300 mx-2 sm:mx-3"></div>
+
+    {% comment %} Étape 3 {% endcomment %}
+    <div class="flex items-center gap-2 shrink-0 group">
+      {% if devis.id %}
+      <a href="{% url 'devis:devis_etape3' devis.id %}" class="flex items-center gap-2">
+        <span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition bg-[#C81E6E] text-white {% if etape == 3 %}ring-4 ring-[#FCEEF3]{% else %}group-hover:ring-4 group-hover:ring-[#FCEEF3]{% endif %}">3</span>
+        <span class="hidden sm:inline text-sm font-medium {% if etape == 3 %}text-[#C81E6E]{% else %}text-gray-700{% endif %}">Devis</span>
+      </a>
+      {% else %}
+      <span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold bg-gray-300 text-gray-500">3</span>
+      <span class="hidden sm:inline text-sm font-medium text-gray-400">Devis</span>
+      {% endif %}
+    </div>
+
+    <div class="flex-1 h-px bg-gray-300 mx-2 sm:mx-3"></div>
+
+    {% comment %} Étape 4 {% endcomment %}
+    <div class="flex items-center gap-2 shrink-0 group">
+      {% if devis.id %}
+      <a href="{% url 'devis:devis_etape4' devis.id %}" class="flex items-center gap-2">
+        <span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition bg-[#C81E6E] text-white {% if etape == 4 %}ring-4 ring-[#FCEEF3]{% else %}group-hover:ring-4 group-hover:ring-[#FCEEF3]{% endif %}">4</span>
+        <span class="hidden sm:inline text-sm font-medium {% if etape == 4 %}text-[#C81E6E]{% else %}text-gray-700{% endif %}">Visualisation</span>
+      </a>
+      {% else %}
+      <span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold bg-gray-300 text-gray-500">4</span>
+      <span class="hidden sm:inline text-sm font-medium text-gray-400">Visualisation</span>
+      {% endif %}
+    </div>
+
+    <div class="flex-1 h-px bg-gray-300 mx-2 sm:mx-3"></div>
+
+    {% comment %} Étape 5 {% endcomment %}
+    <div class="flex items-center gap-2 shrink-0 group">
+      {% if devis.id %}
+      <a href="{% url 'devis:devis_etape5' devis.id %}" class="flex items-center gap-2">
+        <span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition bg-[#C81E6E] text-white {% if etape == 5 %}ring-4 ring-[#FCEEF3]{% else %}group-hover:ring-4 group-hover:ring-[#FCEEF3]{% endif %}">5</span>
+        <span class="hidden sm:inline text-sm font-medium {% if etape == 5 %}text-[#C81E6E]{% else %}text-gray-700{% endif %}">Validation</span>
+      </a>
+      {% else %}
+      <span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold bg-gray-300 text-gray-500">5</span>
+      <span class="hidden sm:inline text-sm font-medium text-gray-400">Validation</span>
+      {% endif %}
+    </div>
+
+  </div>
+
+  {% comment %} Libellé de l'étape courante — visible sur mobile uniquement {% endcomment %}
+  <p class="sm:hidden text-center text-sm font-medium text-[#C81E6E] mt-3">
+    Étape {{ etape }} sur 5 —
+    {% if etape == 1 %}Client{% elif etape == 2 %}Identification{% elif etape == 3 %}Devis{% elif etape == 4 %}Visualisation{% elif etape == 5 %}Validation{% endif %}
+  </p>
+</div>
+

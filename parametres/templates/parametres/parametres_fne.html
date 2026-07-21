@@ -2,78 +2,82 @@
 {% block titre %}Paramètres FNE{% endblock %}
 
 {% block para_contenu %}
-<div class="p-6 max-w-2xl">
+<div class="mx-auto max-w-3xl p-6 lg:p-8">
     {% if messages %}
     {% for m in messages %}
-    <div class="mb-4 p-3 rounded text-sm {% if m.tags == 'success' %}bg-emerald-50 text-emerald-700 border border-emerald-200{% else %}bg-red-50 text-red-700 border border-red-200{% endif %}">{{ m }}</div>
+    <div class="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{{ m }}</div>
     {% endfor %}
-  {% endif %}
-  <h1 class="text-2xl font-bold text-gray-800 mb-1">Facture Normalisée Électronique (FNE)</h1>
-  <p class="text-gray-500 text-sm mb-6">Réglages d'accès à la plateforme FNE de la DGI, utilisés pour la certification des factures.</p>
+    {% endif %}
 
-  {% if params.est_configure %}
-  <div class="bg-emerald-50 border border-emerald-200 rounded p-3 mb-5 text-sm text-emerald-700">✓ La certification FNE est configurée ({{ params.get_environnement_display }}).</div>
-  {% else %}
-  <div class="bg-amber-50 border border-amber-200 rounded p-3 mb-5 text-sm text-amber-700">⚠️ La clé API n'est pas encore renseignée — les factures resteront au statut « À certifier » jusque-là.</div>
-  {% endif %}
+    <section class="rounded-[28px] border border-slate-200 bg-gradient-to-br from-white via-[#FCEEF3]/30 to-white p-6 shadow-sm">
+        <div class="inline-flex items-center rounded-full bg-[#C81E6E]/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-[#C81E6E]">Paramètres</div>
+        <h1 class="mt-3 text-2xl font-bold text-slate-900">Facture Normalisée Électronique (FNE)</h1>
+        <p class="mt-2 text-sm text-slate-500">Réglages d'accès à la plateforme FNE de la DGI, utilisés pour la certification des factures.</p>
+    </section>
 
-  <div class="bg-blue-50 border border-blue-100 rounded-lg p-3 mb-6 text-xs text-blue-800 leading-relaxed">
-    <b>Rappel de la procédure DGI :</b> inscrivez-vous d'abord sur l'environnement de test, réalisez vos essais de génération de factures, puis transmettez vos spécimens à <b>support.fne@dgi.gouv.ci</b>. Ce n'est qu'après validation par la DGI que l'URL de production et la clé définitive vous seront communiquées — vous n'avez pas besoin d'attendre cette étape pour commencer à tester.
-  </div>
+    {% if params.est_configure %}
+    <div class="mt-6 rounded-[24px] border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">✓ La certification FNE est configurée ({{ params.get_environnement_display }}).</div>
+    {% else %}
+    <div class="mt-6 rounded-[24px] border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">⚠️ La clé API n'est pas encore renseignée — les factures resteront au statut « À certifier » jusque-là.</div>
+    {% endif %}
 
-  <form method="post" class="bg-white rounded-lg shadow p-6 space-y-5">
-    {% csrf_token %}
-
-    <div>
-      <label class="block text-sm font-semibold text-gray-700 mb-1">{{ form.environnement.label }}</label>
-      {{ form.environnement }}
+    <div class="mt-6 rounded-[24px] border border-sky-200 bg-sky-50 p-3 text-sm leading-relaxed text-sky-800">
+        <b>Rappel de la procédure DGI :</b> inscrivez-vous d'abord sur l'environnement de test, réalisez vos essais de génération de factures, puis transmettez vos spécimens à <b>support.fne@dgi.gouv.ci</b>. Ce n'est qu'après validation par la DGI que l'URL de production et la clé définitive vous seront communiquées — vous n'avez pas besoin d'attendre cette étape pour commencer à tester.
     </div>
 
-    <div>
-      <label class="block text-sm font-semibold text-gray-700 mb-1">{{ form.url_test.label }}</label>
-      {{ form.url_test }}
-      <span class="text-xs text-gray-400">{{ form.url_test.help_text }}</span>
-    </div>
+    <form method="post" class="mt-6 space-y-5 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+        {% csrf_token %}
 
-    <div>
-      <label class="block text-sm font-semibold text-gray-700 mb-1">{{ form.url_production.label }}</label>
-      {{ form.url_production }}
-      <span class="text-xs text-gray-400">{{ form.url_production.help_text }}</span>
-    </div>
+        <div>
+            <label class="mb-1 block text-sm font-semibold text-slate-700">{{ form.environnement.label }}</label>
+            {{ form.environnement }}
+        </div>
 
-    <div>
-      <label class="block text-sm font-semibold text-gray-700 mb-1">{{ form.api_key.label }}</label>
-      <input type="password" name="api_key" value="{{ form.api_key.value|default:'' }}"
-             class="w-full border border-gray-300 rounded px-3 py-2 text-sm" placeholder="••••••••••••••••••••••••">
-      <span class="text-xs text-gray-400">{{ form.api_key.help_text }}</span>
-    </div>
+        <div>
+            <label class="mb-1 block text-sm font-semibold text-slate-700">{{ form.url_test.label }}</label>
+            {{ form.url_test }}
+            <span class="mt-1 block text-xs text-slate-400">{{ form.url_test.help_text }}</span>
+        </div>
 
-    <div>
-      <label class="block text-sm font-semibold text-gray-700 mb-1">{{ form.ncc_cabinet.label }}</label>
-      {{ form.ncc_cabinet }}
-    </div>
+        <div>
+            <label class="mb-1 block text-sm font-semibold text-slate-700">{{ form.url_production.label }}</label>
+            {{ form.url_production }}
+            <span class="mt-1 block text-xs text-slate-400">{{ form.url_production.help_text }}</span>
+        </div>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      <div>
-        <label class="block text-sm font-semibold text-gray-700 mb-1">{{ form.point_de_vente_defaut.label }}</label>
-        {{ form.point_de_vente_defaut }}
-        <span class="text-xs text-gray-400">{{ form.point_de_vente_defaut.help_text }}</span>
-      </div>
-      <div>
-        <label class="block text-sm font-semibold text-gray-700 mb-1">{{ form.etablissement_defaut.label }}</label>
-        {{ form.etablissement_defaut }}
-      </div>
-    </div>
+        <div>
+            <label class="mb-1 block text-sm font-semibold text-slate-700">{{ form.api_key.label }}</label>
+            <input type="password" name="api_key" value="{{ form.api_key.value|default:'' }}"
+                   class="w-full rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2.5 text-sm shadow-sm focus:border-[#C81E6E] focus:outline-none focus:ring-1 focus:ring-[#C81E6E]" placeholder="••••••••••••••••••••••••">
+            <span class="mt-1 block text-xs text-slate-400">{{ form.api_key.help_text }}</span>
+        </div>
 
-    <div class="pt-3 border-t">
-      <button type="submit" class="bg-[#C81E6E] text-white px-6 py-2 rounded font-medium hover:bg-[#a81659]">Enregistrer</button>
-    </div>
-  </form>
+        <div>
+            <label class="mb-1 block text-sm font-semibold text-slate-700">{{ form.ncc_cabinet.label }}</label>
+            {{ form.ncc_cabinet }}
+        </div>
+
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+                <label class="mb-1 block text-sm font-semibold text-slate-700">{{ form.point_de_vente_defaut.label }}</label>
+                {{ form.point_de_vente_defaut }}
+                <span class="mt-1 block text-xs text-slate-400">{{ form.point_de_vente_defaut.help_text }}</span>
+            </div>
+            <div>
+                <label class="mb-1 block text-sm font-semibold text-slate-700">{{ form.etablissement_defaut.label }}</label>
+                {{ form.etablissement_defaut }}
+            </div>
+        </div>
+
+        <div class="border-t border-slate-100 pt-3">
+            <button type="submit" class="rounded-full bg-[#C81E6E] px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#a81659]">Enregistrer</button>
+        </div>
+    </form>
 </div>
 
 <style>
-  input[type=text], input[type=password], input[type=url], select {
-    width:100%; border:1px solid #d1d5db; border-radius:6px; padding:8px 10px; font-size:14px;
-  }
+    input[type=text], input[type=password], input[type=url], select {
+        width:100%; border:1px solid #d1d5db; border-radius:12px; padding:10px 12px; font-size:14px; background:#f8fafc;
+    }
 </style>
 {% endblock %}

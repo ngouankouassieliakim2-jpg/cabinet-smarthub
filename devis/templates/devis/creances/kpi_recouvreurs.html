@@ -1,38 +1,51 @@
-{% extends "base_pilotage.html" %}
+{% extends "pilotage/base_pilotage.html" %}
 
 {% block contenu %}
-<div class="p-6">
-    <h1 class="text-xl font-semibold mb-4">KPI des recouvreurs</h1>
-    <div class="grid grid-cols-3 gap-4 mb-6 text-sm">
-        <div class="border rounded p-3 bg-white">
-            <div class="text-gray-500">Recouvreurs suivis</div>
-            <div class="text-lg font-semibold">{{ donnees|length }}</div>
-        </div>
-    </div>
 
-    <table class="w-full text-sm border-collapse">
-        <thead>
-            <tr class="text-left border-b">
-                <th class="py-2">Recouvreur</th>
-                <th>Factures</th>
-                <th>Appels</th>
-                <th>Emails</th>
-                <th>Montant récupéré</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for ligne in donnees %}
-            <tr class="border-b hover:bg-gray-50">
-                <td class="py-2">{{ ligne.recouvreur }}</td>
-                <td>{{ ligne.nb_factures }}</td>
-                <td>{{ ligne.nb_appels }}</td>
-                <td>{{ ligne.nb_emails }}</td>
-                <td>{{ ligne.montant_recupere }} FCFA</td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="5" class="py-4 text-center text-gray-400">Aucun recouvreur trouvé.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<div class="min-h-screen bg-slate-50 text-slate-900 p-6 lg:p-10">
+    <div class="max-w-6xl mx-auto space-y-8">
+        <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between mb-6">
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-900">KPI des recouvreurs</h1>
+                    <p class="text-sm text-slate-500 mt-1">Analyse rapide de l'activité et des montants recouvrés.</p>
+                </div>
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm">
+                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-400">Recouvreurs suivis</div>
+                    <div class="mt-2 text-xl font-bold text-slate-900">{{ donnees|length }}</div>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <table class="min-w-full divide-y divide-slate-200 text-sm">
+                    <thead class="bg-slate-50">
+                        <tr class="text-left text-slate-700">
+                            <th class="px-4 py-3">Recouvreur</th>
+                            <th class="px-4 py-3">Factures</th>
+                            <th class="px-4 py-3">Appels</th>
+                            <th class="px-4 py-3">Emails</th>
+                            <th class="px-4 py-3">Montant récupéré</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200 bg-white">
+                        {% for ligne in donnees %}
+                            <tr class="hover:bg-slate-50">
+                                <td class="px-4 py-3">{{ ligne.recouvreur }}</td>
+                                <td class="px-4 py-3">{{ ligne.nb_factures }}</td>
+                                <td class="px-4 py-3">{{ ligne.nb_appels }}</td>
+                                <td class="px-4 py-3">{{ ligne.nb_emails }}</td>
+                                <td class="px-4 py-3">{{ ligne.montant_recupere }} FCFA</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="5" class="px-4 py-8 text-center text-slate-500">Aucun recouvreur trouvé.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
 </div>
+
 {% endblock %}

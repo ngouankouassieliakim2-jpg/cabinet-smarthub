@@ -6,7 +6,17 @@ from django.contrib import messages
 from django.forms import modelform_factory
 from pilotage.modules_data import charger_sous_modules
 
-from .models import CategoriePrestation, PrestationCatalogue, VariantePrix, ParametresEmail, ConditionsUtilisation, ParametresFNE
+from .forms import ParametresMobileMoneyForm, ParametresWhatsAppBusinessForm
+from .models import (
+    CategoriePrestation,
+    ConditionsUtilisation,
+    ParametresEmail,
+    ParametresFNE,
+    ParametresMobileMoney,
+    ParametresWhatsAppBusiness,
+    PrestationCatalogue,
+    VariantePrix,
+)
 
 CategorieForm = modelform_factory(CategoriePrestation, fields=[
     "nom", "regime", "duree_engagement_mois", "preavis_mois", "modalites_paiement",
@@ -63,6 +73,43 @@ def parametres_fne(request):
     ctx = _contexte_parametres()
     ctx.update({"form": form, "params": params})
     return render(request, "parametres/parametres_fne.html", ctx)
+
+
+@role_requis(Profil.Role.DIRECTION, Profil.Role.CADRE)
+def parametres_mobile_money(request):
+    params = ParametresMobileMoney.get_solo()
+    if request.method == "POST":
+        form = ParametresMobileMoneyForm(request.POST, instance=params)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Paramètres Mobile Money enregistrés.")
+            return redirect("parametres_mobile_money")
+    else:
+        form = ParametresMobileMoneyForm(instance=params)
+    ctx = _contexte_parametres()
+    ctx.update({
+        "form": form,
+        "params": params,
+        "wave_configure": params.wave_configure,
+        "orange_money_configure": params.orange_money_configure,
+    })
+    return render(request, "parametres/mobile_money.html", ctx)
+
+
+@role_requis(Profil.Role.DIRECTION, Profil.Role.CADRE)
+def parametres_whatsapp(request):
+    params = ParametresWhatsAppBusiness.get_solo()
+    if request.method == "POST":
+        form = ParametresWhatsAppBusinessForm(request.POST, instance=params)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Paramètres WhatsApp Business enregistrés.")
+            return redirect("parametres_whatsapp")
+    else:
+        form = ParametresWhatsAppBusinessForm(instance=params)
+    ctx = _contexte_parametres()
+    ctx.update({"form": form, "params": params, "est_configure": params.est_configure})
+    return render(request, "parametres/whatsapp.html", ctx)
 
 
 # ---------- Catégories ----------

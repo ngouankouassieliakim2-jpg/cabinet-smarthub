@@ -1,43 +1,101 @@
-{% extends "base_pilotage.html" %}
+﻿{% extends "pilotage/base_pilotage.html" %}
 
 {% block contenu %}
-<div class="p-6 max-w-2xl">
-    <div class="flex justify-between items-start mb-4">
-        <div>
-            <h1 class="text-xl font-semibold">{{ fournisseur.raison_sociale }}</h1>
-            <p class="text-gray-500 text-sm">{{ fournisseur.ncc|default:'NCC non renseigné' }}</p>
-        </div>
-        <a href="{% url 'devis:modifier_fournisseur' fournisseur.id %}" class="text-blue-600 text-sm underline">Modifier</a>
+<div class="min-h-screen bg-slate-50 p-6 text-slate-900 lg:p-10">
+    <div class="mx-auto max-w-6xl space-y-6">
+        <section class="rounded-[28px] border border-slate-200 bg-gradient-to-br from-white via-[#FCEEF3]/30 to-white p-6 shadow-sm">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                    <div class="inline-flex items-center rounded-full bg-[#C81E6E]/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-[#C81E6E]">Profil fournisseur</div>
+                    <h1 class="mt-3 text-2xl font-semibold tracking-tight text-slate-900">{{ fournisseur.raison_sociale }}</h1>
+                    <p class="mt-2 text-sm text-slate-500">{{ fournisseur.ncc|default:'NCC non renseigné' }}</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-3">
+                    <a href="{% url 'devis:modifier_fournisseur' fournisseur.id %}" class="text-sm font-medium text-[#C81E6E] underline">Modifier</a>
+                    {% if peut_administrer %}
+                    <form method="post">
+                        {% csrf_token %}
+                        <button type="submit" name="basculer_actif" value="1" class="text-sm font-medium text-slate-600 underline">{% if fournisseur.actif %}Désactiver ce fournisseur{% else %}Réactiver ce fournisseur{% endif %}</button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                <div class="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm">
+                    <p class="text-sm text-slate-500">Contact</p>
+                    <p class="mt-2 text-lg font-semibold text-slate-900">{{ fournisseur.contact_nom|default:'—' }}</p>
+                </div>
+                <div class="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm">
+                    <p class="text-sm text-slate-500">Téléphone</p>
+                    <p class="mt-2 text-lg font-semibold text-slate-900">{{ fournisseur.telephone|default:'—' }}</p>
+                </div>
+                <div class="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm">
+                    <p class="text-sm text-slate-500">Email</p>
+                    <p class="mt-2 text-lg font-semibold text-slate-900">{{ fournisseur.email|default:'—' }}</p>
+                </div>
+                <div class="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm">
+                    <p class="text-sm text-slate-500">Délai de paiement</p>
+                    <p class="mt-2 text-lg font-semibold text-slate-900">{{ fournisseur.delai_paiement_jours }} jours</p>
+                </div>
+                <div class="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm">
+                    <p class="text-sm text-slate-500">Notation</p>
+                    <p class="mt-2 text-lg font-semibold text-slate-900">{{ fournisseur.notation|default:'—' }}/5</p>
+                </div>
+                <div class="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm">
+                    <p class="text-sm text-slate-500">Adresse</p>
+                    <p class="mt-2 text-lg font-semibold text-slate-900">{{ fournisseur.adresse|default:'—' }}</p>
+                </div>
+            </div>
+
+            <div class="mt-6 grid gap-4 md:grid-cols-2">
+                <div class="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm">
+                    <p class="text-sm text-slate-500">Total acheté (HT)</p>
+                    <p class="mt-2 text-xl font-semibold text-slate-900">{{ fournisseur.total_achete }} FCFA</p>
+                </div>
+                <div class="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm">
+                    <p class="text-sm text-slate-500">Nombre de factures</p>
+                    <p class="mt-2 text-xl font-semibold text-slate-900">{{ fournisseur.nombre_factures }}</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 class="text-lg font-semibold text-slate-900">Notes internes</h2>
+            <ul class="mt-4 space-y-3 text-sm text-slate-600">
+                {% for n in notes %}
+                <li class="rounded-2xl border border-slate-200 p-3"><span class="text-xs uppercase tracking-wide text-slate-400">{{ n.date_creation|date:"d/m/Y H:i" }}</span><br>{{ n.auteur }}<br>{{ n.message }}</li>
+                {% empty %}
+                <li class="text-slate-500">Aucune note.</li>
+                {% endfor %}
+            </ul>
+            <form method="post" class="mt-6 flex flex-col gap-3 lg:flex-row lg:items-end">
+                {% csrf_token %}
+                {{ note_form.as_p }}
+                <button type="submit" name="ajouter_note" value="1" class="inline-flex items-center justify-center rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800">Ajouter</button>
+            </form>
+        </section>
+
+        <section class="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 class="text-lg font-semibold text-slate-900">Contrats</h2>
+            <ul class="mt-4 space-y-3 text-sm text-slate-600">
+                {% for c in contrats %}
+                <li class="rounded-2xl border border-slate-200 p-3">
+                    <a href="{{ c.fichier.url }}" class="font-medium text-[#C81E6E] underline">{{ c.libelle }}</a>
+                    {% if c.date_fin %}<span class="ml-2 text-slate-400">(jusqu’au {{ c.date_fin }})</span>{% endif %}
+                </li>
+                {% empty %}
+                <li class="text-slate-500">Aucun contrat.</li>
+                {% endfor %}
+            </ul>
+
+            <form method="post" enctype="multipart/form-data" class="mt-6 space-y-3">
+                {% csrf_token %}
+                {{ contrat_form.as_p }}
+                <button type="submit" name="ajouter_contrat" value="1" class="inline-flex items-center justify-center rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800">Ajouter un contrat</button>
+            </form>
+        </section>
     </div>
-
-    <div class="grid grid-cols-2 gap-4 mb-6 text-sm">
-        <div><span class="text-gray-500">Contact :</span> {{ fournisseur.contact_nom|default:'—' }}</div>
-        <div><span class="text-gray-500">Téléphone :</span> {{ fournisseur.telephone|default:'—' }}</div>
-        <div><span class="text-gray-500">Email :</span> {{ fournisseur.email|default:'—' }}</div>
-        <div><span class="text-gray-500">Délai de paiement :</span> {{ fournisseur.delai_paiement_jours }} jours</div>
-        <div><span class="text-gray-500">Notation :</span> {{ fournisseur.notation|default:'—' }}/5</div>
-        <div><span class="text-gray-500">Adresse :</span> {{ fournisseur.adresse|default:'—' }}</div>
-    </div>
-
-    <div class="border rounded p-4 bg-gray-50 mb-6 text-sm text-gray-500">
-        Historique des achats, total acheté et factures liées : disponibles dès
-        que le sous-module "Dépenses" sera construit et rattaché à ce fournisseur.
-    </div>
-
-    <h2 class="font-semibold mb-2">Contrats</h2>
-    <ul class="mb-4 text-sm">
-        {% for c in contrats %}
-        <li class="mb-2"><a href="{{ c.fichier.url }}" class="text-blue-600 underline">{{ c.libelle }}</a>
-            {% if c.date_fin %}<span class="text-gray-400">(jusqu'au {{ c.date_fin }})</span>{% endif %}</li>
-        {% empty %}
-        <li class="text-gray-400">Aucun contrat.</li>
-        {% endfor %}
-    </ul>
-
-    <form method="post" enctype="multipart/form-data" class="grid gap-4">
-        {% csrf_token %}
-        {{ contrat_form.as_p }}
-        <button type="submit" name="ajouter_contrat" value="1" class="bg-gray-700 text-white rounded px-3 py-2 text-sm">Ajouter un contrat</button>
-    </form>
 </div>
 {% endblock %}
+

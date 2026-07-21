@@ -3,31 +3,30 @@
 {% block titre %}Conditions d'utilisation — Paramètres{% endblock %}
 
 {% block contenu %}
-<div class="p-6 max-w-3xl">
+<div class="mx-auto max-w-4xl p-6 lg:p-8">
+    <section class="rounded-[28px] border border-slate-200 bg-gradient-to-br from-white via-[#FCEEF3]/30 to-white p-6 shadow-sm">
+        <div class="inline-flex items-center rounded-full bg-[#C81E6E]/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-[#C81E6E]">Paramètres</div>
+        <h1 class="mt-3 text-2xl font-bold text-slate-900">Conditions d'utilisation du portail client</h1>
+        <p class="mt-2 text-sm text-slate-500">Ce texte est présenté au client lors de sa première connexion. Il doit l'accepter pour finaliser son inscription.</p>
+    </section>
 
-    <div class="mb-6">
-        <h1 class="text-2xl font-bold text-gray-800">Conditions d'utilisation du portail client</h1>
-        <p class="text-gray-500 mt-1">Ce texte est présenté au client lors de sa première connexion. Il doit l'accepter pour finaliser son inscription.</p>
-    </div>
-
-    <form method="post" class="space-y-5">
+    <form method="post" class="mt-6 space-y-5 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
         {% csrf_token %}
 
-        <div class="bg-white rounded-xl border border-gray-200 p-6">
-            <label class="block text-sm font-medium text-gray-600 mb-2">Texte des conditions</label>
-            <textarea name="texte" rows="20" class="font-mono text-sm">{{ form.texte.value|default:'' }}</textarea>
-            <p class="text-xs text-gray-400 mt-2">Astuce : laissez une ligne vide entre les paragraphes pour aérer le texte. Les sauts de ligne sont conservés à l'affichage.</p>
+        <div>
+            <label class="mb-2 block text-sm font-semibold text-slate-700">Texte des conditions</label>
+            <textarea name="texte" rows="20" class="w-full rounded-[20px] border border-slate-200 bg-slate-50/70 px-4 py-3 font-mono text-sm shadow-sm focus:border-[#C81E6E] focus:outline-none focus:ring-1 focus:ring-[#C81E6E]">{{ form.texte.value|default:'' }}</textarea>
+            <p class="mt-2 text-xs text-slate-400">Astuce : laissez une ligne vide entre les paragraphes pour aérer le texte. Les sauts de ligne sont conservés à l'affichage.</p>
         </div>
 
-        <div class="flex items-center gap-3">
-            <button type="submit" class="bg-[#C81E6E] text-white font-medium px-6 py-2.5 rounded-lg hover:bg-[#a81759] transition">
+        <div class="flex flex-col gap-3 border-t border-slate-100 pt-3 sm:flex-row sm:items-center">
+            <button type="submit" class="rounded-full bg-[#C81E6E] px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#a81759] transition">
                 Enregistrer les conditions
             </button>
             {% if cgv.date_modification %}
-            <span class="text-xs text-gray-400">Dernière modification : {{ cgv.date_modification|date:"d/m/Y à H:i" }}</span>
+            <span class="text-xs text-slate-400">Dernière modification : {{ cgv.date_modification|date:"d/m/Y à H:i" }}</span>
             {% endif %}
         </div>
     </form>
-
 </div>
 {% endblock %}

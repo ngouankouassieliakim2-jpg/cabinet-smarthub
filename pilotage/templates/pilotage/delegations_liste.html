@@ -1,18 +1,21 @@
 {% extends "pilotage/base_pilotage.html" %}
 {% block titre %}Délégations de signature{% endblock %}
 {% block contenu %}
-<div class="p-6 max-w-4xl mx-auto">
-    <div class="flex justify-between items-center mb-6">
-        <div>
-            <h1 class="text-2xl font-bold text-gray-800">Délégations de signature</h1>
-            <p class="text-gray-500 mt-1">Toutes les délégations accordées par les membres de la Direction.</p>
+<div class="mx-auto max-w-6xl space-y-6 p-6">
+    <section class="rounded-[28px] border border-slate-200 bg-gradient-to-br from-white via-[#FCEEF3]/30 to-white p-6 shadow-sm">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+                <div class="inline-flex items-center rounded-full bg-[#C81E6E]/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-[#C81E6E]">Pilotage</div>
+                <h1 class="mt-3 text-2xl font-bold text-slate-900">Délégations de signature</h1>
+                <p class="mt-2 text-sm text-slate-500">Toutes les délégations accordées par les membres de la Direction.</p>
+            </div>
+            <a href="{% url 'pilotage_delegation_creer' %}" class="inline-flex items-center justify-center rounded-full bg-[#C81E6E] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#a81759]">+ Nouvelle délégation</a>
         </div>
-        <a href="{% url 'pilotage_delegation_creer' %}" class="bg-[#C81E6E] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#a81759]">+ Nouvelle délégation</a>
-    </div>
+    </section>
 
-    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+    <section class="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
         <table class="w-full text-sm">
-            <thead class="bg-gray-50 text-gray-600 text-left">
+            <thead class="bg-slate-50 text-left text-xs uppercase tracking-wider text-slate-500">
                 <tr>
                     <th class="px-4 py-3">Délégant</th>
                     <th class="px-4 py-3">Délégataire</th>
@@ -22,24 +25,24 @@
                     <th class="px-4 py-3">Statut</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-gray-100">
+            <tbody class="divide-y divide-slate-100">
                 {% for d in delegations %}
-                <tr class="hover:bg-gray-50">
-                    <td class="px-4 py-3 text-gray-800 font-medium">{{ d.delegant.get_full_name|default:d.delegant.username }}</td>
-                    <td class="px-4 py-3 text-gray-800">{{ d.delegataire.get_full_name|default:d.delegataire.username }}</td>
-                    <td class="px-4 py-3 text-gray-600">{{ d.get_mode_display }}</td>
-                    <td class="px-4 py-3 text-gray-600">{{ d.perimetre }}</td>
-                    <td class="px-4 py-3 text-gray-600">{{ d.date_debut|date:"d/m/Y" }} → {{ d.date_fin|date:"d/m/Y" }}</td>
+                <tr class="hover:bg-slate-50">
+                    <td class="px-4 py-3 font-medium text-slate-900">{{ d.delegant.get_full_name|default:d.delegant.username }}</td>
+                    <td class="px-4 py-3 text-slate-800">{{ d.delegataire.get_full_name|default:d.delegataire.username }}</td>
+                    <td class="px-4 py-3 text-slate-600">{{ d.get_mode_display }}</td>
+                    <td class="px-4 py-3 text-slate-600">{{ d.perimetre }}</td>
+                    <td class="px-4 py-3 text-slate-600">{{ d.date_debut|date:"d/m/Y" }} → {{ d.date_fin|date:"d/m/Y" }}</td>
                     <td class="px-4 py-3">
-                        {% if d.est_active %}<span class="bg-emerald-50 text-emerald-700 text-xs font-medium px-2 py-1 rounded-full">Active</span>
-                        {% else %}<span class="bg-gray-100 text-gray-500 text-xs font-medium px-2 py-1 rounded-full">Inactive</span>{% endif %}
+                        {% if d.est_active %}<span class="rounded-full bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700">Active</span>
+                        {% else %}<span class="rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-500">Inactive</span>{% endif %}
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="6" class="px-4 py-8 text-center text-gray-400">Aucune délégation créée.</td></tr>
+                <tr><td colspan="6" class="px-4 py-8 text-center text-slate-400">Aucune délégation créée.</td></tr>
                 {% endfor %}
             </tbody>
         </table>
-    </div>
+    </section>
 </div>
 {% endblock %}

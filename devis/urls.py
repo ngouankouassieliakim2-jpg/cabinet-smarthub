@@ -1,6 +1,8 @@
 from django.urls import path
 from . import views
 
+app_name = "devis"
+
 urlpatterns = [
     path("", views.liste_devis, name="liste_devis"),
     path("nouveau/", views.creer_devis, name="creer_devis"),
@@ -35,6 +37,7 @@ urlpatterns = [
     path("affectation-masse/", views.affectation_masse, name="affectation_masse"),
     path("relances/journal/", views.journal_relances, name="journal_relances"),
     path("relances/calendrier/", views.calendrier_relances, name="calendrier_relances"),
+    path("automatisations/journal/", views.journal_automatisations, name="journal_automatisations"),
     path("litiges/", views.liste_litiges, name="liste_litiges"),
     path("litiges/kanban/", views.kanban_litiges, name="kanban_litiges"),
     path("fournisseurs/", views.liste_fournisseurs, name="liste_fournisseurs"),
@@ -42,6 +45,23 @@ urlpatterns = [
     path("fournisseurs/<int:fournisseur_id>/", views.detail_fournisseur, name="detail_fournisseur"),
     path("fournisseurs/<int:fournisseur_id>/modifier/", views.modifier_fournisseur, name="modifier_fournisseur"),
     path("depenses/", views.liste_depenses, name="liste_depenses"),
+    path("depenses/kanban/", views.kanban_depenses, name="kanban_depenses"),
+    path("depenses/validation/file-attente/", views.file_attente_validation, name="file_attente_validation"),
+    path("kpi-depenses/", views.kpi_depenses, name="kpi_depenses"),
+    path("depenses/<int:depense_id>/valider/", views.valider_ou_rejeter_depense, name="valider_depense"),
+    path("notes-de-frais/", views.liste_notes_de_frais, name="liste_notes_de_frais"),
+    path("notes-de-frais/nouvelle/", views.creer_note_de_frais, name="creer_note_de_frais"),
+    path("notes-de-frais/<int:note_id>/", views.detail_note_de_frais, name="detail_note_de_frais"),
+    path("depenses/recurrentes/", views.liste_depenses_recurrentes, name="liste_depenses_recurrentes"),
+    path("depenses/recurrentes/nouvelle/", views.creer_depense_recurrente, name="creer_depense_recurrente"),
+    path("depenses/recurrentes/<int:recurrente_id>/", views.detail_depense_recurrente, name="detail_depense_recurrente"),
+    path("depenses/seuils/", views.config_seuils_approbation, name="config_seuils"),
+    path("budgets/", views.liste_budgets, name="liste_budgets"),
+    path("budgets/nouveau/", views.creer_budget, name="creer_budget"),
+    path("budgets/<int:budget_id>/", views.detail_budget, name="detail_budget"),
+    path("budgets/<int:budget_id>/modifier/", views.modifier_budget, name="modifier_budget"),
+    path("budgets/dashboard/", views.dashboard_budgets, name="dashboard_budgets"),
+    path("dashboard/", views.dashboard_executif, name="dashboard_executif"),
     path("depenses/nouveau/", views.creer_depense, name="creer_depense"),
     path("depenses/<int:depense_id>/", views.detail_depense, name="detail_depense"),
     path("creances/<int:facture_id>/", views.detail_creance, name="detail_creance"),

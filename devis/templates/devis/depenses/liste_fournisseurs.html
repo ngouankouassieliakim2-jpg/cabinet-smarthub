@@ -1,33 +1,58 @@
-{% extends "base_pilotage.html" %}
+﻿{% extends "pilotage/base_pilotage.html" %}
 
 {% block contenu %}
-<div class="p-6">
-    <div class="flex justify-between items-center mb-4">
-        <h1 class="text-xl font-semibold">Fournisseurs</h1>
-        <a href="{% url 'devis:creer_fournisseur' %}" class="bg-blue-600 text-white rounded px-4 py-2 text-sm">+ Nouveau fournisseur</a>
+<div class="min-h-screen bg-slate-50 p-6 text-slate-900 lg:p-10">
+    <div class="mx-auto max-w-7xl space-y-6">
+        <section class="rounded-[28px] border border-slate-200 bg-gradient-to-br from-white via-[#FCEEF3]/30 to-white p-6 shadow-sm">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                    <div class="inline-flex items-center rounded-full bg-[#C81E6E]/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-[#C81E6E]">Annuaire fournisseurs</div>
+                    <h1 class="mt-3 text-2xl font-semibold tracking-tight text-slate-900">Fournisseurs</h1>
+                    <p class="mt-2 text-sm text-slate-500">Suivi des fournisseurs, de leur notation et de leur statut.</p>
+                </div>
+                <a href="{% url 'devis:creer_fournisseur' %}" class="inline-flex items-center justify-center rounded-full bg-[#C81E6E] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#a61756]">+ Nouveau fournisseur</a>
+            </div>
+
+            <form method="get" class="mt-6 flex flex-wrap items-end gap-3 rounded-[24px] border border-slate-200 bg-white/80 p-4 shadow-sm">
+                <input type="text" name="q" value="{{ recherche }}" placeholder="Nom ou NCC..." class="w-full max-w-md rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:border-[#C81E6E] focus:outline-none">
+                <select name="notation" class="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:border-[#C81E6E] focus:outline-none">
+                    <option value="">Toute notation</option>
+                    {% for i in "12345" %}
+                    <option value="{{ i }}" {% if notation_filtre == i %}selected{% endif %}>{{ i }}/5</option>
+                    {% endfor %}
+                </select>
+                <label class="text-sm text-slate-600">
+                    <input type="checkbox" name="inactifs" value="1" {% if voir_inactifs %}checked{% endif %} onchange="this.form.submit()"> Voir inactifs
+                </label>
+                <button type="submit" class="inline-flex items-center justify-center rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800">Filtrer</button>
+                <a href="?{{ request.GET.urlencode }}&export=csv" class="text-sm font-medium text-[#C81E6E] underline">CSV</a>
+                <a href="?{{ request.GET.urlencode }}&export=excel" class="text-sm font-medium text-[#C81E6E] underline">Excel</a>
+            </form>
+
+            <div class="mt-6 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-sm">
+                        <thead class="bg-slate-50 text-left text-xs uppercase tracking-wider text-slate-500">
+                            <tr><th class="px-3 py-3">Raison sociale</th><th class="px-3 py-3">Contact</th><th class="px-3 py-3">Téléphone</th><th class="px-3 py-3">Notation</th><th class="px-3 py-3">Statut</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for f in fournisseurs %}
+                            <tr class="cursor-pointer border-t border-slate-200 transition hover:bg-slate-50" onclick="window.location='{% url 'devis:detail_fournisseur' f.id %}'">
+                                <td class="px-3 py-3 font-medium text-slate-900">{{ f.raison_sociale }}</td>
+                                <td class="px-3 py-3">{{ f.contact_nom|default:'—' }}</td>
+                                <td class="px-3 py-3">{{ f.telephone|default:'—' }}</td>
+                                <td class="px-3 py-3">{{ f.notation|default:'—' }}</td>
+                                <td class="px-3 py-3">{% if f.actif %}<span class="inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">Actif</span>{% else %}<span class="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">Inactif</span>{% endif %}</td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="5" class="px-3 py-6 text-center text-slate-500">Aucun fournisseur.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
     </div>
-
-    <form method="get" class="mb-4">
-        <input type="text" name="q" value="{{ recherche }}" placeholder="Rechercher..." class="border rounded px-2 py-1 w-full max-w-md">
-    </form>
-
-    <table class="w-full text-sm border-collapse">
-        <thead>
-            <tr class="text-left border-b"><th class="py-2">Raison sociale</th><th>Contact</th><th>Téléphone</th><th>Notation</th><th>Statut</th></tr>
-        </thead>
-        <tbody>
-            {% for f in fournisseurs %}
-            <tr class="border-b hover:bg-gray-50 cursor-pointer" onclick="window.location='{% url 'devis:detail_fournisseur' f.id %}'">
-                <td class="py-2">{{ f.raison_sociale }}</td>
-                <td>{{ f.contact_nom|default:'—' }}</td>
-                <td>{{ f.telephone|default:'—' }}</td>
-                <td>{{ f.notation|default:'—' }}</td>
-                <td>{% if f.actif %}Actif{% else %}<span class="text-gray-400">Inactif</span>{% endif %}</td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="5" class="py-4 text-center text-gray-400">Aucun fournisseur.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
 </div>
 {% endblock %}
+

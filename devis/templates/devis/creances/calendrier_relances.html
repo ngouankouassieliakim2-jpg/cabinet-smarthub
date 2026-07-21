@@ -1,29 +1,45 @@
-{% extends "base_pilotage.html" %}
-{% block contenu %}
-<div class="p-6">
-    <h1 class="text-xl font-semibold mb-2">Calendrier prévisionnel des relances</h1>
-    <p class="text-sm text-gray-500 mb-6">Projection sur 60 jours des prochaines relances, calculée à partir des échéances de factures ouvertes.</p>
+﻿{% extends "pilotage/base_pilotage.html" %}
 
-    {% if jours %}
-        {% for jour, items in jours %}
-            <div class="mb-5">
-                <div class="flex items-center justify-between mb-2">
-                    <h2 class="text-lg font-medium">{{ jour|date:"l d F Y" }}</h2>
-                    {% if jour == aujourdhui %}<span class="text-sm text-blue-600">aujourd'hui</span>{% endif %}
-                </div>
-                <ul class="space-y-2">
-                    {% for item in items %}
-                        <li class="border rounded p-3 bg-white shadow-sm">
-                            <a href="{% url 'devis:detail_creance' item.facture.id %}" class="text-blue-600 font-semibold underline">{{ item.facture.numero_facture }}</a>
-                            — {{ item.etape.nom }}<br>
-                            <span class="text-sm text-gray-500">{{ item.facture.client_nom }}</span>
-                        </li>
-                    {% endfor %}
-                </ul>
+{% block contenu %}
+
+<div class="min-h-screen bg-slate-50 text-slate-900 p-6 lg:p-10">
+    <div class="max-w-6xl mx-auto space-y-8">
+        <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="mb-6">
+                <h1 class="text-2xl font-bold text-slate-900">Calendrier prévisionnel des relances</h1>
+                <p class="text-sm text-slate-500 mt-2">Projection sur 60 jours des prochaines relances, calculée à partir des échéances de factures ouvertes.</p>
             </div>
-        {% endfor %}
-    {% else %}
-        <p class="text-gray-500">Aucune relance prévue sur les 60 prochains jours.</p>
-    {% endif %}
+
+            {% if jours %}
+                <div class="space-y-5">
+                    {% for jour, items in jours %}
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        <div class="flex items-center justify-between mb-3 gap-3">
+                            <h2 class="text-lg font-semibold text-slate-900">{{ jour|date:"l d F Y" }}</h2>
+                            {% if jour == aujourdhui %}<span class="rounded-full bg-[#C81E6E]/10 px-3 py-1 text-sm font-semibold text-[#C81E6E]">aujourd'hui</span>{% endif %}
+                        </div>
+                        <ul class="space-y-3">
+                            {% for item in items %}
+                            <li class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                                <a href="{% url 'devis:detail_creance' item.facture.id %}" class="text-[#C81E6E] font-semibold hover:underline">{{ item.facture.numero_facture }}</a>
+                                <div class="text-slate-700">— {{ item.etape.nom }}</div>
+                                <div class="text-sm text-slate-500">{{ item.facture.client_nom }}</div>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-slate-500">Aucune relance prévue sur les 60 prochains jours.</p>
+            {% endif %}
+        </section>
+    </div>
 </div>
+
 {% endblock %}
+
+
+
+
+

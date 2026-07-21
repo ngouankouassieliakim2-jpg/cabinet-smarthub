@@ -1,0 +1,64 @@
+{% extends "pilotage/base_pilotage.html" %}
+
+{% block contenu %}
+
+<div class="min-h-screen bg-slate-50 p-6 text-slate-900 lg:p-10">
+    <div class="mx-auto max-w-5xl space-y-8">
+
+        <section class="rounded-[28px] border border-slate-200 bg-gradient-to-br from-white via-[#FCEEF3]/30 to-white p-6 shadow-sm">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                    <div class="inline-flex items-center rounded-full bg-[#C81E6E]/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-[#C81E6E]">Pilotage budgets</div>
+                    <h1 class="mt-3 text-2xl font-bold tracking-tight text-slate-900">Dashboard budgets</h1>
+                    <p class="mt-2 text-sm text-slate-500">Visualisez les dépassements et les consommations par budget.</p>
+                </div>
+                <form method="get" class="w-full lg:w-auto">
+                    <select name="exercice" onchange="this.form.submit()" class="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 focus:border-[#C81E6E] focus:ring-2 focus:ring-[#C81E6E]/20">
+                        {% for a in annees_disponibles %}
+                        <option value="{{ a }}" {% if a == exercice %}selected{% endif %}>{{ a }}</option>
+                        {% endfor %}
+                    </select>
+                </form>
+            </div>
+
+            <div class="mt-6 grid gap-4 sm:grid-cols-2">
+                <div class="rounded-3xl border border-slate-200 bg-slate-50/80 p-5 shadow-sm">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Budgets dépassés (≥100%)</p>
+                    <p class="mt-3 text-3xl font-semibold text-rose-600">{{ nb_depasses }}</p>
+                </div>
+                <div class="rounded-3xl border border-slate-200 bg-slate-50/80 p-5 shadow-sm">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Budgets en alerte (80-99%)</p>
+                    <p class="mt-3 text-3xl font-semibold text-amber-600">{{ nb_alerte }}</p>
+                </div>
+            </div>
+
+            <div class="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+                <canvas id="chartBudgets" class="w-full" height="110"></canvas>
+            </div>
+        </section>
+
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+new Chart(document.getElementById('chartBudgets'), {
+    type: 'bar',
+    data: {
+        labels: {{ labels|safe }},
+        datasets: [
+            { label: 'Alloué', data: {{ alloues|safe }}, backgroundColor: '#93c5fd' },
+            { label: 'Consommé', data: {{ consommes|safe }}, backgroundColor: '#2563eb' },
+        ]
+    },
+    options: {
+        plugins: { legend: { position: 'bottom' } },
+        scales: {
+            x: { grid: { display: false }, ticks: { color: '#475569' } },
+            y: { grid: { color: '#e2e8f0' }, ticks: { color: '#475569' } }
+        }
+    }
+});
+</script>
+
+{% endblock %}

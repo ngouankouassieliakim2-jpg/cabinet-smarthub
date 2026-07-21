@@ -1,5 +1,6 @@
 import json
 from datetime import date
+from decimal import Decimal
 from itertools import chain
 from operator import attrgetter
 from django.shortcuts import render, get_object_or_404, redirect
@@ -11,46 +12,110 @@ from django.utils import timezone
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
-from .models import Devis, LignePrestation, Associe, Facture, LigneFacture, EtapeRelance, Litige, ActionRecouvrement, Paiement, Avoir, Remboursement, Compensation, Fournisseur, ContratFournisseur, CategorieDepense, Depense, PaiementDepense, DocumentDepense, Relance
+from .models import Devis, LignePrestation, Associe, Facture, LigneFacture, EtapeRelance, Litige, ActionRecouvrement, Paiement, Avoir, Remboursement, Compensation, Fournisseur, ContratFournisseur, CategorieDepense, Depense, PaiementDepense, DocumentDepense, Relance, Budget, SeuilApprobation, HistoriqueValidationDepense, BudgetDepasseError, DepenseRecurrente, GenerationDepenseRecurrente, NoteDeFrais, LigneNoteDeFrais, PromessePaiement
 from .forms import (
     PaiementForm, TransitionStatutForm, AvoirForm,
     RemboursementForm, CompensationForm, EtapeRelanceForm,
     LitigeForm, CommentaireLitigeForm, PieceJointeLitigeForm,
     AffectationRecouvreurForm, ActionRecouvrementForm,
     ResolutionLitigeForm, FournisseurForm, ContratFournisseurForm,
-    DepenseForm, DocumentDepenseForm, PaiementDepenseForm, NoteInterneForm,
+    DepenseForm, DocumentDepenseForm, PaiementDepenseForm, NoteInterneForm, BudgetForm,
+    RejetDepenseForm, SeuilApprobationForm, DepenseRecurrenteForm, NoteDeFraisForm,
+    LigneNoteDeFraisForm, RejetNoteDeFraisForm, RemboursementNoteDeFraisForm,
+    PromessePaiementForm,
 )
 from .ia import generer_note_explicative, analyser_dossier
 from parametres.models import CategoriePrestation, PrestationCatalogue
 from django.http import HttpResponse
 from django.contrib import messages
+from django.urls import reverse
 from .pdf import generer_pdf_devis
 from django.contrib.auth.decorators import login_required
 from comptes.decorators import role_requis
 from comptes.models import Profil
 from pilotage.modules_data import charger_sous_modules, get_module_info
+from pilotage.models import Notification
 from core.audit import journaliser
 from core.exports import exporter_csv, exporter_excel
-from core.models import NoteInterne
-from parametres.emails import envoyer_email as notifier_email
+from core.models import NoteInterne, JournalExecutionCommande
+from parametres.emails import envoyer_email as _envoyer_email_brut
+
+
+def notifier_email(destinataire, sujet, message):
+    """Wrapper pour accepter une adresse unique (chaîne) là où envoyer_email
+    attend une liste — évite de modifier les 3 appels existants (detail_creance,
+    detail_depense, valider_ou_rejeter_depense) un par un."""
+    if not destinataire:
+        return False, "Aucune adresse email fournie."
+    return _envoyer_email_brut([destinataire], sujet, message)
 from .kpi import (
     delai_moyen_paiement, taux_impayes, taux_recouvrement,
     clients_a_risque, encaissements_mensuels, creances_par_anciennete,
 )
+from .dashboard import (
+    montants_echu_non_echu, encaisse_aujourdhui, factures_en_litige,
+    factures_promises, total_creances, depenses_du_mois,
+    situation_budgets, situation_validation_depenses,
+)
 from .previsions import previsions_encaissements, repartition_par_anciennete
+from .dashboard import (
+    montants_echu_non_echu, encaisse_aujourdhui, factures_en_litige,
+    factures_promises, total_creances, depenses_du_mois,
+    situation_budgets, situation_validation_depenses,
+)
+from .kpi_depenses import (
+    depenses_par_categorie, depenses_par_fournisseur, depenses_par_service,
+    depenses_par_collaborateur, evolution_annuelle, depassements_budgetaires,
+    fournisseurs_les_plus_couteux,
+)
 
 
 @login_required
 def tableau_kpi(request):
-    debut_annee = date(date.today().year, 1, 1)
+    annee = int(request.GET.get("annee", date.today().year))
+    debut_periode = date(annee, 1, 1)
+
+    delai_moyen = delai_moyen_paiement()
+    t_impayes = taux_impayes(depuis=debut_periode)
+    t_recouvrement = taux_recouvrement(depuis=debut_periode)
+    clients_risque = clients_a_risque()
+    encaissements = encaissements_mensuels()
+    anciennete = creances_par_anciennete()
+
+    if "export" in request.GET:
+        lignes = [
+            {"indicateur": "Délai moyen de paiement (jours)", "valeur": delai_moyen or "—"},
+            {"indicateur": "Taux d'impayés (%)", "valeur": t_impayes},
+            {"indicateur": "Taux de recouvrement (%)", "valeur": t_recouvrement},
+        ] + [
+            {"indicateur": f"Client à risque : {nom}", "valeur": montant} for nom, montant in clients_risque
+        ] + [
+            {"indicateur": f"Encaissement {e['mois'].strftime('%B %Y')}", "valeur": e["total"]} for e in encaissements
+        ]
+        colonnes = [("Indicateur", lambda l: l["indicateur"]), ("Valeur", lambda l: l["valeur"])]
+        journaliser(request, "EXPORT", description=f"Export KPI recouvrement (année {annee})")
+        if request.GET["export"] == "excel":
+            return exporter_excel(lignes, colonnes, f"kpi_recouvrement_{annee}")
+        return exporter_csv(lignes, colonnes, f"kpi_recouvrement_{annee}")
+
+    journaliser(request, "CONSULTATION", description=f"Consultation KPI recouvrement (année {annee})")
+
+    annees_disponibles = range(date.today().year - 3, date.today().year + 1)
+
     context = {
         "module_actif": get_module_info("recouvrement"),
-        "delai_moyen": delai_moyen_paiement(),
-        "taux_impayes": taux_impayes(depuis=debut_annee),
-        "taux_recouvrement": taux_recouvrement(depuis=debut_annee),
-        "clients_risque": clients_a_risque(),
-        "encaissements": encaissements_mensuels(),
-        "anciennete": creances_par_anciennete(),
+        "delai_moyen": delai_moyen,
+        "taux_impayes": t_impayes,
+        "taux_recouvrement": t_recouvrement,
+        "clients_risque": clients_risque,
+        "encaissements": encaissements,
+        "anciennete": anciennete,
+        "annee": annee,
+        "annees_disponibles": annees_disponibles,
+        "encaissements_labels": [e["mois"].strftime("%b %Y") for e in encaissements],
+        "encaissements_valeurs": [float(e["total"]) for e in encaissements],
+        "clients_risque_labels": [nom for nom, _ in clients_risque],
+        "clients_risque_valeurs": [float(montant) for _, montant in clients_risque],
     }
     return render(request, "devis/creances/tableau_kpi.html", context)
 
@@ -58,14 +123,39 @@ def tableau_kpi(request):
 @login_required
 def liste_fournisseurs(request):
     recherche = request.GET.get("q", "").strip()
-    fournisseurs = Fournisseur.objects.all()
+    voir_inactifs = request.GET.get("inactifs") == "1"
+
+    fournisseurs = Fournisseur.objects.filter(actif=not voir_inactifs)
     if recherche:
-        fournisseurs = fournisseurs.filter(raison_sociale__icontains=recherche)
+        fournisseurs = fournisseurs.filter(
+            Q(raison_sociale__icontains=recherche) | Q(ncc__icontains=recherche)
+        )
+
+    notation_filtre = request.GET.get("notation", "")
+    if notation_filtre:
+        fournisseurs = fournisseurs.filter(notation=notation_filtre)
+
+    if "export" in request.GET:
+        colonnes = [
+            ("Raison sociale", lambda f: f.raison_sociale),
+            ("NCC", lambda f: f.ncc),
+            ("Contact", lambda f: f.contact_nom),
+            ("Téléphone", lambda f: f.telephone),
+            ("Total acheté (HT)", lambda f: f.total_achete),
+            ("Nb factures", lambda f: f.nombre_factures),
+            ("Notation", lambda f: f.notation or "—"),
+        ]
+        journaliser(request, "EXPORT", description="Export liste fournisseurs")
+        if request.GET["export"] == "excel":
+            return exporter_excel(fournisseurs, colonnes, "fournisseurs")
+        return exporter_csv(fournisseurs, colonnes, "fournisseurs")
 
     context = {
         "module_actif": get_module_info("recouvrement"),
         "fournisseurs": fournisseurs,
         "recherche": recherche,
+        "voir_inactifs": voir_inactifs,
+        "notation_filtre": notation_filtre,
     }
     return render(request, "devis/depenses/liste_fournisseurs.html", context)
 
@@ -102,27 +192,130 @@ def modifier_fournisseur(request, fournisseur_id):
 @login_required
 def detail_fournisseur(request, fournisseur_id):
     fournisseur = get_object_or_404(Fournisseur, pk=fournisseur_id)
+    fournisseur_ct = ContentType.objects.get_for_model(Fournisseur)
     contrat_form = ContratFournisseurForm()
+    note_form = NoteInterneForm()
 
-    if request.method == "POST" and "ajouter_contrat" in request.POST:
-        contrat_form = ContratFournisseurForm(request.POST, request.FILES)
-        if contrat_form.is_valid():
-            ContratFournisseur.objects.create(fournisseur=fournisseur, **contrat_form.cleaned_data)
-            messages.success(request, "Contrat ajouté.")
+    if request.method == "POST":
+        if "ajouter_contrat" in request.POST:
+            contrat_form = ContratFournisseurForm(request.POST, request.FILES)
+            if contrat_form.is_valid():
+                ContratFournisseur.objects.create(fournisseur=fournisseur, **contrat_form.cleaned_data)
+                journaliser(request, "ACTION_METIER", objet=fournisseur, description="Contrat ajouté")
+                messages.success(request, "Contrat ajouté.")
+                return redirect("devis:detail_fournisseur", fournisseur_id=fournisseur.id)
+
+        elif "ajouter_note" in request.POST:
+            note_form = NoteInterneForm(request.POST)
+            if note_form.is_valid():
+                NoteInterne.objects.create(
+                    content_type=fournisseur_ct,
+                    object_id=fournisseur.id,
+                    auteur=request.user,
+                    message=note_form.cleaned_data["message"],
+                )
+                journaliser(request, "ACTION_METIER", objet=fournisseur, description="Note interne ajoutée")
+                return redirect("devis:detail_fournisseur", fournisseur_id=fournisseur.id)
+
+        elif "basculer_actif" in request.POST:
+            if not _direction_ou_cadre(request.user):
+                raise PermissionDenied
+            fournisseur.actif = not fournisseur.actif
+            fournisseur.save(update_fields=["actif"])
+            journaliser(
+                request,
+                "MODIFICATION",
+                objet=fournisseur,
+                description=f"Fournisseur {'réactivé' if fournisseur.actif else 'désactivé'}",
+            )
+            messages.success(request, "Statut mis à jour.")
             return redirect("devis:detail_fournisseur", fournisseur_id=fournisseur.id)
+
+    journaliser(request, "CONSULTATION", objet=fournisseur)
 
     context = {
         "module_actif": get_module_info("recouvrement"),
         "fournisseur": fournisseur,
         "contrats": fournisseur.contrats.all(),
         "contrat_form": contrat_form,
+        "note_form": note_form,
+        "notes": NoteInterne.objects.filter(content_type=fournisseur_ct, object_id=fournisseur.id).select_related("auteur"),
+        "peut_administrer": _direction_ou_cadre(request.user),
     }
     return render(request, "devis/depenses/detail_fournisseur.html", context)
+
+
+STATUTS_KANBAN_DEPENSES = ["A_PAYER", "PROGRAMME", "PARTIELLEMENT_PAYEE", "EN_RETARD", "PAYEE"]
+
+
+@login_required
+def liste_depenses_recurrentes(request):
+    if not _direction_ou_cadre(request.user):
+        raise PermissionDenied
+
+    recurrentes = DepenseRecurrente.objects.select_related("fournisseur", "categorie").order_by("libelle")
+
+    if "export" in request.GET:
+        colonnes = [
+            ("Libellé", lambda r: r.libelle),
+            ("Fournisseur", lambda r: str(r.fournisseur)),
+            ("Fréquence", lambda r: r.get_frequence_display()),
+            ("Montant HT", lambda r: r.montant_ht),
+            ("Active", lambda r: "Oui" if r.actif else "Non"),
+        ]
+        journaliser(request, "EXPORT", description="Export dépenses récurrentes")
+        if request.GET["export"] == "excel":
+            return exporter_excel(recurrentes, colonnes, "depenses_recurrentes")
+        return exporter_csv(recurrentes, colonnes, "depenses_recurrentes")
+
+    context = {"module_actif": get_module_info("recouvrement"), "recurrentes": recurrentes}
+    return render(request, "devis/depenses/liste_recurrentes.html", context)
+
+
+@login_required
+def creer_depense_recurrente(request):
+    if not _direction_ou_cadre(request.user):
+        raise PermissionDenied
+
+    if request.method == "POST":
+        form = DepenseRecurrenteForm(request.POST)
+        if form.is_valid():
+            recurrente = form.save(commit=False)
+            recurrente.cree_par = request.user
+            recurrente.save()
+            journaliser(request, "CREATION", objet=recurrente, description="Dépense récurrente créée")
+            messages.success(request, "Dépense récurrente créée.")
+            return redirect("devis:detail_depense_recurrente", recurrente_id=recurrente.id)
+    else:
+        form = DepenseRecurrenteForm()
+
+    return render(request, "devis/depenses/form_recurrente.html", {
+        "module_actif": get_module_info("recouvrement"), "form": form, "creation": True,
+    })
+
+
+@login_required
+def detail_depense_recurrente(request, recurrente_id):
+    if not _direction_ou_cadre(request.user):
+        raise PermissionDenied
+
+    recurrente = get_object_or_404(DepenseRecurrente, pk=recurrente_id)
+    journaliser(request, "CONSULTATION", objet=recurrente)
+
+    context = {
+        "module_actif": get_module_info("recouvrement"),
+        "recurrente": recurrente,
+        "generations": recurrente.generations.select_related("depense").order_by("-date_echeance"),
+    }
+    return render(request, "devis/depenses/detail_recurrente.html", context)
 
 
 @login_required
 def liste_depenses(request):
     depenses = Depense.objects.select_related("fournisseur", "categorie").order_by("-date_facture")
+
+    voir_archivees = request.GET.get("archivees") == "1"
+    depenses = depenses.filter(archive=voir_archivees)
 
     statut = request.GET.get("statut", "")
     if statut:
@@ -132,6 +325,26 @@ def liste_depenses(request):
     if fournisseur_id:
         depenses = depenses.filter(fournisseur_id=fournisseur_id)
 
+    recherche = request.GET.get("q", "").strip()
+    if recherche:
+        depenses = depenses.filter(
+            Q(numero_depense__icontains=recherche) | Q(fournisseur__raison_sociale__icontains=recherche)
+        )
+
+    if "export" in request.GET:
+        colonnes = [
+            ("N° dépense", lambda d: d.numero_depense),
+            ("Fournisseur", lambda d: str(d.fournisseur)),
+            ("Catégorie", lambda d: str(d.categorie)),
+            ("Échéance", lambda d: d.date_echeance),
+            ("Montant TTC", lambda d: d.montant_ttc),
+            ("Statut", lambda d: d.get_statut_display()),
+        ]
+        journaliser(request, "EXPORT", description="Export liste des dépenses")
+        if request.GET["export"] == "excel":
+            return exporter_excel(depenses, colonnes, "depenses")
+        return exporter_csv(depenses, colonnes, "depenses")
+
     context = {
         "module_actif": get_module_info("recouvrement"),
         "depenses": depenses,
@@ -139,8 +352,21 @@ def liste_depenses(request):
         "fournisseurs": Fournisseur.objects.filter(actif=True),
         "filtre_statut": statut,
         "filtre_fournisseur": fournisseur_id,
+        "filtre_recherche": recherche,
+        "voir_archivees": voir_archivees,
+        "total_ttc": sum((d.montant_ttc for d in depenses), Decimal("0")),
     }
     return render(request, "devis/depenses/liste_depenses.html", context)
+
+
+@login_required
+def kanban_depenses(request):
+    colonnes = []
+    for code in STATUTS_KANBAN_DEPENSES:
+        depenses = Depense.objects.filter(statut=code, archive=False).select_related("fournisseur")[:50]
+        colonnes.append({"code": code, "libelle": dict(Depense.STATUT_CHOICES)[code], "depenses": depenses})
+    context = {"module_actif": get_module_info("recouvrement"), "colonnes": colonnes}
+    return render(request, "devis/depenses/kanban_depenses.html", context)
 
 
 @login_required
@@ -160,42 +386,332 @@ def creer_depense(request):
 
 
 @login_required
+def liste_budgets(request):
+    budgets = Budget.objects.select_related("categorie").order_by("-exercice", "categorie__nom")
+
+    exercice_filtre = request.GET.get("exercice", str(date.today().year))
+    if exercice_filtre:
+        budgets = budgets.filter(exercice=exercice_filtre)
+
+    categorie_id = request.GET.get("categorie", "")
+    if categorie_id:
+        budgets = budgets.filter(categorie_id=categorie_id)
+
+    budgets = list(budgets)
+
+    if "export" in request.GET:
+        colonnes = [
+            ("Catégorie", lambda b: str(b.categorie)),
+            ("Période", lambda b: f"{b.mois}/{b.exercice}" if b.mois else str(b.exercice)),
+            ("Alloué", lambda b: b.montant_alloue),
+            ("Consommé", lambda b: b.consomme),
+            ("Disponible", lambda b: b.disponible),
+            ("Taux (%)", lambda b: b.taux_consommation),
+        ]
+        journaliser(request, "EXPORT", description="Export liste des budgets")
+        if request.GET["export"] == "excel":
+            return exporter_excel(budgets, colonnes, "budgets")
+        return exporter_csv(budgets, colonnes, "budgets")
+
+    context = {
+        "module_actif": get_module_info("recouvrement"),
+        "budgets": budgets,
+        "categories": CategorieDepense.objects.all(),
+        "exercice_filtre": exercice_filtre,
+        "categorie_filtre": categorie_id,
+        "annees_disponibles": range(date.today().year - 2, date.today().year + 2),
+        "total_alloue": sum((b.montant_alloue for b in budgets), Decimal("0")),
+        "total_consomme": sum((b.consomme for b in budgets), Decimal("0")),
+    }
+    return render(request, "devis/depenses/liste_budgets.html", context)
+
+
+@login_required
+def creer_budget(request):
+    if not _direction_ou_cadre(request.user):
+        raise PermissionDenied
+    if request.method == "POST":
+        form = BudgetForm(request.POST)
+        if form.is_valid():
+            budget = form.save(commit=False)
+            budget.cree_par = request.user
+            budget.save()
+            journaliser(request, "CREATION", objet=budget, description="Budget créé")
+            messages.success(request, "Budget créé.")
+            return redirect("devis:detail_budget", budget_id=budget.id)
+    else:
+        form = BudgetForm(initial={"exercice": date.today().year})
+    return render(request, "devis/depenses/form_budget.html", {
+        "module_actif": get_module_info("recouvrement"), "form": form, "creation": True})
+
+
+@login_required
+def modifier_budget(request, budget_id):
+    if not _direction_ou_cadre(request.user):
+        raise PermissionDenied
+    budget = get_object_or_404(Budget, pk=budget_id)
+    if request.method == "POST":
+        form = BudgetForm(request.POST, instance=budget)
+        if form.is_valid():
+            form.save()
+            journaliser(request, "MODIFICATION", objet=budget, description="Budget modifié")
+            messages.success(request, "Budget mis à jour.")
+            return redirect("devis:detail_budget", budget_id=budget.id)
+    else:
+        form = BudgetForm(instance=budget)
+    return render(request, "devis/depenses/form_budget.html", {
+        "module_actif": get_module_info("recouvrement"), "form": form, "creation": False, "budget": budget})
+
+
+@login_required
+def detail_budget(request, budget_id):
+    budget = get_object_or_404(Budget, pk=budget_id)
+    budget_ct = ContentType.objects.get_for_model(Budget)
+    note_form = NoteInterneForm()
+
+    debut, fin = budget._bornes_periode()
+    depenses_liees = Depense.objects.filter(
+        categorie=budget.categorie, date_facture__gte=debut, date_facture__lte=fin,
+    ).exclude(statut="ANNULEE").select_related("fournisseur").order_by("-date_facture")
+
+    if request.method == "POST" and "ajouter_note" in request.POST:
+        note_form = NoteInterneForm(request.POST)
+        if note_form.is_valid():
+            NoteInterne.objects.create(
+                content_type=budget_ct, object_id=budget.id,
+                auteur=request.user, message=note_form.cleaned_data["message"])
+            return redirect("devis:detail_budget", budget_id=budget.id)
+
+    journaliser(request, "CONSULTATION", objet=budget)
+
+    context = {
+        "module_actif": get_module_info("recouvrement"),
+        "budget": budget,
+        "depenses_liees": depenses_liees,
+        "note_form": note_form,
+        "notes": NoteInterne.objects.filter(content_type=budget_ct, object_id=budget.id).select_related("auteur"),
+        "peut_administrer": _direction_ou_cadre(request.user),
+    }
+    return render(request, "devis/depenses/detail_budget.html", context)
+
+
+@login_required
+def dashboard_budgets(request):
+    exercice = int(request.GET.get("exercice", date.today().year))
+    budgets = list(Budget.objects.filter(exercice=exercice, actif=True).select_related("categorie"))
+
+    journaliser(request, "CONSULTATION", description=f"Consultation dashboard budgets {exercice}")
+
+    context = {
+        "module_actif": get_module_info("recouvrement"),
+        "budgets": budgets,
+        "exercice": exercice,
+        "annees_disponibles": range(date.today().year - 2, date.today().year + 2),
+        "labels": [str(b.categorie) for b in budgets],
+        "alloues": [float(b.montant_alloue) for b in budgets],
+        "consommes": [float(b.consomme) for b in budgets],
+        "nb_depasses": sum(1 for b in budgets if b.taux_consommation >= 100),
+        "nb_alerte": sum(1 for b in budgets if 80 <= b.taux_consommation < 100),
+    }
+    return render(request, "devis/depenses/dashboard_budgets.html", context)
+
+
+@login_required
+def dashboard_executif(request):
+    if not _direction_ou_cadre(request.user):
+        raise PermissionDenied
+
+    annee = int(request.GET.get("annee", date.today().year))
+    debut_annee = date(annee, 1, 1)
+
+    previsions = previsions_encaissements()
+    anciennete = creances_par_anciennete()
+    clients_risque = clients_a_risque(limite=10)
+    encaissements = encaissements_mensuels()
+    delai_moyen = delai_moyen_paiement()
+    t_recouvrement = taux_recouvrement(depuis=debut_annee)
+    t_impayes = taux_impayes(depuis=debut_annee)
+
+    depassements = depassements_budgetaires(exercice=annee)
+    evo_depenses = evolution_annuelle()
+
+    echu_non_echu = montants_echu_non_echu()
+    budgets_situation = situation_budgets(exercice=annee)
+    validation_depenses = situation_validation_depenses()
+
+    if "export" in request.GET:
+        lignes = [
+            {"indicateur": "Total créances", "valeur": total_creances()},
+            {"indicateur": "Montant échu", "valeur": echu_non_echu["echu"]},
+            {"indicateur": "Montant non échu", "valeur": echu_non_echu["non_echu"]},
+            {"indicateur": "Encaissé aujourd'hui", "valeur": encaisse_aujourdhui()},
+            {"indicateur": "Factures en litige", "valeur": factures_en_litige()},
+            {"indicateur": "Factures promises", "valeur": factures_promises()},
+            {"indicateur": "Taux de recouvrement (%)", "valeur": t_recouvrement},
+            {"indicateur": "Taux d'impayés (%)", "valeur": t_impayes},
+            {"indicateur": "DSO (délai moyen, jours)", "valeur": delai_moyen or "—"},
+            {"indicateur": "Dépenses du mois", "valeur": depenses_du_mois()},
+            {"indicateur": "Budget alloué", "valeur": budgets_situation["alloue"]},
+            {"indicateur": "Budget consommé", "valeur": budgets_situation["consomme"]},
+            {"indicateur": "Budget disponible", "valeur": budgets_situation["disponible"]},
+            {"indicateur": "Dépenses en attente de validation", "valeur": validation_depenses["en_attente"]},
+            {"indicateur": "Dépenses refusées", "valeur": validation_depenses["refusees"]},
+        ]
+        colonnes = [("Indicateur", lambda l: l["indicateur"]), ("Valeur", lambda l: l["valeur"])]
+        journaliser(request, "EXPORT", description=f"Export Dashboard exécutif (année {annee})")
+        if request.GET["export"] == "excel":
+            return exporter_excel(lignes, colonnes, f"dashboard_executif_{annee}")
+        return exporter_csv(lignes, colonnes, f"dashboard_executif_{annee}")
+
+    journaliser(request, "CONSULTATION", description=f"Consultation Dashboard exécutif (année {annee})")
+
+    context = {
+        "module_actif": get_module_info("recouvrement"),
+        "annee": annee,
+        "annees_disponibles": range(date.today().year - 3, date.today().year + 1),
+        "total_creances": total_creances(),
+        "echu": echu_non_echu["echu"],
+        "non_echu": echu_non_echu["non_echu"],
+        "encaisse_jour": encaisse_aujourdhui(),
+        "nb_litiges": factures_en_litige(),
+        "nb_promesses": factures_promises(),
+        "taux_recouvrement": t_recouvrement,
+        "taux_impayes": t_impayes,
+        "delai_moyen": delai_moyen,
+        "anciennete": anciennete,
+        "clients_risque": clients_risque,
+        "depenses_mois": depenses_du_mois(),
+        "budgets": budgets_situation,
+        "depassements": depassements,
+        "validation_depenses": validation_depenses,
+        "encaissements_labels": [e["mois"].strftime("%b %Y") for e in encaissements],
+        "encaissements_valeurs": [float(e["total"]) for e in encaissements],
+        "clients_risque_labels": [nom for nom, _ in clients_risque],
+        "clients_risque_valeurs": [float(m) for _, m in clients_risque],
+        "evo_dep_labels": [e["annee"].strftime("%Y") for e in evo_depenses],
+        "evo_dep_valeurs": [float(e["total"]) for e in evo_depenses],
+        "previsions_labels": ["Semaine", "Mois", "Trimestre"],
+        "previsions_valeurs": [
+            float(previsions["semaine"]["pondere"]),
+            float(previsions["mois"]["pondere"]),
+            float(previsions["trimestre"]["pondere"]),
+        ],
+    }
+    return render(request, "devis/dashboard_executif.html", context)
+
+
+@login_required
 def detail_depense(request, depense_id):
     depense = get_object_or_404(Depense, pk=depense_id)
+    depense_ct = ContentType.objects.get_for_model(Depense)
     document_form = DocumentDepenseForm()
     paiement_form = PaiementDepenseForm(depense=depense)
+    note_form = NoteInterneForm()
 
     if request.method == "POST":
         if "ajouter_document" in request.POST:
             document_form = DocumentDepenseForm(request.POST, request.FILES)
             if document_form.is_valid():
-                DocumentDepense.objects.create(depense=depense, **document_form.cleaned_data)
+                doc = DocumentDepense.objects.create(depense=depense, **document_form.cleaned_data)
+                journaliser(request, "ACTION_METIER", objet=depense, description=f"Document ajouté : {doc.get_type_document_display()}")
                 messages.success(request, "Document ajouté.")
                 return redirect("devis:detail_depense", depense_id=depense.id)
+
+        elif "soumettre" in request.POST:
+            try:
+                depense.soumettre(utilisateur=request.user)
+                journaliser(request, "ACTION_METIER", objet=depense, description="Dépense soumise pour validation")
+                messages.success(request, f"Dépense soumise (niveau requis : {depense.get_niveau_requis_display()}).")
+            except BudgetDepasseError as e:
+                journaliser(request, "ACTION_METIER", objet=depense, description=f"Soumission bloquée : {e}")
+                if _direction_ou_cadre(request.user):
+                    messages.error(request, f"{e} Une dérogation est possible ci-dessous si cette dépense est justifiée.")
+                else:
+                    messages.error(request, f"{e} Contactez la Direction pour une dérogation si cette dépense est justifiée.")
+            except ValueError as e:
+                messages.error(request, str(e))
+            return redirect("devis:detail_depense", depense_id=depense.id)
+
+        elif "demander_derogation" in request.POST:
+            if not _direction_ou_cadre(request.user):
+                raise PermissionDenied
+            motif = request.POST.get("motif_derogation", "").strip()
+            if not motif:
+                messages.error(request, "Un motif est requis pour la dérogation.")
+            else:
+                depense.accorder_derogation(motif, utilisateur=request.user)
+                journaliser(request, "ACTION_METIER", objet=depense, description="Dérogation budgétaire accordée")
+                messages.success(request, "Dérogation accordée. Vous pouvez maintenant soumettre la dépense.")
+            return redirect("devis:detail_depense", depense_id=depense.id)
 
         elif "enregistrer_paiement" in request.POST:
             paiement_form = PaiementDepenseForm(request.POST, request.FILES, depense=depense)
             if paiement_form.is_valid():
-                depense.enregistrer_paiement(
-                    montant=paiement_form.cleaned_data["montant"],
-                    utilisateur=request.user,
-                    date_paiement=paiement_form.cleaned_data["date_paiement"],
-                    mode_paiement=paiement_form.cleaned_data["mode_paiement"],
-                    reference_bancaire=paiement_form.cleaned_data["reference_bancaire"],
-                    justificatif=paiement_form.cleaned_data["justificatif"],
-                    commentaire=paiement_form.cleaned_data["commentaire"],
-                )
-                messages.success(request, "Paiement enregistré.")
+                try:
+                    depense.enregistrer_paiement(
+                        montant=paiement_form.cleaned_data["montant"],
+                        utilisateur=request.user,
+                        date_paiement=paiement_form.cleaned_data["date_paiement"],
+                        mode_paiement=paiement_form.cleaned_data["mode_paiement"],
+                        reference_bancaire=paiement_form.cleaned_data["reference_bancaire"],
+                        justificatif=paiement_form.cleaned_data["justificatif"],
+                        commentaire=paiement_form.cleaned_data["commentaire"],
+                    )
+                    journaliser(request, "ACTION_METIER", objet=depense, description="Paiement enregistré")
+                    if depense.solde_restant <= 0 and depense.fournisseur.email:
+                        notifier_email(
+                            depense.fournisseur.email,
+                            f"Dépense {depense.numero_depense} soldée",
+                            f"La dépense {depense.numero_depense} a été intégralement réglée par le Cabinet K&L.",
+                        )
+                    messages.success(request, "Paiement enregistré.")
+                except ValueError as e:
+                    messages.error(request, str(e))
                 return redirect("devis:detail_depense", depense_id=depense.id)
 
+        elif "ajouter_note" in request.POST:
+            note_form = NoteInterneForm(request.POST)
+            if note_form.is_valid():
+                NoteInterne.objects.create(
+                    content_type=depense_ct,
+                    object_id=depense.id,
+                    auteur=request.user,
+                    message=note_form.cleaned_data["message"],
+                )
+                journaliser(request, "ACTION_METIER", objet=depense, description="Note interne ajoutée")
+                return redirect("devis:detail_depense", depense_id=depense.id)
+
+        elif "archiver" in request.POST:
+            if not _direction_ou_cadre(request.user):
+                raise PermissionDenied
+            try:
+                depense.archiver(utilisateur=request.user)
+                journaliser(request, "ACTION_METIER", objet=depense, description="Dépense archivée")
+                messages.success(request, "Dépense archivée.")
+            except ValueError as e:
+                messages.error(request, str(e))
+            return redirect("devis:liste_depenses")
+
+    journaliser(request, "CONSULTATION", objet=depense)
+
+    ok_budget, budget_concerne, message_budget = depense.verifier_budget() if depense.statut_validation == "BROUILLON" else (None, None, None)
     context = {
         "module_actif": get_module_info("recouvrement"),
         "depense": depense,
         "document_form": document_form,
         "paiement_form": paiement_form,
+        "note_form": note_form,
         "documents": depense.documents.all(),
         "paiements": depense.paiements.select_related("utilisateur").order_by("-date_paiement"),
         "historique": depense.historique_statuts.select_related("utilisateur").order_by("-date_changement"),
+        "notes": NoteInterne.objects.filter(content_type=depense_ct, object_id=depense.id).select_related("auteur"),
+        "peut_archiver": _direction_ou_cadre(request.user) and depense.statut in ("PAYEE", "ANNULEE"),
+        "peut_soumettre": depense.statut_validation == "BROUILLON",
+        "peut_payer": depense.statut_validation == "VALIDEE",
+        "peut_administrer": _direction_ou_cadre(request.user),
+        "ok_budget": ok_budget,
+        "budget_concerne": budget_concerne,
+        "message_budget": message_budget,
     }
     return render(request, "devis/depenses/detail_depense.html", context)
 
@@ -326,6 +842,9 @@ def facture_certifier(request, facture_id):
 
 @login_required
 def previsions_tresorerie(request):
+    if not _direction_ou_cadre(request.user):
+        raise PermissionDenied
+
     debut_annee = date(date.today().year, 1, 1)
     previsions = previsions_encaissements()
     anciennete = creances_par_anciennete()
@@ -362,6 +881,257 @@ def previsions_tresorerie(request):
 def _direction_ou_cadre(user):
     profil = getattr(user, "profil", None)
     return profil and profil.role in (Profil.Role.DIRECTION, Profil.Role.CADRE)
+
+
+def _utilisateurs_recouvreurs():
+    return [
+        utilisateur for utilisateur in User.objects.filter(is_active=True).select_related("profil").prefetch_related("profil__postes_secondaires")
+        if getattr(getattr(utilisateur, "profil", None), "est_recouvreur", lambda: False)()
+    ]
+
+
+def _niveau_utilisateur(user):
+    profil = getattr(user, "profil", None)
+    if not profil:
+        return None
+    if profil.role == Profil.Role.DIRECTION:
+        return "DIRECTION"
+    if profil.role == Profil.Role.CADRE:
+        return "CADRE"
+    return None
+
+
+@login_required
+def liste_notes_de_frais(request):
+    notes = NoteDeFrais.objects.filter(collaborateur=request.user).select_related("collaborateur").order_by("-date_creation")
+    return render(request, "devis/depenses/liste_notes_de_frais.html", {
+        "module_actif": get_module_info("recouvrement"),
+        "notes": notes,
+    })
+
+
+@login_required
+def creer_note_de_frais(request):
+    if request.method == "POST":
+        form = NoteDeFraisForm(request.POST)
+        if form.is_valid():
+            note = form.save(commit=False)
+            note.collaborateur = request.user
+            note.save()
+            messages.success(request, "Note de frais créée.")
+            return redirect("devis:detail_note_de_frais", note_id=note.id)
+    else:
+        form = NoteDeFraisForm()
+    return render(request, "devis/depenses/form_note_de_frais.html", {
+        "module_actif": get_module_info("recouvrement"),
+        "form": form,
+        "creation": True,
+    })
+
+
+@login_required
+def detail_note_de_frais(request, note_id):
+    note = get_object_or_404(NoteDeFrais, pk=note_id)
+    if note.collaborateur_id != request.user.id and not _direction_ou_cadre(request.user):
+        raise PermissionDenied
+
+    ligne_form = LigneNoteDeFraisForm()
+    rejet_form = RejetNoteDeFraisForm()
+    remboursement_form = RemboursementNoteDeFraisForm()
+
+    if request.method == "POST":
+        if "ajouter_ligne" in request.POST:
+            ligne_form = LigneNoteDeFraisForm(request.POST)
+            if ligne_form.is_valid():
+                LigneNoteDeFrais.objects.create(note=note, **ligne_form.cleaned_data)
+                messages.success(request, "Ligne ajoutée.")
+                return redirect("devis:detail_note_de_frais", note_id=note.id)
+        elif "soumettre" in request.POST:
+            note.soumettre(utilisateur=request.user)
+            messages.success(request, "Note soumise pour validation.")
+            return redirect("devis:detail_note_de_frais", note_id=note.id)
+        elif "valider" in request.POST:
+            if not _direction_ou_cadre(request.user):
+                raise PermissionDenied
+            note.valider(utilisateur=request.user)
+            messages.success(request, "Note validée.")
+            return redirect("devis:detail_note_de_frais", note_id=note.id)
+        elif "rejeter" in request.POST:
+            if not _direction_ou_cadre(request.user):
+                raise PermissionDenied
+            rejet_form = RejetNoteDeFraisForm(request.POST)
+            if rejet_form.is_valid():
+                note.rejeter(rejet_form.cleaned_data["motif"], utilisateur=request.user)
+                messages.success(request, "Note rejetée.")
+                return redirect("devis:detail_note_de_frais", note_id=note.id)
+        elif "rembourser" in request.POST:
+            if not _direction_ou_cadre(request.user):
+                raise PermissionDenied
+            remboursement_form = RemboursementNoteDeFraisForm(request.POST)
+            if remboursement_form.is_valid():
+                note.marquer_remboursee(
+                    mode=remboursement_form.cleaned_data["mode"],
+                    reference=remboursement_form.cleaned_data["reference"],
+                    date_remb=remboursement_form.cleaned_data["date_remb"],
+                    utilisateur=request.user,
+                )
+                messages.success(request, "Note marquée comme remboursée.")
+                return redirect("devis:detail_note_de_frais", note_id=note.id)
+
+    context = {
+        "module_actif": get_module_info("recouvrement"),
+        "note": note,
+        "lignes": note.lignes.all(),
+        "ligne_form": ligne_form,
+        "rejet_form": rejet_form,
+        "remboursement_form": remboursement_form,
+        "peut_modifier": note.collaborateur_id == request.user.id and note.statut == "BROUILLON",
+        "peut_soumettre": note.collaborateur_id == request.user.id and note.statut == "BROUILLON",
+        "peut_valider": _direction_ou_cadre(request.user) and note.statut == "SOUMISE",
+        "peut_rejeter": _direction_ou_cadre(request.user) and note.statut == "SOUMISE",
+        "peut_rembourser": _direction_ou_cadre(request.user) and note.statut == "VALIDEE",
+    }
+    return render(request, "devis/depenses/detail_note_de_frais.html", context)
+
+
+@login_required
+def kpi_depenses(request):
+    if not _direction_ou_cadre(request.user):
+        raise PermissionDenied
+
+    annee = int(request.GET.get("annee", date.today().year))
+    debut_periode = date(annee, 1, 1)
+
+    par_categorie = depenses_par_categorie(depuis=debut_periode)
+    par_fournisseur = depenses_par_fournisseur(depuis=debut_periode)
+    par_service = depenses_par_service(depuis=debut_periode)
+    par_collaborateur = depenses_par_collaborateur(depuis=debut_periode)
+    evolution = evolution_annuelle()
+    depassements = depassements_budgetaires(exercice=annee)
+    top_fournisseurs = fournisseurs_les_plus_couteux(depuis=debut_periode)
+
+    if "export" in request.GET:
+        lignes = (
+            [{"indicateur": f"Catégorie : {c['categorie__nom']}", "valeur": c["total"]} for c in par_categorie] +
+            [{"indicateur": f"Fournisseur : {f['fournisseur__raison_sociale']}", "valeur": f["total"]} for f in par_fournisseur] +
+            [{"indicateur": f"Service : {s['cree_par__profil__pole__nom']}", "valeur": s["total"]} for s in par_service] +
+            [{"indicateur": f"Dépassement budgétaire : {b.categorie}", "valeur": f"{b.taux_consommation}%"} for b in depassements]
+        )
+        colonnes = [("Indicateur", lambda l: l["indicateur"]), ("Valeur", lambda l: l["valeur"])]
+        journaliser(request, "EXPORT", description=f"Export KPI dépenses (année {annee})")
+        if request.GET["export"] == "excel":
+            return exporter_excel(lignes, colonnes, f"kpi_depenses_{annee}")
+        return exporter_csv(lignes, colonnes, f"kpi_depenses_{annee}")
+
+    journaliser(request, "CONSULTATION", description=f"Consultation KPI dépenses (année {annee})")
+
+    context = {
+        "module_actif": get_module_info("recouvrement"),
+        "annee": annee,
+        "annees_disponibles": range(date.today().year - 3, date.today().year + 1),
+        "par_categorie": par_categorie,
+        "par_fournisseur": par_fournisseur,
+        "par_service": par_service,
+        "par_collaborateur": par_collaborateur,
+        "depassements": depassements,
+        "top_fournisseurs": top_fournisseurs,
+        "cat_labels": [c["categorie__nom"] or "Non catégorisé" for c in par_categorie],
+        "cat_valeurs": [float(c["total"]) for c in par_categorie],
+        "evo_labels": [e["annee"].strftime("%Y") for e in evolution],
+        "evo_valeurs": [float(e["total"]) for e in evolution],
+        "four_labels": [f["fournisseur__raison_sociale"] or "—" for f in top_fournisseurs],
+        "four_valeurs": [float(f["total"]) for f in top_fournisseurs],
+    }
+    return render(request, "devis/depenses/kpi_depenses.html", context)
+
+
+@login_required
+def file_attente_validation(request):
+    niveau = _niveau_utilisateur(request.user)
+    if niveau is None:
+        raise PermissionDenied
+
+    if niveau == "DIRECTION":
+        depenses = Depense.objects.filter(statut_validation="SOUMISE")
+    else:
+        depenses = Depense.objects.filter(statut_validation="SOUMISE", niveau_requis="CADRE")
+
+    depenses = depenses.select_related("fournisseur", "categorie", "soumise_par").order_by("date_soumission")
+
+    context = {
+        "module_actif": get_module_info("recouvrement"),
+        "depenses": depenses,
+        "mon_niveau": niveau,
+    }
+    return render(request, "devis/depenses/file_attente_validation.html", context)
+
+
+@login_required
+def valider_ou_rejeter_depense(request, depense_id):
+    depense = get_object_or_404(Depense, pk=depense_id)
+    niveau = _niveau_utilisateur(request.user)
+
+    if depense.statut_validation != "SOUMISE":
+        messages.error(request, "Cette dépense n'est plus en attente de validation.")
+        return redirect("devis:detail_depense", depense_id=depense.id)
+
+    if niveau != depense.niveau_requis and niveau != "DIRECTION":
+        raise PermissionDenied
+
+    rejet_form = RejetDepenseForm()
+
+    if request.method == "POST":
+        if "valider" in request.POST:
+            depense.valider(utilisateur=request.user)
+            journaliser(request, "ACTION_METIER", objet=depense, description="Dépense validée")
+            if depense.soumise_par and depense.soumise_par.email:
+                notifier_email(
+                    depense.soumise_par.email,
+                    f"Dépense {depense.numero_depense} validée",
+                    "Votre dépense a été validée et peut maintenant être payée.",
+                )
+            messages.success(request, "Dépense validée.")
+            return redirect("devis:file_attente_validation")
+
+        elif "rejeter" in request.POST:
+            rejet_form = RejetDepenseForm(request.POST)
+            if rejet_form.is_valid():
+                depense.rejeter(rejet_form.cleaned_data["motif"], utilisateur=request.user)
+                journaliser(request, "ACTION_METIER", objet=depense, description="Dépense rejetée")
+                Notification.objects.get_or_create(
+                    cle=f"depense_rejetee_{depense.id}",
+                    defaults={
+                        "type_notification": "budget_alerte",
+                        "titre": f"Dépense rejetée — {depense.numero_depense}"[:200],
+                        "message": rejet_form.cleaned_data["motif"][:300],
+                        "url": reverse("devis:detail_depense", args=[depense.id]),
+                        "destinataire": depense.soumise_par,
+                    },
+                )
+                if depense.soumise_par and depense.soumise_par.email:
+                    notifier_email(
+                        depense.soumise_par.email,
+                        f"Dépense rejetée — {depense.numero_depense}",
+                        "Votre dépense a été rejetée : " + rejet_form.cleaned_data["motif"],
+                    )
+                messages.success(request, "Dépense rejetée.")
+                return redirect("devis:file_attente_validation")
+
+    journaliser(request, "CONSULTATION", objet=depense, description="Consultation dépense en attente de validation")
+    return render(request, "devis/depenses/valider_depense.html", {
+        "module_actif": get_module_info("recouvrement"),
+        "depense": depense,
+        "rejet_form": rejet_form,
+        "niveau": niveau,
+    })
+
+@login_required
+def config_seuils_approbation(request):
+    if not _direction_ou_cadre(request.user):
+        raise PermissionDenied
+    seuils = SeuilApprobation.objects.all().order_by("borne_min")
+    context = {"module_actif": get_module_info("recouvrement"), "seuils": seuils}
+    return render(request, "devis/depenses/config_seuils.html", context)
 
 
 def _contexte_devis(actif_sous="devis", extra=None):
@@ -450,12 +1220,6 @@ def liste_creances(request):
         return exporter_csv(factures, colonnes, "creances")
 
     factures = list(factures)
-    for f in factures:
-        f.est_en_retard_affichage = (
-            f.statut in STATUTS_EN_RETARD_POSSIBLES
-            and f.date_echeance is not None
-            and f.date_echeance < aujourdhui
-        )
 
     total_creances = sum((f.montant_ttc for f in factures), 0)
     total_solde = sum((f.solde_restant_calc for f in factures), 0)
@@ -487,6 +1251,7 @@ def kanban_creances(request):
             "libelle": dict(Facture.STATUT_CHOICES)[code],
             "factures": factures,
         })
+    journaliser(request, "CONSULTATION", description="Consultation kanban des créances")
     return render(request, "devis/creances/kanban.html", {
         "module_actif": get_module_info("recouvrement"),
         "colonnes": colonnes,
@@ -503,8 +1268,15 @@ def detail_creance(request, facture_id):
     avoir_form = AvoirForm(facture=facture)
     remboursement_form = RemboursementForm(facture=facture)
     compensation_form = CompensationForm(facture=facture)
+    promesse_form = PromessePaiementForm()
+    promesse_active = facture.promesses.filter(statut="EN_COURS").first()
     litige_form = LitigeForm()
     affectation_form = AffectationRecouvreurForm(initial={"recouvreur": facture.recouvreur})
+    recouvreurs_disponibles = [
+        utilisateur for utilisateur in User.objects.filter(is_active=True).select_related("profil").prefetch_related("profil__postes_secondaires")
+        if getattr(getattr(utilisateur, "profil", None), "est_recouvreur", lambda: False)()
+    ]
+    aucun_recouvreur_configure = not recouvreurs_disponibles
     action_form = ActionRecouvrementForm()
     commentaire_form = CommentaireLitigeForm()
     piece_form = PieceJointeLitigeForm()
@@ -602,6 +1374,33 @@ def detail_creance(request, facture_id):
                 except ValueError as e:
                     compensation_form.add_error(None, str(e))
 
+        elif "enregistrer_promesse" in request.POST:
+            promesse_form = PromessePaiementForm(request.POST)
+            if promesse_form.is_valid():
+                try:
+                    facture.enregistrer_promesse(
+                        montant_promis=promesse_form.cleaned_data["montant_promis"],
+                        date_promise=promesse_form.cleaned_data["date_promise"],
+                        commentaire=promesse_form.cleaned_data["commentaire"],
+                        responsable=request.user,
+                    )
+                    journaliser(request, "ACTION_METIER", objet=facture, description="Promesse de paiement enregistrée")
+                    messages.success(request, "Promesse enregistrée.")
+                    return redirect("devis:detail_creance", facture_id=facture.id)
+                except ValueError as e:
+                    promesse_form.add_error(None, str(e))
+
+        elif "annuler_promesse" in request.POST:
+            promesse_id = request.POST.get("promesse_id")
+            promesse = get_object_or_404(PromessePaiement, pk=promesse_id, facture=facture)
+            try:
+                promesse.annuler(utilisateur=request.user)
+                journaliser(request, "ACTION_METIER", objet=facture, description="Promesse de paiement annulée")
+                messages.success(request, "Promesse annulée.")
+            except ValueError as e:
+                messages.error(request, str(e))
+            return redirect("devis:detail_creance", facture_id=facture.id)
+
         elif "affecter_recouvreur" in request.POST:
             if not _direction_ou_cadre(request.user):
                 raise PermissionDenied
@@ -642,6 +1441,8 @@ def detail_creance(request, facture_id):
                     litige_form.add_error(None, str(e))
 
         elif "passer_en_cours" in request.POST:
+            if not _direction_ou_cadre(request.user):
+                raise PermissionDenied
             litige_id = request.POST.get("litige_id")
             litige = get_object_or_404(Litige, pk=litige_id, facture=facture)
             try:
@@ -653,6 +1454,8 @@ def detail_creance(request, facture_id):
                 messages.error(request, str(e))
 
         elif "resoudre_litige" in request.POST:
+            if not _direction_ou_cadre(request.user):
+                raise PermissionDenied
             resolution_form = ResolutionLitigeForm(request.POST)
             litige_id = request.POST.get("litige_id")
             litige = get_object_or_404(Litige, pk=litige_id, facture=facture)
@@ -669,6 +1472,8 @@ def detail_creance(request, facture_id):
                     resolution_form.add_error(None, str(e))
 
         elif "abandonner_litige" in request.POST:
+            if not _direction_ou_cadre(request.user):
+                raise PermissionDenied
             litige_id = request.POST.get("litige_id")
             litige = get_object_or_404(Litige, pk=litige_id, facture=facture)
             try:
@@ -741,6 +1546,9 @@ def detail_creance(request, facture_id):
         "remboursements": facture.remboursements.select_related("utilisateur").order_by("-date_remboursement"),
         "compensations_emises": facture.compensations_emises.order_by("-date_creation"),
         "compensations_recues": facture.compensations_recues.order_by("-date_creation"),
+        "promesse_form": promesse_form,
+        "promesse_active": promesse_active,
+        "historique_promesses": facture.promesses.exclude(statut="EN_COURS").order_by("-date_creation"),
         "historique": facture.historique_statuts.select_related("utilisateur").order_by("-date_changement"),
         "litiges": facture.litiges.select_related("ouvert_par").order_by("-date_ouverture"),
         "litige_form": litige_form,
@@ -756,6 +1564,7 @@ def detail_creance(request, facture_id):
             and facture.statut in Litige.STATUTS_SOURCE_AUTORISES,
         "peut_affecter": _direction_ou_cadre(request.user),
         "peut_archiver": _direction_ou_cadre(request.user) and facture.statut in ("PAYEE", "ANNULEE", "IRRECOUVRABLE"),
+        "aucun_recouvreur_configure": aucun_recouvreur_configure,
     }
     return render(request, "devis/creances/detail.html", context)
 
@@ -791,6 +1600,8 @@ def detail_litige(request, litige_id):
                 return redirect("devis:detail_litige", litige_id=litige.id)
 
         elif "passer_en_cours" in request.POST:
+            if not _direction_ou_cadre(request.user):
+                raise PermissionDenied
             try:
                 litige.passer_en_cours(utilisateur=request.user)
                 journaliser(request, "ACTION_METIER", objet=litige, description="Litige passé en instruction")
@@ -800,6 +1611,8 @@ def detail_litige(request, litige_id):
             return redirect("devis:detail_litige", litige_id=litige.id)
 
         elif "resoudre_litige" in request.POST:
+            if not _direction_ou_cadre(request.user):
+                raise PermissionDenied
             resolution_form = ResolutionLitigeForm(request.POST)
             if resolution_form.is_valid():
                 try:
@@ -814,6 +1627,8 @@ def detail_litige(request, litige_id):
                     resolution_form.add_error(None, str(e))
 
         elif "abandonner_litige" in request.POST:
+            if not _direction_ou_cadre(request.user):
+                raise PermissionDenied
             resolution_form = ResolutionLitigeForm(request.POST)
             if resolution_form.is_valid():
                 try:
@@ -904,7 +1719,7 @@ def kpi_recouvreurs(request):
     if not _direction_ou_cadre(request.user):
         raise PermissionDenied
 
-    recouvreurs = User.objects.filter(portefeuille_creances__isnull=False).distinct()
+    recouvreurs = [utilisateur for utilisateur in _utilisateurs_recouvreurs()]
     donnees = []
     for r in recouvreurs:
         factures_qs = Facture.objects.filter(recouvreur=r)
@@ -1022,7 +1837,7 @@ def journal_actions_recouvrement(request):
     context = {
         "module_actif": get_module_info("recouvrement"),
         "actions": actions[:200],
-        "recouvreurs": User.objects.filter(portefeuille_creances__isnull=False).distinct(),
+        "recouvreurs": _utilisateurs_recouvreurs(),
         "filtre_recouvreur": recouvreur_id,
         "filtre_recherche": recherche,
     }
@@ -1055,10 +1870,46 @@ def affectation_masse(request):
     context = {
         "module_actif": get_module_info("recouvrement"),
         "factures": factures_ouvertes,
-        "recouvreurs": User.objects.filter(portefeuille_creances__isnull=False).distinct(),
+        "recouvreurs": _utilisateurs_recouvreurs(),
         "filtre_client": client_filtre,
     }
     return render(request, "devis/creances/affectation_masse.html", context)
+
+
+@login_required
+def journal_automatisations(request):
+    if not _direction_ou_cadre(request.user):
+        raise PermissionDenied
+
+    executions = JournalExecutionCommande.objects.all().order_by("-date_debut")
+
+    commande_filtre = request.GET.get("commande", "").strip()
+    etat_filtre = request.GET.get("etat", "").strip()
+    if commande_filtre:
+        executions = executions.filter(commande__icontains=commande_filtre)
+    if etat_filtre:
+        executions = executions.filter(etat=etat_filtre)
+
+    if "export" in request.GET:
+        colonnes = [
+            ("Commande", lambda e: e.commande),
+            ("Début", lambda e: e.date_debut.strftime("%d/%m/%Y %H:%M") if e.date_debut else "—"),
+            ("État", lambda e: e.get_etat_display()),
+            ("Résumé", lambda e: e.resume),
+        ]
+        journaliser(request, "EXPORT", description="Export journal des automatisations")
+        if request.GET["export"] == "excel":
+            return exporter_excel(executions, colonnes, "journal_automatisations")
+        return exporter_csv(executions, colonnes, "journal_automatisations")
+
+    context = {
+        "module_actif": get_module_info("recouvrement"),
+        "executions": executions[:200],
+        "commande_filtre": commande_filtre,
+        "etat_filtre": etat_filtre,
+        "etats": JournalExecutionCommande.ETAT_CHOICES,
+    }
+    return render(request, "devis/creances/journal_automatisations.html", context)
 
 
 @login_required

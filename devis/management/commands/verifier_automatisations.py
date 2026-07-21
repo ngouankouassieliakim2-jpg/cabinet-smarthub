@@ -1,6 +1,8 @@
 from datetime import date
 from django.core.management.base import BaseCommand
+from django.contrib.auth.models import User
 from devis.models import Facture
+from core.execution import tracer_execution
 
 SEUIL_CREATION_TACHE_JOURS = 30
 STATUTS_CONCERNES = ["EN_ATTENTE_PAIEMENT", "PARTIELLEMENT_PAYEE", "EN_RETARD"]
@@ -15,33 +17,41 @@ class Command(BaseCommand):
     )
 
     def handle(self, *args, **options):
-        aujourdhui = date.today()
-        candidates = Facture.objects.filter(
-            statut__in=STATUTS_CONCERNES,
-            date_echeance__isnull=False,
-            date_echeance__lt=aujourdhui,
-        )
+        with tracer_execution(
+            commande="verifier_automatisations",
+            description="Vérification des automatisations de recouvrement",
+            utilisateur=User.objects.filter(is_superuser=True).first(),
+            contexte={"seuil_creation_tache_jours": SEUIL_CREATION_TACHE_JOURS},
+        ) as trace:
+            aujourdhui = date.today()
+            candidates = Facture.objects.filter(
+                statut__in=STATUTS_CONCERNES,
+                date_echeance__isnull=False,
+                date_echeance__lt=aujourdhui,
+            )
 
-        a_signaler = []
-        for f in candidates:
-            jours_retard = (aujourdhui - f.date_echeance).days
-            if jours_retard >= SEUIL_CREATION_TACHE_JOURS:
-                a_signaler.append(f)
+            a_signaler = []
+            for f in candidates:
+                jours_retard = (aujourdhui - f.date_echeance).days
+                if jours_retard >= SEUIL_CREATION_TACHE_JOURS:
+                    a_signaler.append(f)
 
-        if not a_signaler:
-            self.stdout.write("Aucune facture ne nécessite de tâche de suivi.")
-            return
+            if not a_signaler:
+                trace.resume = "Aucune facture ne nécessite de tâche de suivi."
+                self.stdout.write(trace.resume)
+                return
 
-        self.stdout.write(self.style.WARNING(
-            f"{len(a_signaler)} facture(s) dépassent {SEUIL_CREATION_TACHE_JOURS} jours de retard "
-            f"— création de tâche non exécutée (module Tâches absent) :"
-        ))
-        for f in a_signaler:
-            self.stdout.write(f"  - {f.numero_facture} ({f.client_nom})")
+            trace.resume = (
+                f"{len(a_signaler)} facture(s) dépassent {SEUIL_CREATION_TACHE_JOURS} jours de retard "
+                f"— création de tâche non exécutée (module Tâches absent)."
+            )
+            self.stdout.write(self.style.WARNING(trace.resume))
+            for f in a_signaler:
+                self.stdout.write(f"  - {f.numero_facture} ({f.client_nom})")
 
-        # TODO : dès que le module Tâches existe, remplacer ce bloc par :
-        # from taches.models import Tache
-        # for f in a_signaler:
-        #     Tache.objects.get_or_create(
-        #         cle_unique=f"recouvrement_facture_{f.id}",
-        #         defaults={"titre": f"Relancer {f.numero_facture}", "lien": ...})
+            # TODO : dès que le module Tâches existe, remplacer ce bloc par :
+            # from taches.models import Tache
+            # for f in a_signaler:
+            #     Tache.objects.get_or_create(
+            #         cle_unique=f"recouvrement_facture_{f.id}",
+            #         defaults={"titre": f"Relancer {f.numero_facture}", "lien": ...})

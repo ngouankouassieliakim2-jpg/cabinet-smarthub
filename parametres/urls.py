@@ -15,5 +15,7 @@ urlpatterns = [
     path("email/", views.parametres_email, name="parametres_email"),
     path("email/test/", views.tester_email, name="tester_email"),
     path("fne/", views.parametres_fne, name="parametres_fne"),
+    path("mobile-money/", views.parametres_mobile_money, name="parametres_mobile_money"),
+    path("whatsapp/", views.parametres_whatsapp, name="parametres_whatsapp"),
     path("cgv/", views.parametres_cgv, name="parametres_cgv"),
 ]

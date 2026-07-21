@@ -1,8 +1,77 @@
-﻿from datetime import date, timedelta
+﻿from datetime import date, datetime, timedelta
 from decimal import Decimal
 from django.db import models
 from django.db.models import Sum
 from django.utils import timezone
+
+
+class Budget(models.Model):
+    categorie = models.ForeignKey("CategorieDepense", on_delete=models.PROTECT, related_name="budgets")
+    exercice = models.PositiveIntegerField("Exercice (année)")
+    mois = models.PositiveSmallIntegerField(
+        "Mois", null=True, blank=True,
+        help_text="Laisser vide pour un budget annuel, ou préciser 1-12 pour un budget mensuel")
+    montant_alloue = models.DecimalField("Montant alloué", max_digits=12, decimal_places=0)
+    actif = models.BooleanField("Actif", default=True)
+
+    cree_par = models.ForeignKey("auth.User", on_delete=models.SET_NULL, null=True, blank=True)
+    date_creation = models.DateTimeField(auto_now_add=True)
+
+    SEUILS_ALERTE = [80, 90, 100]
+
+    def _bornes_periode(self):
+        if self.mois:
+            debut = date(self.exercice, self.mois, 1)
+            fin = date(self.exercice, self.mois + 1, 1) - timedelta(days=1) if self.mois < 12 else date(self.exercice, 12, 31)
+        else:
+            debut = date(self.exercice, 1, 1)
+            fin = date(self.exercice, 12, 31)
+        return debut, fin
+
+    @property
+    def consomme(self):
+        debut, fin = self._bornes_periode()
+        total = Depense.objects.filter(
+            categorie=self.categorie, date_facture__gte=debut, date_facture__lte=fin,
+        ).exclude(statut="ANNULEE").aggregate(total=Sum("montant_ht"))["total"]
+        return total or Decimal("0")
+
+    @property
+    def disponible(self):
+        return self.montant_alloue - self.consomme
+
+    @property
+    def taux_consommation(self):
+        if self.montant_alloue == 0:
+            return Decimal("0")
+        return round((self.consomme / self.montant_alloue) * 100, 1)
+
+    @classmethod
+    def budget_disponible_pour(cls, categorie, a_date):
+        if isinstance(a_date, str):
+            a_date = datetime.strptime(a_date, "%Y-%m-%d").date()
+        if isinstance(a_date, datetime):
+            a_date = a_date.date()
+        mensuel = cls.objects.filter(
+            categorie=categorie, exercice=a_date.year, mois=a_date.month, actif=True).first()
+        if mensuel:
+            return mensuel
+        return cls.objects.filter(
+            categorie=categorie, exercice=a_date.year, mois__isnull=True, actif=True).first()
+
+    def __str__(self):
+        periode = f"{self.mois:02d}/{self.exercice}" if self.mois else str(self.exercice)
+        return f"{self.categorie} — {periode} ({self.montant_alloue} FCFA)"
+
+    class Meta:
+        verbose_name = "Budget"
+        verbose_name_plural = "Budgets"
+        ordering = ["-exercice", "categorie"]
+        constraints = [
+            models.UniqueConstraint(fields=["categorie", "exercice", "mois"], name="unique_budget_periode")
+        ]
+
+
 
 
 class Devis(models.Model):
@@ -711,6 +780,97 @@ class Facture(models.Model):
     def peut_transitionner_vers(self, nouveau_statut, user=None):
         return nouveau_statut in self.transitions_possibles(user=user)
 
+    def enregistrer_promesse(self, montant_promis, date_promise, commentaire="", responsable=None):
+        if montant_promis <= 0:
+            raise ValueError("Le montant promis doit être supérieur à zéro.")
+        if self.promesses.filter(statut="EN_COURS").exists():
+            raise ValueError("Une promesse est déjà en cours sur cette facture.")
+        return PromessePaiement.objects.create(
+            facture=self,
+            montant_promis=montant_promis,
+            date_promise=date_promise,
+            commentaire=commentaire,
+            responsable=responsable,
+        )
+
+    @property
+    def a_promesse_active(self):
+        return self.promesses.filter(statut="EN_COURS").exists()
+
+
+class PromessePaiement(models.Model):
+    STATUT_CHOICES = [
+        ("EN_COURS", "En cours"),
+        ("TENUE", "Tenue (paiement reçu à temps)"),
+        ("ROMPUE", "Rompue (échéance dépassée sans paiement)"),
+        ("ANNULEE", "Annulée"),
+    ]
+
+    facture = models.ForeignKey(
+        Facture, on_delete=models.CASCADE, related_name="promesses"
+    )
+    montant_promis = models.DecimalField("Montant promis", max_digits=12, decimal_places=0)
+    date_promise = models.DateField("Date promise de paiement")
+    commentaire = models.TextField(blank=True)
+    statut = models.CharField(max_length=15, choices=STATUT_CHOICES, default="EN_COURS")
+
+    responsable = models.ForeignKey(
+        "auth.User", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="promesses_enregistrees",
+        help_text="Collaborateur ayant reçu la promesse (recouvreur en général)",
+    )
+
+    date_creation = models.DateTimeField(auto_now_add=True)
+    date_verification = models.DateTimeField(null=True, blank=True)
+
+    def verifier(self):
+        """Vérifie automatiquement si la promesse a été tenue — appelée par
+        la commande verifier_promesses. Ne change rien si déjà tranchée
+        (TENUE/ROMPUE/ANNULEE) ou si la date promise n'est pas encore passée."""
+        if self.statut != "EN_COURS":
+            return
+        if date.today() < self.date_promise:
+            return
+
+        if self.facture.solde_restant <= 0 or self.facture.statut == "PAYEE":
+            self.statut = "TENUE"
+        else:
+            self.statut = "ROMPUE"
+            self._notifier_rupture()
+        self.date_verification = timezone.now()
+        self.save(update_fields=["statut", "date_verification"])
+
+    def _notifier_rupture(self):
+        from django.urls import reverse
+        from pilotage.models import Notification
+
+        cle = f"promesse_rompue_facture{self.facture_id}_promesse{self.id}"
+        Notification.objects.get_or_create(
+            cle=cle,
+            defaults={
+                "type_notification": "promesse_rompue",
+                "titre": f"Promesse rompue — {self.facture.numero_facture}",
+                "message": f"La promesse de paiement sur {self.facture.numero_facture} n'a pas été honorée.",
+                "url": reverse("devis:detail_creance", args=[self.facture_id]),
+                "destinataire": self.facture.recouvreur or self.responsable,
+            },
+        )
+
+    def annuler(self, utilisateur=None):
+        if self.statut != "EN_COURS":
+            raise ValueError("Seule une promesse en cours peut être annulée.")
+        self.statut = "ANNULEE"
+        self.date_verification = timezone.now()
+        self.save(update_fields=["statut", "date_verification"])
+
+    def __str__(self):
+        return f"Promesse {self.montant_promis} FCFA le {self.date_promise} — {self.facture.numero_facture}"
+
+    class Meta:
+        verbose_name = "Promesse de paiement"
+        verbose_name_plural = "Promesses de paiement"
+        ordering = ["-date_creation"]
+
 
 class EtapeRelance(models.Model):
     TYPE_ACTION_CHOICES = [
@@ -1106,6 +1266,235 @@ class CategorieDepense(models.Model):
         ordering = ["nom"]
 
 
+class SeuilApprobation(models.Model):
+    NIVEAU_CHOICES = [
+        ("CADRE", "Chef de service (Cadre)"),
+        ("DIRECTION", "Direction"),
+    ]
+    borne_min = models.DecimalField("À partir de (FCFA)", max_digits=12, decimal_places=0, default=0)
+    borne_max = models.DecimalField(
+        "Jusqu'à (FCFA)", max_digits=12, decimal_places=0, null=True, blank=True,
+        help_text="Laisser vide pour 'et plus'"
+    )
+    niveau_requis = models.CharField(max_length=15, choices=NIVEAU_CHOICES)
+    actif = models.BooleanField(default=True)
+
+    def __str__(self):
+        borne = f"{self.borne_min} — {self.borne_max or '∞'} FCFA"
+        return f"{borne} → {self.get_niveau_requis_display()}"
+
+    class Meta:
+        verbose_name = "Seuil d'approbation"
+        verbose_name_plural = "Seuils d'approbation"
+        ordering = ["borne_min"]
+
+    @classmethod
+    def niveau_requis_pour(cls, montant):
+        seuil = cls.objects.filter(actif=True, borne_min__lte=montant).filter(
+            models.Q(borne_max__gte=montant) | models.Q(borne_max__isnull=True)
+        ).order_by("-borne_min").first()
+        return seuil.niveau_requis if seuil else "DIRECTION"
+
+
+class NoteDeFrais(models.Model):
+    STATUT_CHOICES = [
+        ("BROUILLON", "Brouillon"),
+        ("SOUMISE", "Soumise"),
+        ("VALIDEE", "Validée"),
+        ("REJETEE", "Rejetée"),
+        ("REMBOURSEE", "Remboursée"),
+    ]
+    TYPE_FRAIS_CHOICES = [
+        ("MISSION", "Mission"),
+        ("TRANSPORT", "Transport"),
+        ("HEBERGEMENT", "Hébergement"),
+        ("REPAS", "Repas"),
+        ("AUTRE", "Autre"),
+    ]
+
+    collaborateur = models.ForeignKey("auth.User", on_delete=models.CASCADE, related_name="notes_de_frais")
+    objet = models.CharField("Objet", max_length=200, blank=True)
+    periode_debut = models.DateField("Période — début", null=True, blank=True)
+    periode_fin = models.DateField("Période — fin", null=True, blank=True)
+    statut = models.CharField(max_length=15, choices=STATUT_CHOICES, default="BROUILLON")
+
+    date_soumission = models.DateTimeField(null=True, blank=True)
+    soumise_par = models.ForeignKey("auth.User", on_delete=models.SET_NULL, null=True, blank=True, related_name="notes_de_frais_soumises")
+    date_validation = models.DateTimeField(null=True, blank=True)
+    validee_par = models.ForeignKey("auth.User", on_delete=models.SET_NULL, null=True, blank=True, related_name="notes_de_frais_validees")
+    motif_rejet = models.TextField(blank=True)
+
+    date_remboursement = models.DateField(null=True, blank=True)
+    mode_remboursement = models.CharField(max_length=15, choices=Paiement.MODE_CHOICES, blank=True)
+    reference_remboursement = models.CharField("Référence de remboursement", max_length=100, blank=True)
+    rembourse_par = models.ForeignKey("auth.User", on_delete=models.SET_NULL, null=True, blank=True, related_name="notes_de_frais_remboursees")
+
+    date_creation = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def montant_total(self):
+        return self.lignes.aggregate(total=Sum("montant"))["total"] or Decimal("0")
+
+    def soumettre(self, utilisateur=None):
+        if self.statut != "BROUILLON":
+            raise ValueError("Seule une note en brouillon peut être soumise.")
+        if not self.lignes.exists():
+            raise ValueError("Une note de frais doit contenir au moins une ligne.")
+        self.statut = "SOUMISE"
+        self.date_soumission = timezone.now()
+        self.soumise_par = utilisateur
+        self.save(update_fields=["statut", "date_soumission", "soumise_par"])
+
+    def valider(self, utilisateur=None):
+        if self.statut != "SOUMISE":
+            raise ValueError("Seule une note soumise peut être validée.")
+        self.statut = "VALIDEE"
+        self.date_validation = timezone.now()
+        self.validee_par = utilisateur
+        self.save(update_fields=["statut", "date_validation", "validee_par"])
+
+    def rejeter(self, motif, utilisateur=None):
+        if self.statut != "SOUMISE":
+            raise ValueError("Seule une note soumise peut être rejetée.")
+        self.statut = "REJETEE"
+        self.motif_rejet = motif
+        self.save(update_fields=["statut", "motif_rejet"])
+
+    def renvoyer_en_brouillon(self, utilisateur=None):
+        if self.statut != "REJETEE":
+            raise ValueError("Seule une note rejetée peut être renvoyée en brouillon.")
+        self.statut = "BROUILLON"
+        self.motif_rejet = ""
+        self.save(update_fields=["statut", "motif_rejet"])
+
+    def marquer_remboursee(self, mode, reference="", date_remb=None, utilisateur=None):
+        if self.statut != "VALIDEE":
+            raise ValueError("Seule une note validée peut être marquée comme remboursée.")
+        self.statut = "REMBOURSEE"
+        self.mode_remboursement = mode
+        self.reference_remboursement = reference
+        self.date_remboursement = date_remb or date.today()
+        self.rembourse_par = utilisateur
+        self.save(update_fields=["statut", "mode_remboursement", "reference_remboursement", "date_remboursement", "rembourse_par"])
+
+    def __str__(self):
+        return f"Note de frais #{self.id} — {self.collaborateur}"
+
+    class Meta:
+        verbose_name = "Note de frais"
+        verbose_name_plural = "Notes de frais"
+        ordering = ["-date_creation"]
+
+
+class LigneNoteDeFrais(models.Model):
+    note = models.ForeignKey(NoteDeFrais, on_delete=models.CASCADE, related_name="lignes")
+    type_frais = models.CharField("Type de frais", max_length=15, choices=NoteDeFrais.TYPE_FRAIS_CHOICES)
+    date_depense = models.DateField("Date de dépense")
+    description = models.CharField("Description", max_length=250)
+    montant = models.DecimalField("Montant", max_digits=12, decimal_places=0)
+
+    def __str__(self):
+        return f"{self.get_type_frais_display()} — {self.description}"
+
+    class Meta:
+        verbose_name = "Ligne de note de frais"
+        verbose_name_plural = "Lignes de notes de frais"
+        ordering = ["date_depense"]
+
+
+class DepenseRecurrente(models.Model):
+    FREQUENCE_CHOICES = [
+        ("MENSUEL", "Mensuel"),
+        ("TRIMESTRIEL", "Trimestriel"),
+        ("ANNUEL", "Annuel"),
+    ]
+
+    libelle = models.CharField("Libellé", max_length=200)
+    fournisseur = models.ForeignKey(Fournisseur, on_delete=models.PROTECT, related_name="depenses_recurrentes")
+    categorie = models.ForeignKey(CategorieDepense, on_delete=models.PROTECT, related_name="depenses_recurrentes")
+    montant_ht = models.DecimalField("Montant HT", max_digits=12, decimal_places=0)
+    taux_tva = models.CharField(max_length=2, choices=LignePrestation.TVA_CHOICES, default="18")
+
+    frequence = models.CharField(max_length=15, choices=FREQUENCE_CHOICES)
+    jour_generation = models.PositiveSmallIntegerField(
+        "Jour du mois de génération", default=1,
+        help_text="Plafonné automatiquement les mois courts (comme jour_emission_facture sur Devis)")
+    mois_generation = models.PositiveSmallIntegerField(
+        "Mois de génération (si annuel)", null=True, blank=True,
+        help_text="Uniquement pour une fréquence annuelle")
+
+    date_debut = models.DateField("Début de la récurrence", default=date.today)
+    date_fin = models.DateField("Fin de la récurrence", null=True, blank=True)
+    actif = models.BooleanField(default=True)
+
+    derniere_generation = models.DateField(null=True, blank=True)
+
+    cree_par = models.ForeignKey("auth.User", on_delete=models.SET_NULL, null=True, blank=True)
+    date_creation = models.DateTimeField(auto_now_add=True)
+
+    def _prochaine_echeance(self, apres):
+        if self.frequence == "MENSUEL":
+            annee, mois = apres.year, apres.month + 1
+            if mois > 12:
+                annee, mois = annee + 1, 1
+        elif self.frequence == "TRIMESTRIEL":
+            annee, mois = apres.year, apres.month + 3
+            while mois > 12:
+                annee, mois = annee + 1, mois - 12
+        else:
+            annee, mois = apres.year + 1, self.mois_generation or apres.month
+
+        jours_par_mois = [31, 29 if annee % 4 == 0 and (annee % 100 != 0 or annee % 400 == 0) else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+        jour = min(self.jour_generation, jours_par_mois[mois - 1])
+        return date(annee, mois, jour)
+
+    def echeances_dues(self, jusqu_au):
+        depart = self.derniere_generation or (self.date_debut - timedelta(days=1))
+        echeances = []
+        courante = self._prochaine_echeance(depart)
+        while courante <= jusqu_au and (not self.date_fin or courante <= self.date_fin):
+            echeances.append(courante)
+            courante = self._prochaine_echeance(courante)
+        return echeances
+
+    def generer_depense(self, date_echeance, utilisateur=None):
+        if GenerationDepenseRecurrente.objects.filter(recurrente=self, date_echeance=date_echeance).exists():
+            return None
+        depense = Depense.objects.create(
+            fournisseur=self.fournisseur,
+            categorie=self.categorie,
+            montant_ht=self.montant_ht,
+            taux_tva=self.taux_tva,
+            date_facture=date_echeance,
+            est_recurrente=True,
+            cree_par=utilisateur,
+            observations=f"Générée automatiquement — {self.libelle}",
+        )
+        GenerationDepenseRecurrente.objects.create(recurrente=self, date_echeance=date_echeance, depense=depense)
+        self.derniere_generation = date_echeance
+        self.save(update_fields=["derniere_generation"])
+        return depense
+
+    def __str__(self):
+        return f"{self.libelle} — {self.get_frequence_display()}"
+
+    class Meta:
+        verbose_name = "Dépense récurrente"
+        verbose_name_plural = "Dépenses récurrentes"
+        ordering = ["libelle"]
+
+
+class GenerationDepenseRecurrente(models.Model):
+    recurrente = models.ForeignKey(DepenseRecurrente, on_delete=models.CASCADE, related_name="generations")
+    date_echeance = models.DateField()
+    depense = models.ForeignKey("Depense", on_delete=models.CASCADE, related_name="generation_recurrente")
+    date_creation = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("recurrente", "date_echeance")
+        ordering = ["-date_echeance"]
+
+
 class Depense(models.Model):
     MODE_PAIEMENT_CHOICES = Paiement.MODE_CHOICES
 
@@ -1116,6 +1505,13 @@ class Depense(models.Model):
         ("PAYEE", "Payée"),
         ("EN_RETARD", "En retard"),
         ("ANNULEE", "Annulée"),
+    ]
+
+    STATUT_VALIDATION_CHOICES = [
+        ("BROUILLON", "Brouillon"),
+        ("SOUMISE", "Soumise, en attente de validation"),
+        ("VALIDEE", "Validée"),
+        ("REJETEE", "Rejetée"),
     ]
 
     numero_depense = models.CharField("Numéro", max_length=30, unique=True, blank=True)
@@ -1136,6 +1532,23 @@ class Depense(models.Model):
     observations = models.TextField(blank=True)
 
     statut = models.CharField(max_length=25, choices=STATUT_CHOICES, default="A_PAYER")
+    archive = models.BooleanField("Archivée", default=False)
+    date_archivage = models.DateTimeField(null=True, blank=True)
+
+    statut_validation = models.CharField(max_length=15, choices=STATUT_VALIDATION_CHOICES, default="BROUILLON")
+    niveau_requis = models.CharField(max_length=15, choices=SeuilApprobation.NIVEAU_CHOICES, blank=True)
+
+    date_soumission = models.DateTimeField(null=True, blank=True)
+    soumise_par = models.ForeignKey("auth.User", on_delete=models.SET_NULL, null=True, blank=True, related_name="depenses_soumises")
+
+    date_validation = models.DateTimeField(null=True, blank=True)
+    validee_par = models.ForeignKey("auth.User", on_delete=models.SET_NULL, null=True, blank=True, related_name="depenses_validees")
+    motif_rejet = models.TextField(blank=True)
+
+    depassement_autorise = models.BooleanField("Dépassement budgétaire autorisé", default=False)
+    depassement_autorise_par = models.ForeignKey(
+        "auth.User", on_delete=models.SET_NULL, null=True, blank=True, related_name="depenses_derogees")
+    motif_depassement = models.TextField(blank=True)
 
     est_recurrente = models.BooleanField("Dépense récurrente", default=False)
 
@@ -1170,7 +1583,10 @@ class Depense(models.Model):
 
         if self.date_facture and not self.date_echeance:
             delai = self.fournisseur.delai_paiement_jours or self.DELAI_ECHEANCE_DEFAUT_JOURS
-            self.date_echeance = self.date_facture + timedelta(days=delai)
+            date_facture = self.date_facture
+            if isinstance(date_facture, str):
+                date_facture = date.fromisoformat(date_facture)
+            self.date_echeance = date_facture + timedelta(days=delai)
 
         super().save(*args, **kwargs)
 
@@ -1185,12 +1601,93 @@ class Depense(models.Model):
             utilisateur=utilisateur, commentaire=commentaire,
         )
 
+    def verifier_budget(self):
+        """Retourne (ok: bool, budget: Budget|None, message: str)."""
+        if self.depassement_autorise:
+            return True, None, "Dépassement autorisé par la Direction."
+
+        budget = Budget.budget_disponible_pour(self.categorie, self.date_facture)
+        if budget is None:
+            return True, None, "Aucun budget défini pour cette catégorie/période — pas de contrôle possible."
+
+        if budget.disponible >= self.montant_ht:
+            return True, budget, "Budget disponible suffisant."
+        return False, budget, f"Dépassement : {budget.disponible} FCFA disponibles, {self.montant_ht} FCFA demandés."
+
+    def soumettre(self, utilisateur=None):
+        if self.statut_validation != "BROUILLON":
+            raise ValueError("Seule une dépense en brouillon peut être soumise.")
+
+        ok, budget, message = self.verifier_budget()
+        if not ok:
+            raise BudgetDepasseError(message, budget)
+
+        self.niveau_requis = SeuilApprobation.niveau_requis_pour(self.montant_ttc)
+        self.statut_validation = "SOUMISE"
+        self.date_soumission = timezone.now()
+        self.soumise_par = utilisateur
+        self.save(update_fields=["niveau_requis", "statut_validation", "date_soumission", "soumise_par"])
+        HistoriqueValidationDepense.objects.create(
+            depense=self, action="SOUMISE", utilisateur=utilisateur, commentaire=message
+        )
+
+    def accorder_derogation(self, motif, utilisateur=None):
+        self.depassement_autorise = True
+        self.depassement_autorise_par = utilisateur
+        self.motif_depassement = motif
+        self.save(update_fields=["depassement_autorise", "depassement_autorise_par", "motif_depassement"])
+        HistoriqueValidationDepense.objects.create(
+            depense=self, action="DEROGATION_BUDGET", utilisateur=utilisateur, commentaire=motif
+        )
+
+    def valider(self, utilisateur=None, commentaire=""):
+        if self.statut_validation != "SOUMISE":
+            raise ValueError("Seule une dépense soumise peut être validée.")
+        self.statut_validation = "VALIDEE"
+        self.date_validation = timezone.now()
+        self.validee_par = utilisateur
+        self.save(update_fields=["statut_validation", "date_validation", "validee_par"])
+        HistoriqueValidationDepense.objects.create(
+            depense=self, action="VALIDEE", utilisateur=utilisateur, commentaire=commentaire
+        )
+
+    def rejeter(self, motif, utilisateur=None):
+        if self.statut_validation != "SOUMISE":
+            raise ValueError("Seule une dépense soumise peut être rejetée.")
+        self.statut_validation = "REJETEE"
+        self.motif_rejet = motif
+        self.save(update_fields=["statut_validation", "motif_rejet"])
+        HistoriqueValidationDepense.objects.create(depense=self, action="REJETEE", utilisateur=utilisateur, commentaire=motif)
+
+    def renvoyer_en_brouillon(self, utilisateur=None):
+        """Permet de corriger une dépense rejetée et de la resoumettre."""
+        if self.statut_validation != "REJETEE":
+            raise ValueError("Seule une dépense rejetée peut être renvoyée en brouillon.")
+        self.statut_validation = "BROUILLON"
+        self.motif_rejet = ""
+        self.save(update_fields=["statut_validation", "motif_rejet"])
+        HistoriqueValidationDepense.objects.create(depense=self, action="RENVOYEE_BROUILLON", utilisateur=utilisateur)
+
     def enregistrer_paiement(self, montant, utilisateur=None, **kwargs):
+        if self.statut_validation != "VALIDEE":
+            raise ValueError("Cette dépense doit être validée avant tout paiement.")
         PaiementDepense.objects.create(depense=self, montant=montant, utilisateur=utilisateur, **kwargs)
         if self.solde_restant <= 0:
             self.changer_statut("PAYEE", utilisateur=utilisateur)
         else:
             self.changer_statut("PARTIELLEMENT_PAYEE", utilisateur=utilisateur)
+
+    def archiver(self, utilisateur=None):
+        if self.statut not in ("PAYEE", "ANNULEE"):
+            raise ValueError("Seule une dépense payée ou annulée peut être archivée.")
+        self.archive = True
+        self.date_archivage = timezone.now()
+        self.save(update_fields=["archive", "date_archivage"])
+
+    def restaurer(self, utilisateur=None):
+        self.archive = False
+        self.date_archivage = None
+        self.save(update_fields=["archive", "date_archivage"])
 
     def __str__(self):
         return f"{self.numero_depense} — {self.fournisseur} ({self.montant_ttc} FCFA)"
@@ -1199,6 +1696,35 @@ class Depense(models.Model):
         verbose_name = "Dépense"
         verbose_name_plural = "Dépenses"
         ordering = ["-date_facture"]
+
+
+class BudgetDepasseError(Exception):
+    def __init__(self, message, budget=None):
+        super().__init__(message)
+        self.budget = budget
+
+
+class HistoriqueValidationDepense(models.Model):
+    ACTION_CHOICES = [
+        ("SOUMISE", "Soumise"),
+        ("VALIDEE", "Validée"),
+        ("REJETEE", "Rejetée"),
+        ("RENVOYEE_BROUILLON", "Renvoyée en brouillon"),
+        ("DEROGATION_BUDGET", "Dérogation de dépassement budgétaire accordée"),
+    ]
+    depense = models.ForeignKey(Depense, on_delete=models.CASCADE, related_name="historique_validations")
+    action = models.CharField(max_length=25, choices=ACTION_CHOICES)
+    utilisateur = models.ForeignKey("auth.User", on_delete=models.SET_NULL, null=True, blank=True)
+    commentaire = models.TextField(blank=True)
+    date_action = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.depense.numero_depense} : {self.get_action_display()}"
+
+    class Meta:
+        verbose_name = "Historique de validation (dépense)"
+        verbose_name_plural = "Historiques de validation (dépenses)"
+        ordering = ["date_action"]
 
 
 class PaiementDepense(models.Model):

@@ -1,70 +1,71 @@
-{% extends "pilotage/base_recouvrement.html" %}
-{% block titre %}Nouveau devis — Étape 1{% endblock %}
-
-{% block contenu %}
-{% include "devis/_barre_etapes.html" %}
-
-<div class="max-w-2xl mx-auto p-6">
-  <div class="bg-white rounded-lg shadow p-6">
-    <h1 class="text-xl font-bold text-gray-800 mb-1">Étape 1 — Le client</h1>
-    <p class="text-gray-500 text-sm mb-6">Pour qui établissez-vous ce devis ?</p>
-
-    <form method="post">
-      {% csrf_token %}
-
-      <p class="text-sm font-semibold text-gray-700 mb-2">S'agit-il d'un…</p>
-      <div class="grid grid-cols-2 gap-3 mb-6">
-        <label class="border rounded-lg p-3 cursor-pointer hover:border-[#C81E6E] flex items-center gap-2">
-          <input type="radio" name="origine" value="nouveau" checked>
-          <span class="text-sm font-medium">Nouveau prospect</span>
-        </label>
-        <label class="border rounded-lg p-3 cursor-not-allowed bg-gray-50 flex items-center gap-2 opacity-60">
-          <input type="radio" name="origine" value="existant" disabled>
-          <span class="text-sm">Client existant <span class="text-xs text-gray-400">(bientôt)</span></span>
-        </label>
-      </div>
-
-      <p class="text-sm font-semibold text-gray-700 mb-2">Type de client</p>
-      <div class="space-y-3 mb-8">
-
-        <label class="block border rounded-lg p-4 cursor-pointer hover:border-[#C81E6E] transition">
-          <div class="flex items-start gap-3">
-            <input type="radio" name="type_client" value="PM" checked class="mt-1">
-            <div>
-              <span class="text-sm font-semibold text-gray-800">Personne Morale</span>
-              <span class="text-xs text-gray-400">(société)</span>
-              <p class="text-xs text-gray-500 mt-1">Entreprise enregistrée : SARL, SA, SAS, etc. Possède un RCCM et un NCC.</p>
-            </div>
-          </div>
-        </label>
-
-        <label class="block border rounded-lg p-4 cursor-pointer hover:border-[#C81E6E] transition">
-          <div class="flex items-start gap-3">
-            <input type="radio" name="type_client" value="PP_CONSTITUEE" class="mt-1">
-            <div>
-              <span class="text-sm font-semibold text-gray-800">Personne Physique légalement constituée</span>
-              <p class="text-xs text-gray-500 mt-1">Entreprenant ou profession libérale immatriculé : possède un RCCM et/ou un NCC.</p>
-            </div>
-          </div>
-        </label>
-
-        <label class="block border rounded-lg p-4 cursor-pointer hover:border-[#C81E6E] transition">
-          <div class="flex items-start gap-3">
-            <input type="radio" name="type_client" value="PP_INFORMEL" class="mt-1">
-            <div>
-              <span class="text-sm font-semibold text-gray-800">Personne Physique — secteur informel</span>
-              <p class="text-xs text-gray-500 mt-1">Particulier non immatriculé : seule une pièce d'identité est requise. Pour courses, livraisons, formations, petites prestations.</p>
-            </div>
-          </div>
-        </label>
-
-      </div>
-
-      <div class="flex justify-between items-center pt-4 border-t">
-        <a href="{% url 'liste_devis' %}" class="text-sm text-gray-500 hover:underline">Annuler</a>
-        <button type="submit" class="bg-[#C81E6E] text-white px-6 py-2 rounded font-medium hover:bg-[#a81659]">Suivant →</button>
-      </div>
-    </form>
-  </div>
-</div>
-{% endblock %}
+﻿{% extends "pilotage/base_recouvrement.html" %}
+{% block titre %}Nouveau devis — Étape 1{% endblock %}
+
+{% block contenu %}
+{% include "devis/_barre_etapes.html" %}
+
+<div class="max-w-2xl mx-auto p-6">
+  <div class="bg-white rounded-lg shadow p-6">
+    <h1 class="text-xl font-bold text-gray-800 mb-1">Étape 1 — Le client</h1>
+    <p class="text-gray-500 text-sm mb-6">Pour qui établissez-vous ce devis ?</p>
+
+    <form method="post">
+      {% csrf_token %}
+
+      <p class="text-sm font-semibold text-gray-700 mb-2">S'agit-il d'un…</p>
+      <div class="grid grid-cols-2 gap-3 mb-6">
+        <label class="border rounded-lg p-3 cursor-pointer hover:border-[#C81E6E] flex items-center gap-2">
+          <input type="radio" name="origine" value="nouveau" checked>
+          <span class="text-sm font-medium">Nouveau prospect</span>
+        </label>
+        <label class="border rounded-lg p-3 cursor-not-allowed bg-gray-50 flex items-center gap-2 opacity-60">
+          <input type="radio" name="origine" value="existant" disabled>
+          <span class="text-sm">Client existant <span class="text-xs text-gray-400">(bientôt)</span></span>
+        </label>
+      </div>
+
+      <p class="text-sm font-semibold text-gray-700 mb-2">Type de client</p>
+      <div class="space-y-3 mb-8">
+
+        <label class="block border rounded-lg p-4 cursor-pointer hover:border-[#C81E6E] transition">
+          <div class="flex items-start gap-3">
+            <input type="radio" name="type_client" value="PM" checked class="mt-1">
+            <div>
+              <span class="text-sm font-semibold text-gray-800">Personne Morale</span>
+              <span class="text-xs text-gray-400">(société)</span>
+              <p class="text-xs text-gray-500 mt-1">Entreprise enregistrée : SARL, SA, SAS, etc. Possède un RCCM et un NCC.</p>
+            </div>
+          </div>
+        </label>
+
+        <label class="block border rounded-lg p-4 cursor-pointer hover:border-[#C81E6E] transition">
+          <div class="flex items-start gap-3">
+            <input type="radio" name="type_client" value="PP_CONSTITUEE" class="mt-1">
+            <div>
+              <span class="text-sm font-semibold text-gray-800">Personne Physique légalement constituée</span>
+              <p class="text-xs text-gray-500 mt-1">Entreprenant ou profession libérale immatriculé : possède un RCCM et/ou un NCC.</p>
+            </div>
+          </div>
+        </label>
+
+        <label class="block border rounded-lg p-4 cursor-pointer hover:border-[#C81E6E] transition">
+          <div class="flex items-start gap-3">
+            <input type="radio" name="type_client" value="PP_INFORMEL" class="mt-1">
+            <div>
+              <span class="text-sm font-semibold text-gray-800">Personne Physique — secteur informel</span>
+              <p class="text-xs text-gray-500 mt-1">Particulier non immatriculé : seule une pièce d'identité est requise. Pour courses, livraisons, formations, petites prestations.</p>
+            </div>
+          </div>
+        </label>
+
+      </div>
+
+      <div class="flex justify-between items-center pt-4 border-t">
+        <a href="{% url 'devis:liste_devis' %}" class="text-sm text-gray-500 hover:underline">Annuler</a>
+        <button type="submit" class="bg-[#C81E6E] text-white px-6 py-2 rounded font-medium hover:bg-[#a81659]">Suivant →</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+

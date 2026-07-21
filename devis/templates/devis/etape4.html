@@ -1,4 +1,4 @@
-{% extends "pilotage/base_recouvrement.html" %}
+?{% extends "pilotage/base_recouvrement.html" %}
 {% block titre %}Nouveau devis — Étape 4{% endblock %}
 {% block style %}
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,8 +18,8 @@
       <p class="text-gray-500 text-sm">Vérifiez le devis et la note avant de le proposer au client.</p>
     </div>
     <div class="flex flex-wrap gap-2">
-      <button onclick="window.print()" class="bg-[#C81E6E] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#a81659]">🖨️ Imprimer le brouillon</button>
-      <a href="{% url 'rapport_analyse' devis.id %}" class="bg-[#16171C] text-white px-4 py-2 rounded text-sm font-medium hover:bg-black">🔍 Rapport d'analyse</a>
+      <button onclick="window.print()" class="bg-[#C81E6E] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#a81659]">🖨�? Imprimer le brouillon</button>
+      <a href="{% url 'devis:rapport_analyse' devis.id %}" class="bg-[#16171C] text-white px-4 py-2 rounded text-sm font-medium hover:bg-black">�? Rapport d'analyse</a>
     </div>
   </div>
 
@@ -28,8 +28,8 @@
 
   <!-- Navigation (cachée à l'impression) -->
   <div class="no-print flex justify-between items-center pt-6 mt-6 border-t">
-    <a href="{% url 'devis_etape3' devis.id %}" class="text-sm text-gray-500 hover:underline">← Précédent</a>
-    <a href="{% url 'devis_etape5' devis.id %}" class="bg-[#C81E6E] text-white px-6 py-2 rounded font-medium hover:bg-[#a81659]">Continuer vers la validation →</a>
+    <a href="{% url 'devis:devis_etape3' devis.id %}" class="text-sm text-gray-500 hover:underline">�? Précédent</a>
+    <a href="{% url 'devis:devis_etape5' devis.id %}" class="bg-[#C81E6E] text-white px-6 py-2 rounded font-medium hover:bg-[#a81659]">Continuer vers la validation →</a>
   </div>
 </div>
 
@@ -46,3 +46,4 @@
   @page { size: A4; margin: 8mm; }
 </style>
 {% endblock %}
+

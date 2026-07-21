@@ -1,53 +1,70 @@
-{% extends "base_pilotage.html" %}
+{% extends "pilotage/base_pilotage.html" %}
 
 {% block contenu %}
-<div class="p-6 max-w-3xl">
-    <h1 class="text-xl font-semibold mb-1">Prévisions de trésorerie</h1>
-    <p class="text-sm text-gray-500 mb-4">
-        Estimation basée sur les dates d'échéance, pondérée par l'ancienneté du retard.
-        ⚠️ Provisoire : ne tient pas encore compte des promesses de paiement (sous-module non construit).
-    </p>
 
-    <div class="grid grid-cols-3 gap-4 mb-8">
-        <div class="border rounded p-4">
-            <div class="text-gray-500 text-sm">Cette semaine</div>
-            <div class="text-lg font-semibold">{{ previsions.semaine.pondere }} FCFA</div>
-            <div class="text-xs text-gray-400">Brut : {{ previsions.semaine.brut }} FCFA</div>
-        </div>
-        <div class="border rounded p-4">
-            <div class="text-gray-500 text-sm">Ce mois</div>
-            <div class="text-lg font-semibold">{{ previsions.mois.pondere }} FCFA</div>
-            <div class="text-xs text-gray-400">Brut : {{ previsions.mois.brut }} FCFA</div>
-        </div>
-        <div class="border rounded p-4">
-            <div class="text-gray-500 text-sm">Ce trimestre</div>
-            <div class="text-lg font-semibold">{{ previsions.trimestre.pondere }} FCFA</div>
-            <div class="text-xs text-gray-400">Brut : {{ previsions.trimestre.brut }} FCFA</div>
-        </div>
+<div class="min-h-screen bg-slate-50 text-slate-900 p-6 lg:p-10">
+    <div class="max-w-6xl mx-auto space-y-8">
+        <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="mb-6">
+                <h1 class="text-2xl font-bold text-slate-900">Prévisions de trésorerie</h1>
+                <p class="text-sm text-slate-500 mt-1">Estimation basée sur les dates d'échéance et l'ancienneté des créances.</p>
+            </div>
+
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-6 mb-6">
+                <p class="text-sm text-slate-700">⚠️ Provisoire : ne tient pas encore compte des promesses de paiement (sous-module non construit).</p>
+            </div>
+
+            <div class="grid gap-4 lg:grid-cols-3 mb-8">
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                    <div class="text-sm text-slate-500">Cette semaine</div>
+                    <div class="mt-2 text-xl font-semibold text-slate-900">{{ previsions.semaine.pondere }} FCFA</div>
+                    <div class="text-xs text-slate-400">Brut : {{ previsions.semaine.brut }} FCFA</div>
+                </div>
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                    <div class="text-sm text-slate-500">Ce mois</div>
+                    <div class="mt-2 text-xl font-semibold text-slate-900">{{ previsions.mois.pondere }} FCFA</div>
+                    <div class="text-xs text-slate-400">Brut : {{ previsions.mois.brut }} FCFA</div>
+                </div>
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                    <div class="text-sm text-slate-500">Ce trimestre</div>
+                    <div class="mt-2 text-xl font-semibold text-slate-900">{{ previsions.trimestre.pondere }} FCFA</div>
+                    <div class="text-xs text-slate-400">Brut : {{ previsions.trimestre.brut }} FCFA</div>
+                </div>
+            </div>
+
+            <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm mb-8">
+                <canvas id="chartEncaissements" class="w-full" height="100"></canvas>
+            </div>
+
+            <div class="rounded-2xl border border-slate-200 bg-white p-6 mb-6 shadow-sm">
+                <h2 class="text-lg font-semibold mb-4">Vieillissement des créances</h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-slate-200 text-sm">
+                        <thead class="bg-slate-50 text-slate-700">
+                            <tr>
+                                <th class="px-4 py-3 text-left">0-30 jours</th>
+                                <th class="px-4 py-3 text-left">31-60 jours</th>
+                                <th class="px-4 py-3 text-left">61-90 jours</th>
+                                <th class="px-4 py-3 text-left">90+ jours</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-slate-200">
+                            <tr>
+                                <td class="px-4 py-3">{{ anciennete.j0_30 }} FCFA</td>
+                                <td class="px-4 py-3">{{ anciennete.j31_60 }} FCFA</td>
+                                <td class="px-4 py-3">{{ anciennete.j61_90 }} FCFA</td>
+                                <td class="px-4 py-3 text-red-600">{{ anciennete.j90_plus }} FCFA</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <canvas id="chartAnciennete" class="w-full" height="100"></canvas>
+            </div>
+        </section>
     </div>
-
-    <canvas id="chartEncaissements" class="mb-8" height="100"></canvas>
-
-    <h2 class="font-semibold mb-2">Vieillissement des créances</h2>
-    <table class="w-full text-sm border-collapse mb-4">
-        <thead>
-            <tr class="text-left border-b">
-                <th class="py-2">0-30 jours</th>
-                <th>31-60 jours</th>
-                <th>61-90 jours</th>
-                <th>90+ jours</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td class="py-2">{{ anciennete.j0_30 }} FCFA</td>
-                <td>{{ anciennete.j31_60 }} FCFA</td>
-                <td>{{ anciennete.j61_90 }} FCFA</td>
-                <td class="text-red-600">{{ anciennete.j90_plus }} FCFA</td>
-            </tr>
-        </tbody>
-    </table>
-    <canvas id="chartAnciennete" height="100"></canvas>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
@@ -70,8 +87,8 @@ new Chart(document.getElementById('chartAnciennete'), {
         labels: ['0-30 j', '31-60 j', '61-90 j', '90+ j'],
         datasets: [{ label: 'Montant', data: [{{ anciennete.j0_30 }}, {{ anciennete.j31_60 }}, {{ anciennete.j61_90 }}, {{ anciennete.j90_plus }}], backgroundColor: ['#22c55e', '#eab308', '#f97316', '#ef4444'] }]
     },
-    options: { plugins: { title: { display: true, text: 'Vieillissement des créances (FCFA)' }, legend: { display: false } } }
+    options: { plugins: { legend: { display: false } } }
 });
 </script>
-</div>
+
 {% endblock %}

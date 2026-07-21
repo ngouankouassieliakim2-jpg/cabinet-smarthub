@@ -1,86 +1,175 @@
-{% extends "pilotage/base_recouvrement.html" %}
+﻿{% extends "pilotage/base_recouvrement.html" %}
+
 {% block titre %}Devis {{ devis.numero_devis }}{% endblock %}
 
+
+
 {% block contenu %}
-<div class="max-w-4xl mx-auto p-4 sm:p-8">
 
-    <a href="{% url 'liste_devis' %}" class="text-blue-700 hover:underline">&larr; Retour à la liste</a>
-
-    <div class="bg-white shadow rounded-lg p-4 sm:p-6 mt-4">
-        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start border-b pb-4 mb-4 gap-3">
+<div class="mx-auto max-w-5xl p-4 sm:p-8">
+    <section class="rounded-[28px] border border-slate-200 bg-gradient-to-br from-white via-[#FCEEF3]/30 to-white p-6 shadow-sm">
+        <a href="{% url 'devis:liste_devis' %}" class="text-sm font-medium text-[#C81E6E] hover:underline">&larr; Retour à la liste</a>
+        <div class="mt-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
-                <h1 class="text-2xl font-bold text-gray-800">{{ devis.numero_devis }}</h1>
-                <p class="text-gray-600">{{ devis.pm_raison_sociale|default:devis.pp_nom_prenoms|default:"—" }}</p>
+                <div class="inline-flex items-center rounded-full bg-[#C81E6E]/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-[#C81E6E]">Devis</div>
+                <h1 class="mt-3 text-2xl font-bold text-slate-900">{{ devis.numero_devis }}</h1>
+                <p class="mt-2 text-sm text-slate-500">{{ devis.pm_raison_sociale|default:devis.pp_nom_prenoms|default:"—" }}</p>
             </div>
-            <span class="self-start px-3 py-1 rounded-full text-sm {% if devis.statut == 'ENVOYE' %}bg-blue-100 text-blue-700{% else %}bg-gray-200 text-gray-800{% endif %}">{{ devis.get_statut_display }}</span>
+            <span class="self-start rounded-full px-3 py-1 text-sm {% if devis.statut == 'ENVOYE' %}bg-blue-100 text-blue-700{% else %}bg-slate-100 text-slate-700{% endif %}">{{ devis.get_statut_display }}</span>
+        </div>
+    </section>
+
+    <div class="mt-6 rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+
+        <div class="flex flex-col gap-3 border-b border-slate-100 pb-4 sm:flex-row sm:items-start sm:justify-between">
+
+            <div>
+
+                <h2 class="text-lg font-semibold text-slate-900">Informations client</h2>
+
+                <p class="text-sm text-slate-500">Résumé rapide du devis et des coordonnées du client.</p>
+
+            </div>
+
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-sm">
+        <div class="mt-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2 sm:gap-4">
+
             <div><span class="text-gray-500">Type :</span> {{ devis.get_type_client_display }}</div>
+
             <div><span class="text-gray-500">NCC :</span> {{ devis.ncc|default:"—" }}</div>
+
             <div><span class="text-gray-500">RCCM :</span> {{ devis.rccm_numero|default:"—" }}</div>
+
             <div><span class="text-gray-500">Téléphone :</span> {{ devis.telephone|default:"—" }}</div>
+
             <div><span class="text-gray-500">Email :</span> {{ devis.email|default:"—" }}</div>
+
             <div><span class="text-gray-500">Régime :</span> {{ devis.get_regime_imposition_display|default:"—" }}</div>
+
         </div>
 
-        <h2 class="text-lg font-semibold text-gray-800 mt-6 mb-2">Prestations</h2>
+
+
+        <h2 class="mt-6 mb-2 text-lg font-semibold text-slate-900">Prestations</h2>
+
+
 
         <!-- Tableau défilable sur mobile (ne fait plus déborder la page) -->
+
         <div class="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
-            <table class="w-full text-sm border min-w-[480px]">
-                <thead class="bg-gray-100">
+
+            <table class="w-full min-w-[480px] border-collapse rounded-[20px] border border-slate-200 text-sm">
+
+                <thead class="bg-slate-50">
+
                     <tr>
+
                         <th class="px-3 py-2 text-left">Désignation</th>
+
                         <th class="px-3 py-2 text-left">Périodicité</th>
+
                         <th class="px-3 py-2 text-right">Qté</th>
+
                         <th class="px-3 py-2 text-right">P.U. HT</th>
+
                         <th class="px-3 py-2 text-right">Total HT</th>
+
                     </tr>
+
                 </thead>
+
                 <tbody>
+
                     {% for ligne in devis.lignes.all %}
-                    <tr class="border-t">
+
+                    <tr class="border-t border-slate-100">
+
                         <td class="px-3 py-2">{{ ligne.designation }}</td>
+
                         <td class="px-3 py-2">{{ ligne.periodicite|default:"—" }}</td>
+
                         <td class="px-3 py-2 text-right">{{ ligne.quantite|floatformat:0 }}</td>
+
                         <td class="px-3 py-2 text-right">{{ ligne.prix_unitaire|floatformat:0 }}</td>
+
                         <td class="px-3 py-2 text-right">{{ ligne.total_ht|floatformat:0 }}</td>
+
                     </tr>
+
                     {% endfor %}
+
                 </tbody>
+
             </table>
+
         </div>
+
+
 
         <div class="text-right mt-4 text-sm">
+
             <div>Total HT : <b>{{ devis.total_ht|floatformat:0 }} FCFA</b></div>
+
             <div>TVA : {{ devis.montant_tva|floatformat:0 }} FCFA</div>
+
             <div class="text-lg text-gray-900 mt-1">Total TTC : <b>{{ devis.total_ttc|floatformat:0 }} FCFA</b></div>
+
         </div>
+
+
 
         <!-- Boutons d'action -->
-        <div class="border-t mt-6 pt-4 flex flex-col sm:flex-row sm:items-center gap-3">
-            <a href="{% url 'apercu_devis' devis.id %}" class="block text-center bg-pink-600 text-white px-5 py-2 rounded hover:bg-pink-700 font-medium">📄 Voir / Imprimer le devis</a>
+
+        <div class="mt-6 flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center">
+
+            <a href="{% url 'devis:apercu_devis' devis.id %}" class="block text-center bg-pink-600 text-white px-5 py-2 rounded hover:bg-pink-700 font-medium">📄 Voir / Imprimer le devis</a>
+
+
 
             {% if devis.note_explicative %}
-                <a href="{% url 'apercu_note' devis.id %}" class="block text-center bg-gray-700 text-white px-5 py-2 rounded hover:bg-gray-800 font-medium">📎 Voir la note explicative</a>
+
+                <a href="{% url 'devis:apercu_note' devis.id %}" class="block text-center bg-gray-700 text-white px-5 py-2 rounded hover:bg-gray-800 font-medium">📎 Voir la note explicative</a>
+
             {% endif %}
 
-            <a href="{% url 'apercu_proforma' devis.id %}" class="block text-center bg-amber-500 text-white px-5 py-2 rounded hover:bg-amber-600 font-medium">🧾 Générer une proforma</a>
+
+
+            <a href="{% url 'devis:apercu_proforma' devis.id %}" class="block text-center bg-amber-500 text-white px-5 py-2 rounded hover:bg-amber-600 font-medium">🧾 Générer une proforma</a>
+
+
 
             {% if devis.est_modifiable %}
-                <a href="{% url 'devis_etape2' devis.id %}" class="block text-center bg-blue-700 text-white px-5 py-2 rounded hover:bg-blue-800">Modifier</a>
+
+                <a href="{% url 'devis:devis_etape2' devis.id %}" class="block text-center bg-blue-700 text-white px-5 py-2 rounded hover:bg-blue-800">Modifier</a>
+
             {% else %}
+
                 <span class="block text-center bg-gray-300 text-gray-600 px-5 py-2 rounded cursor-not-allowed">Modification verrouillée</span>
+
             {% endif %}
+
         </div>
+
         {% if devis.est_modifiable %}
+
             <p class="text-gray-500 text-xs mt-2">Modifiable jusqu'au {{ devis.date_limite_modification|date:"d/m/Y" }}.</p>
+
         {% else %}
+
             <p class="text-gray-500 text-xs mt-2">Le délai de modification (30 jours) est dépassé depuis le {{ devis.date_limite_modification|date:"d/m/Y" }}.</p>
+
         {% endif %}
+
+
 
     </div>
 
+
+
 </div>
+
 {% endblock %}
+
+
+

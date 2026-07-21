@@ -1,0 +1,18 @@
+﻿{% extends "pilotage/base_pilotage.html" %}
+{% block contenu %}
+<div class="min-h-screen bg-slate-50 p-6 text-slate-900 lg:p-10">
+    <div class="mx-auto max-w-2xl">
+        <section class="rounded-[28px] border border-slate-200 bg-gradient-to-br from-white via-[#FCEEF3]/30 to-white p-6 shadow-sm">
+            <div class="inline-flex items-center rounded-full bg-[#C81E6E]/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-[#C81E6E]">Budget</div>
+            <h1 class="mt-3 text-2xl font-semibold tracking-tight text-slate-900">{% if creation %}Nouveau budget{% else %}Modifier le budget{% endif %}</h1>
+            <form method="post" class="mt-6 space-y-4">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit" class="inline-flex items-center justify-center rounded-full bg-[#C81E6E] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#a61756]">Enregistrer</button>
+            </form>
+        </section>
+    </div>
+</div>
+{% endblock %}
+
+

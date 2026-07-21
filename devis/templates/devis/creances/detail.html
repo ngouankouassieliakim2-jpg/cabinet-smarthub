@@ -1,312 +1,869 @@
-{% extends "base_pilotage.html" %}
+﻿{% extends "pilotage/base_pilotage.html" %}
 
 {% block contenu %}
-<div class="p-6 max-w-4xl">
-    <h1 class="text-xl font-semibold mb-1">Facture {{ facture.numero_facture }}</h1>
-    <p class="text-gray-500 mb-4">{{ facture.client_nom }} — {{ facture.get_statut_display }}</p>
 
-    <div class="grid grid-cols-3 gap-4 mb-6 text-sm">
-        <div class="border rounded p-3">
-            <div class="text-gray-500">Montant TTC</div>
-            <div class="text-lg font-semibold">{{ facture.montant_ttc }} FCFA</div>
-        </div>
-        <div class="border rounded p-3">
-            <div class="text-gray-500">Payé</div>
-            <div class="text-lg font-semibold">{{ facture.montant_paye }} FCFA</div>
-        </div>
-        <div class="border rounded p-3">
-            <div class="text-gray-500">Solde restant</div>
-            <div class="text-lg font-semibold {% if facture.solde_restant > 0 %}text-red-600{% endif %}">
-                {{ facture.solde_restant }} FCFA
+<div class="min-h-screen bg-slate-50 p-6 text-slate-900 lg:p-10">
+    <div class="mx-auto max-w-6xl space-y-8">
+        <section class="rounded-[28px] border border-slate-200 bg-gradient-to-br from-white via-[#FCEEF3]/30 to-white p-6 shadow-sm">
+            <div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                <div>
+                    <div class="inline-flex items-center rounded-full bg-[#C81E6E]/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-[#C81E6E]">Créance</div>
+                    <h1 class="mt-3 text-2xl font-bold text-slate-900">Facture {{ facture.numero_facture }}</h1>
+                    <p class="mt-1 text-sm text-slate-500">{{ facture.client_nom }} — {{ facture.get_statut_display }}</p>
+                </div>
+                <div class="grid grid-cols-1 gap-4 text-sm sm:grid-cols-3">
+                    <div class="rounded-[24px] border border-slate-200 bg-white/80 p-4 shadow-sm">
+                        <div class="text-xs font-semibold uppercase tracking-wide text-slate-400">Montant TTC</div>
+                        <div class="mt-2 text-xl font-bold text-slate-900">{{ facture.montant_ttc }} FCFA</div>
+                    </div>
+                    <div class="rounded-[24px] border border-slate-200 bg-white/80 p-4 shadow-sm">
+                        <div class="text-xs font-semibold uppercase tracking-wide text-slate-400">Payé</div>
+                        <div class="mt-2 text-xl font-bold text-slate-900">{{ facture.montant_paye }} FCFA</div>
+                    </div>
+                    <div class="rounded-[24px] border border-slate-200 bg-white/80 p-4 shadow-sm">
+                        <div class="text-xs font-semibold uppercase tracking-wide text-slate-400">Solde restant</div>
+                        <div class="mt-2 text-xl font-bold {% if facture.solde_restant > 0 %}text-red-600{% endif %}">{{ facture.solde_restant }} FCFA</div>
+                    </div>
+                </div>
             </div>
-        </div>
-        <div class="border rounded p-3">
-            <div class="text-gray-500">Total Avoirs</div>
-            <div class="text-lg font-semibold">{{ facture.total_avoirs }} FCFA</div>
-        </div>
-        <div class="border rounded p-3">
-            <div class="text-gray-500">Montant dû après avoirs</div>
-            <div class="text-lg font-semibold {% if facture.montant_du > 0 %}text-red-600{% endif %}">
-                {{ facture.montant_du }} FCFA
+
+            <div class="mb-6 grid grid-cols-1 gap-4 text-sm lg:grid-cols-3">
+                <div class="rounded-[24px] border border-slate-200 bg-white/80 p-4 shadow-sm">
+                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-400">Total avoirs</div>
+                    <div class="mt-2 text-xl font-bold text-slate-900">{{ facture.total_avoirs }} FCFA</div>
+                </div>
+                <div class="rounded-[24px] border border-slate-200 bg-white/80 p-4 shadow-sm">
+                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-400">Montant dû après avoirs</div>
+                    <div class="mt-2 text-xl font-bold {% if facture.montant_du > 0 %}text-red-600{% endif %}">{{ facture.montant_du }} FCFA</div>
+                </div>
+                <div class="rounded-[24px] border border-slate-200 bg-white/80 p-4 shadow-sm">
+                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-400">Trop-perçu disponible</div>
+                    <div class="mt-2 text-xl font-bold {% if facture.trop_percu_disponible > 0 %}text-red-600{% endif %}">{{ facture.trop_percu_disponible }} FCFA</div>
+                </div>
             </div>
-        </div>
-        <div class="border rounded p-3">
-            <div class="text-gray-500">Trop-perçu disponible</div>
-            <div class="text-lg font-semibold {% if facture.trop_percu_disponible > 0 %}text-red-600{% endif %}">
-                {{ facture.trop_percu_disponible }} FCFA
+
+            {% if peut_archiver %}
+                <form method="post" class="mb-6">
+                    {% csrf_token %}
+                    <button type="submit" name="archiver" value="1" class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Archiver cette facture</button>
+                </form>
+            {% endif %}
+
+            <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm mb-6">
+                <h2 class="text-lg font-semibold mb-3">Notes internes</h2>
+                <ul class="space-y-3 text-sm text-slate-700 mb-4">
+                    {% for n in notes %}
+                        <li class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                            <div class="text-xs text-slate-500">{{ n.date_creation|date:"d/m/Y H:i" }} — {{ n.auteur }}</div>
+                            <div class="mt-2">{{ n.message }}</div>
+                        </li>
+                    {% empty %}
+                        <li class="text-slate-500">Aucune note.</li>
+                    {% endfor %}
+                </ul>
+                <form method="post" class="space-y-4">
+                    {% csrf_token %}
+                    {{ note_form.as_p }}
+                    <button type="submit" name="ajouter_note" value="1" class="inline-flex items-center justify-center rounded-2xl bg-[#C81E6E] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#ad1457]">Ajouter</button>
+                </form>
             </div>
-        </div>
+
+            {% if promesse_active %}
+                <div class="rounded-2xl border border-blue-200 bg-blue-50 p-5 mb-6">
+                    <h2 class="text-lg font-semibold mb-2">Promesse en cours</h2>
+                    <p class="text-sm text-slate-700">{{ promesse_active.montant_promis }} FCFA promis pour le {{ promesse_active.date_promise }}{% if promesse_active.responsable %} (par {{ promesse_active.responsable }}){% endif %}</p>
+                    {% if promesse_active.commentaire %}
+                        <p class="mt-2 text-sm text-slate-500 italic">{{ promesse_active.commentaire }}</p>
+                    {% endif %}
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        <input type="hidden" name="promesse_id" value="{{ promesse_active.id }}">
+                        <button type="submit" name="annuler_promesse" value="1" class="rounded-2xl text-sm font-semibold text-red-600 hover:text-red-700">Annuler la promesse</button>
+                    </form>
+                </div>
+            {% elif facture.solde_restant > 0 %}
+                <div class="rounded-2xl border border-slate-200 bg-white p-5 mb-6">
+                    <h2 class="text-lg font-semibold mb-3">Enregistrer une promesse de paiement</h2>
+                    <form method="post" class="space-y-4">
+                        {% csrf_token %}
+                        {{ promesse_form.as_p }}
+                        <button type="submit" name="enregistrer_promesse" value="1" class="inline-flex items-center justify-center rounded-2xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700">Enregistrer</button>
+                    </form>
+                </div>
+            {% endif %}
+
+            {% if historique_promesses %}
+                <div class="rounded-2xl border border-slate-200 bg-white p-5 mb-6">
+                    <h2 class="text-lg font-semibold mb-3">Historique des promesses</h2>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-slate-200 text-sm">
+                            <thead class="bg-slate-50">
+                                <tr class="text-left text-slate-700">
+                                    <th class="px-4 py-3">Date promise</th>
+                                    <th class="px-4 py-3">Montant</th>
+                                    <th class="px-4 py-3">Statut</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-200 bg-white">
+                                {% for p in historique_promesses %}
+                                    <tr>
+                                        <td class="px-4 py-3">{{ p.date_promise }}</td>
+                                        <td class="px-4 py-3">{{ p.montant_promis }} FCFA</td>
+                                        <td class="px-4 py-3">{% if p.statut == "TENUE" %}<span class="text-green-600">Tenue</span>{% elif p.statut == "ROMPUE" %}<span class="text-red-600">Rompue</span>{% else %}<span class="text-slate-400">Annulée</span>{% endif %}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            {% endif %}
+
+            {% if facture.solde_restant > 0 %}
+                <div class="rounded-2xl border border-slate-200 bg-white p-5 mb-6">
+                    <h2 class="text-lg font-semibold mb-3">Enregistrer un paiement</h2>
+                    <form method="post" enctype="multipart/form-data" class="space-y-4">
+                        {% csrf_token %}
+                        {{ form.as_p }}
+                        <button type="submit" name="enregistrer_paiement" value="1" class="inline-flex items-center justify-center rounded-2xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700">Enregistrer</button>
+                    </form>
+                </div>
+            {% endif %}
+
+            {% if facture.montant_du > 0 %}
+                <div class="rounded-2xl border border-slate-200 bg-white p-5 mb-6">
+                    <h2 class="text-lg font-semibold mb-3">Enregistrer un avoir</h2>
+                    <form method="post" class="space-y-4">
+                        {% csrf_token %}
+                        {{ avoir_form.as_p }}
+                        <button type="submit" name="enregistrer_avoir" value="1" class="inline-flex items-center justify-center rounded-2xl bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-700">Enregistrer</button>
+                    </form>
+                    <p class="text-xs text-slate-500 mt-2">Les avoirs ne sont pas encore certifiés FNE automatiquement.</p>
+                </div>
+            {% endif %}
+
+            {% if facture.trop_percu_disponible > 0 %}
+                <div class="rounded-2xl border border-yellow-200 bg-yellow-50 p-5 mb-6">
+                    <h2 class="text-lg font-semibold mb-3">Trop-perçu détecté</h2>
+                    <p class="text-sm text-slate-700 mb-4">La facture présente un trop-perçu de {{ facture.trop_percu_disponible }} FCFA. Vous pouvez enregistrer un remboursement ou appliquer une compensation vers une autre facture du même client.</p>
+                    <div class="grid gap-4 lg:grid-cols-2">
+                        <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                            <h3 class="font-semibold mb-3">Enregistrer un remboursement</h3>
+                            <form method="post" enctype="multipart/form-data" class="space-y-4">
+                                {% csrf_token %}
+                                {{ remboursement_form.as_p }}
+                                <button type="submit" name="enregistrer_remboursement" value="1" class="inline-flex items-center justify-center rounded-2xl bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700">Enregistrer</button>
+                            </form>
+                        </div>
+                        <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                            <h3 class="font-semibold mb-3">Appliquer une compensation</h3>
+                            <form method="post" class="space-y-4">
+                                {% csrf_token %}
+                                {{ compensation_form.as_p }}
+                                <button type="submit" name="enregistrer_compensation" value="1" class="inline-flex items-center justify-center rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">Appliquer</button>
+                            </form>
+                            <p class="text-xs text-slate-500 mt-2">La compensation est appliquée uniquement vers une facture du même client. Cette correspondance est basée sur le nom du client, ce qui peut être imprécis.</p>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            {% if transition_form.fields.nouveau_statut.choices %}
+                <div class="rounded-2xl border border-slate-200 bg-white p-5 mb-6">
+                    <h2 class="text-lg font-semibold mb-3">Changer le statut</h2>
+                    <form method="post" class="space-y-4">
+                        {% csrf_token %}
+                        {{ transition_form.as_p }}
+                        <button type="submit" name="changer_statut" value="1" class="inline-flex items-center justify-center rounded-2xl bg-orange-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-orange-700">Appliquer</button>
+                    </form>
+                </div>
+            {% endif %}
+
+            <div class="rounded-2xl border border-slate-200 bg-white p-5 mb-6">
+                <h2 class="text-lg font-semibold mb-3">Recouvreur</h2>
+                <p class="text-sm text-slate-700 mb-3">Recouvreur affecté : <strong>{{ facture.recouvreur|default:"Aucun" }}</strong></p>
+                {% if aucun_recouvreur_configure %}
+                    <div class="mb-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">Aucun utilisateur ne semble encore configuré comme recouvreur. Ajoutez un poste correspondant à la fonction recouvrement pour pouvoir affecter des créances.</div>
+                {% endif %}
+                {% if peut_affecter %}
+                    <form method="post" class="space-y-4 mb-3">
+                        {% csrf_token %}
+                        {{ affectation_form.as_p }}
+                        <button type="submit" name="affecter_recouvreur" value="1" class="inline-flex items-center justify-center rounded-2xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700">Affecter</button>
+                    </form>
+                {% endif %}
+                <h3 class="font-semibold mb-3">Actions de recouvrement</h3>
+                <form method="post" class="space-y-4 mb-4">
+                    {% csrf_token %}
+                    {{ action_form.as_p }}
+                    <button type="submit" name="ajouter_action" value="1" class="inline-flex items-center justify-center rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">Ajouter l'action</button>
+                </form>
+                {% for action in actions_recouvrement %}
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 mb-3">
+                        <div class="flex justify-between items-center text-sm text-slate-500">
+                            <div>{{ action.date_action|date:"d/m/Y H:i" }}</div>
+                            <div>{{ action.get_type_action_display }}</div>
+                        </div>
+                        <div class="mt-2 text-sm text-slate-800">{{ action.commentaire|default:"(Pas de commentaire)" }}</div>
+                        <div class="text-xs text-slate-500 mt-2">Enregistrée par {{ action.recouvreur|default:"—" }}</div>
+                    </div>
+                {% empty %}
+                    <p class="text-slate-500">Aucune action de recouvrement enregistrée pour cette facture.</p>
+                {% endfor %}
+            </div>
+
+            <div class="rounded-2xl border border-slate-200 bg-white p-5 mb-6">
+                <h2 class="text-lg font-semibold mb-3">Litiges</h2>
+                {% if peut_ouvrir_litige %}
+                    <form method="post" class="space-y-4 mb-4">
+                        {% csrf_token %}
+                        {{ litige_form.as_p }}
+                        <button type="submit" name="ouvrir_litige" value="1" class="inline-flex items-center justify-center rounded-2xl bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700">Ouvrir un litige</button>
+                    </form>
+                {% else %}
+                    <p class="text-sm text-slate-600 mb-4">Un litige ouvert ou en cours existe déjà pour cette facture.</p>
+                {% endif %}
+                {% for litige in litiges %}
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 mb-3">
+                        <div class="flex justify-between items-start gap-4">
+                            <div>
+                                <div class="font-semibold">Litige #{{ litige.id }}</div>
+                                <div class="text-slate-600 text-sm">{{ litige.get_motif_type_display }}</div>
+                            </div>
+                            <div class="text-sm text-slate-500">{{ litige.get_statut_display }}</div>
+                        </div>
+                        <div class="text-sm text-slate-700 mt-2 whitespace-pre-wrap">{{ litige.description|truncatechars:230 }}</div>
+                        <div class="mt-3 flex flex-wrap gap-3 text-sm">
+                            <a href="{% url 'devis:detail_litige' litige.id %}" class="text-indigo-600">Voir le litige</a>
+                            {% if litige.statut == 'OUVERT' %}
+                                <form method="post" class="inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="litige_id" value="{{ litige.id }}">
+                                    <button type="submit" name="passer_en_cours" value="1" class="text-blue-600 underline">Passer en cours</button>
+                                </form>
+                            {% endif %}
+                            {% if litige.statut in ['OUVERT', 'EN_COURS'] %}
+                                <form method="post" class="inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="litige_id" value="{{ litige.id }}">
+                                    <button type="submit" name="abandonner_litige" value="1" class="text-red-600 underline">Abandonner</button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% empty %}
+                    <p class="text-slate-500">Aucun litige associé.</p>
+                {% endfor %}
+            </div>
+
+            <div class="rounded-2xl border border-slate-200 bg-white p-5 mb-6">
+                <h2 class="text-lg font-semibold mb-3">Paiements enregistrés</h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-slate-200 text-sm">
+                        <thead class="bg-slate-50">
+                            <tr class="text-left text-slate-700">
+                                <th class="px-4 py-3">Date</th>
+                                <th class="px-4 py-3">Montant</th>
+                                <th class="px-4 py-3">Mode</th>
+                                <th class="px-4 py-3">Référence</th>
+                                <th class="px-4 py-3">Par</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200 bg-white">
+                            {% for p in paiements %}
+                                <tr>
+                                    <td class="px-4 py-3">{{ p.date_paiement }}</td>
+                                    <td class="px-4 py-3">{{ p.montant }} FCFA</td>
+                                    <td class="px-4 py-3">{{ p.get_mode_paiement_display }}{% if p.operateur_mobile_money %} ({{ p.get_operateur_mobile_money_display }}){% endif %}</td>
+                                    <td class="px-4 py-3">{{ p.reference_bancaire|default:"—" }}</td>
+                                    <td class="px-4 py-3">{{ p.utilisateur|default:"—" }}</td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="5" class="px-4 py-8 text-center text-slate-500">Aucun paiement.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="rounded-2xl border border-slate-200 bg-white p-5 mb-6">
+                <h2 class="text-lg font-semibold mb-3">Avoirs enregistrés</h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-slate-200 text-sm">
+                        <thead class="bg-slate-50">
+                            <tr class="text-left text-slate-700">
+                                <th class="px-4 py-3">N°</th>
+                                <th class="px-4 py-3">Montant</th>
+                                <th class="px-4 py-3">Type</th>
+                                <th class="px-4 py-3">Motif</th>
+                                <th class="px-4 py-3">Date</th>
+                                <th class="px-4 py-3">Créé par</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200 bg-white">
+                            {% for a in avoirs %}
+                                <tr>
+                                    <td class="px-4 py-3">{{ a.numero_avoir }}</td>
+                                    <td class="px-4 py-3">{{ a.montant }} FCFA</td>
+                                    <td class="px-4 py-3">{{ a.get_type_avoir_display }}</td>
+                                    <td class="px-4 py-3">{{ a.motif|truncatechars:60 }}</td>
+                                    <td class="px-4 py-3">{{ a.date_creation|date:"d/m/Y" }}</td>
+                                    <td class="px-4 py-3">{{ a.cree_par|default:"—" }}</td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="6" class="px-4 py-8 text-center text-slate-500">Aucun avoir.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="rounded-2xl border border-slate-200 bg-white p-5 mb-6">
+                <h2 class="text-lg font-semibold mb-3">Remboursements enregistrés</h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-slate-200 text-sm">
+                        <thead class="bg-slate-50">
+                            <tr class="text-left text-slate-700">
+                                <th class="px-4 py-3">Date</th>
+                                <th class="px-4 py-3">Montant</th>
+                                <th class="px-4 py-3">Mode</th>
+                                <th class="px-4 py-3">Référence</th>
+                                <th class="px-4 py-3">Par</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200 bg-white">
+                            {% for r in remboursements %}
+                                <tr>
+                                    <td class="px-4 py-3">{{ r.date_remboursement }}</td>
+                                    <td class="px-4 py-3">{{ r.montant }} FCFA</td>
+                                    <td class="px-4 py-3">{{ r.get_mode_remboursement_display }}</td>
+                                    <td class="px-4 py-3">{{ r.reference|default:"—" }}</td>
+                                    <td class="px-4 py-3">{{ r.utilisateur|default:"—" }}</td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="5" class="px-4 py-8 text-center text-slate-500">Aucun remboursement.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="rounded-2xl border border-slate-200 bg-white p-5 mb-6">
+                <h2 class="text-lg font-semibold mb-3">Compensations</h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-slate-200 text-sm">
+                        <thead class="bg-slate-50">
+                            <tr class="text-left text-slate-700">
+                                <th class="px-4 py-3">Date</th>
+                                <th class="px-4 py-3">Source</th>
+                                <th class="px-4 py-3">Cible</th>
+                                <th class="px-4 py-3">Montant</th>
+                                <th class="px-4 py-3">Commentaire</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200 bg-white">
+                            {% for c in compensations_emises %}
+                                <tr>
+                                    <td class="px-4 py-3">{{ c.date_creation|date:"d/m/Y" }}</td>
+                                    <td class="px-4 py-3">{{ c.facture_source.numero_facture }}</td>
+                                    <td class="px-4 py-3">{{ c.facture_cible.numero_facture }}</td>
+                                    <td class="px-4 py-3">{{ c.montant }} FCFA</td>
+                                    <td class="px-4 py-3">{{ c.commentaire|default:"—" }}</td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="5" class="px-4 py-8 text-center text-slate-500">Aucune compensation.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="rounded-2xl border border-slate-200 bg-white p-5">
+                <h2 class="text-lg font-semibold mb-3">Historique des statuts</h2>
+                <ul class="space-y-3 text-sm text-slate-700">
+                    {% for h in historique %}
+                        <li class="rounded-2xl border-l-2 border-slate-300 bg-slate-50 p-4">
+                            <div class="text-xs text-slate-500">{{ h.date_changement|date:"d/m/Y H:i" }}</div>
+                            <div class="mt-1">{{ h.ancien_statut|default:"—" }} → <strong>{{ h.nouveau_statut }}</strong>{% if h.utilisateur %} <span class="text-slate-400">({{ h.utilisateur }})</span>{% endif %}</div>
+                            {% if h.commentaire %}<div class="mt-2 text-slate-500 italic">{{ h.commentaire }}</div>{% endif %}
+                        </li>
+                    {% empty %}
+                        <li class="text-slate-500">Aucun changement enregistré.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </section>
     </div>
+</div>
 
-    {% if peut_archiver %}
-    <form method="post" class="mb-4">
-        {% csrf_token %}
-        <button type="submit" name="archiver" value="1" class="text-sm text-gray-500 underline">Archiver cette facture</button>
-    </form>
-    {% endif %}
+{% endblock %}
 
-    <div class="border rounded p-4 mb-6 bg-white shadow-sm">
-        <h2 class="font-semibold mb-2">Notes internes</h2>
-        <ul class="space-y-2 text-sm mb-4">
-            {% for n in notes %}
-            <li class="border-l-2 border-gray-300 pl-3">
-                <span class="text-gray-500">{{ n.date_creation|date:"d/m/Y H:i" }}</span> — {{ n.auteur }}<br>{{ n.message }}</li>
-            {% empty %}
-            <li class="text-gray-400">Aucune note.</li>
-            {% endfor %}
-        </ul>
-        <form method="post" class="flex gap-2 items-end mb-6">
-            {% csrf_token %}
-            {{ note_form.as_p }}
-            <button type="submit" name="ajouter_note" value="1" class="bg-gray-700 text-white rounded px-3 py-1 text-sm">Ajouter</button>
-        </form>
-    </div>
-
-    {% if facture.solde_restant > 0 %}
-    <div class="border rounded p-4 mb-6">
-        <h2 class="font-semibold mb-3">Enregistrer un paiement</h2>
-        <form method="post" enctype="multipart/form-data" class="space-y-3">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit" name="enregistrer_paiement" value="1" class="bg-blue-600 text-white rounded px-4 py-2">Enregistrer</button>
-        </form>
-    </div>
-    {% endif %}
-
-    {% if facture.montant_du > 0 %}
-    <div class="border rounded p-4 mb-6">
-        <h2 class="font-semibold mb-3">Enregistrer un avoir</h2>
-        <form method="post" class="space-y-3">
-            {% csrf_token %}
-            {{ avoir_form.as_p }}
-            <button type="submit" name="enregistrer_avoir" value="1" class="bg-green-600 text-white rounded px-4 py-2">Enregistrer</button>
-        </form>
         <p class="text-xs text-gray-500 mt-2">Les avoirs ne sont pas encore certifiés FNE automatiquement.</p>
+
     </div>
+
     {% endif %}
+
+
 
     {% if facture.trop_percu_disponible > 0 %}
+
     <div class="border rounded p-4 mb-6 bg-yellow-50">
+
         <h2 class="font-semibold mb-3">Trop-perçu détecté</h2>
+
         <p class="text-sm text-gray-700 mb-4">
+
             La facture présente un trop-perçu de {{ facture.trop_percu_disponible }} FCFA.
+
             Vous pouvez enregistrer un remboursement ou appliquer une compensation vers une autre facture du même client.
+
         </p>
+
+
 
         <div class="grid grid-cols-2 gap-4">
+
             <div class="border rounded p-4 bg-white">
+
                 <h3 class="font-semibold mb-3">Enregistrer un remboursement</h3>
+
                 <form method="post" enctype="multipart/form-data" class="space-y-3">
+
                     {% csrf_token %}
+
                     {{ remboursement_form.as_p }}
+
                     <button type="submit" name="enregistrer_remboursement" value="1" class="bg-red-600 text-white rounded px-4 py-2">Enregistrer</button>
+
                 </form>
+
             </div>
+
             <div class="border rounded p-4 bg-white">
+
                 <h3 class="font-semibold mb-3">Appliquer une compensation</h3>
+
                 <form method="post" class="space-y-3">
+
                     {% csrf_token %}
+
                     {{ compensation_form.as_p }}
+
                     <button type="submit" name="enregistrer_compensation" value="1" class="bg-indigo-600 text-white rounded px-4 py-2">Appliquer</button>
+
                 </form>
+
                 <p class="text-xs text-gray-500 mt-2">
+
                     La compensation est appliquée uniquement vers une facture du même client.
+
                     Cette correspondance est basée sur le nom du client, ce qui peut être imprécis.
+
                 </p>
+
             </div>
+
         </div>
+
     </div>
+
     {% endif %}
+
+
 
     {% if transition_form.fields.nouveau_statut.choices %}
+
     <div class="border rounded p-4 mb-6">
+
         <h2 class="font-semibold mb-3">Changer le statut</h2>
+
         <form method="post" class="space-y-3">
+
             {% csrf_token %}
+
             {{ transition_form.as_p }}
+
             <button type="submit" name="changer_statut" value="1" class="bg-orange-600 text-white rounded px-4 py-2">Appliquer</button>
+
         </form>
+
     </div>
+
     {% endif %}
 
-    <div class="border rounded p-4 mb-6 bg-white shadow-sm">
-        <h2 class="font-semibold mb-3">Recouvreur</h2>
-        <p class="text-sm text-gray-700 mb-3">
-            Recouvreur affecté : <strong>{{ facture.recouvreur|default:"Aucun" }}</strong>
-        </p>
-        {% if peut_affecter %}
-        <form method="post" class="space-y-3 mb-3">
-            {% csrf_token %}
-            {{ affectation_form.as_p }}
-            <button type="submit" name="affecter_recouvreur" value="1" class="bg-blue-600 text-white rounded px-4 py-2">Affecter</button>
-        </form>
-        {% endif %}
-        <h3 class="font-semibold mb-2">Actions de recouvrement</h3>
-        <form method="post" class="space-y-3 mb-4">
-            {% csrf_token %}
-            {{ action_form.as_p }}
-            <button type="submit" name="ajouter_action" value="1" class="bg-indigo-600 text-white rounded px-4 py-2">Ajouter l'action</button>
-        </form>
-        {% for action in actions_recouvrement %}
-        <div class="border rounded p-3 mb-3 bg-gray-50">
-            <div class="flex justify-between items-center text-sm text-gray-600">
-                <div>{{ action.date_action|date:"d/m/Y H:i" }}</div>
-                <div>{{ action.get_type_action_display }}</div>
-            </div>
-            <div class="mt-2 text-sm text-gray-800">{{ action.commentaire|default:"(Pas de commentaire)" }}</div>
-            <div class="text-xs text-gray-500 mt-2">Enregistrée par {{ action.recouvreur|default:"—" }}</div>
-        </div>
-        {% empty %}
-        <p class="text-gray-500">Aucune action de recouvrement enregistrée pour cette facture.</p>
-        {% endfor %}
-    </div>
+
 
     <div class="border rounded p-4 mb-6 bg-white shadow-sm">
-        <h2 class="font-semibold mb-3">Litiges</h2>
-        {% if peut_ouvrir_litige %}
-        <form method="post" class="space-y-3 mb-4">
+
+        <h2 class="font-semibold mb-3">Recouvreur</h2>
+
+        <p class="text-sm text-gray-700 mb-3">
+
+            Recouvreur affecté : <strong>{{ facture.recouvreur|default:"Aucun" }}</strong>
+
+        </p>
+
+        {% if peut_affecter %}
+
+        <form method="post" class="space-y-3 mb-3">
+
             {% csrf_token %}
-            {{ litige_form.as_p }}
-            <button type="submit" name="ouvrir_litige" value="1" class="bg-red-600 text-white rounded px-4 py-2">Ouvrir un litige</button>
+
+            {{ affectation_form.as_p }}
+
+            <button type="submit" name="affecter_recouvreur" value="1" class="bg-blue-600 text-white rounded px-4 py-2">Affecter</button>
+
         </form>
-        {% else %}
-        <p class="text-sm text-gray-600 mb-4">Un litige ouvert ou en cours existe déjà pour cette facture.</p>
+
         {% endif %}
+
+        <h3 class="font-semibold mb-2">Actions de recouvrement</h3>
+
+        <form method="post" class="space-y-3 mb-4">
+
+            {% csrf_token %}
+
+            {{ action_form.as_p }}
+
+            <button type="submit" name="ajouter_action" value="1" class="bg-indigo-600 text-white rounded px-4 py-2">Ajouter l'action</button>
+
+        </form>
+
+        {% for action in actions_recouvrement %}
+
+        <div class="border rounded p-3 mb-3 bg-gray-50">
+
+            <div class="flex justify-between items-center text-sm text-gray-600">
+
+                <div>{{ action.date_action|date:"d/m/Y H:i" }}</div>
+
+                <div>{{ action.get_type_action_display }}</div>
+
+            </div>
+
+            <div class="mt-2 text-sm text-gray-800">{{ action.commentaire|default:"(Pas de commentaire)" }}</div>
+
+            <div class="text-xs text-gray-500 mt-2">Enregistrée par {{ action.recouvreur|default:"—" }}</div>
+
+        </div>
+
+        {% empty %}
+
+        <p class="text-gray-500">Aucune action de recouvrement enregistrée pour cette facture.</p>
+
+        {% endfor %}
+
+    </div>
+
+
+
+    <div class="border rounded p-4 mb-6 bg-white shadow-sm">
+
+        <h2 class="font-semibold mb-3">Litiges</h2>
+
+        {% if peut_ouvrir_litige %}
+
+        <form method="post" class="space-y-3 mb-4">
+
+            {% csrf_token %}
+
+            {{ litige_form.as_p }}
+
+            <button type="submit" name="ouvrir_litige" value="1" class="bg-red-600 text-white rounded px-4 py-2">Ouvrir un litige</button>
+
+        </form>
+
+        {% else %}
+
+        <p class="text-sm text-gray-600 mb-4">Un litige ouvert ou en cours existe déjà pour cette facture.</p>
+
+        {% endif %}
+
+
 
         {% for litige in litiges %}
+
         <div class="border rounded p-3 mb-3 bg-gray-50">
+
             <div class="flex justify-between items-start gap-4">
+
                 <div>
+
                     <div class="font-semibold">Litige #{{ litige.id }}</div>
+
                     <div class="text-gray-600 text-sm">{{ litige.get_motif_type_display }}</div>
+
                 </div>
+
                 <div class="text-sm text-gray-500">{{ litige.get_statut_display }}</div>
+
             </div>
+
             <div class="text-sm text-gray-700 mt-2 whitespace-pre-wrap">{{ litige.description|truncatechars:230 }}</div>
+
             <div class="mt-3 flex gap-2 text-sm">
+
                 <a href="{% url 'devis:detail_litige' litige.id %}" class="text-indigo-600">Voir le litige</a>
+
                 {% if litige.statut == 'OUVERT' %}
+
                 <form method="post" class="inline">
+
                     {% csrf_token %}
+
                     <input type="hidden" name="litige_id" value="{{ litige.id }}">
+
                     <button type="submit" name="passer_en_cours" value="1" class="text-blue-600 underline">Passer en cours</button>
+
                 </form>
+
                 {% endif %}
+
                 {% if litige.statut in ['OUVERT', 'EN_COURS'] %}
+
                 <form method="post" class="inline">
+
                     {% csrf_token %}
+
                     <input type="hidden" name="litige_id" value="{{ litige.id }}">
+
                     <button type="submit" name="abandonner_litige" value="1" class="text-red-600 underline">Abandonner</button>
+
                 </form>
+
                 {% endif %}
+
             </div>
+
         </div>
+
         {% empty %}
+
         <p class="text-gray-500">Aucun litige associé.</p>
+
         {% endfor %}
+
     </div>
 
+
+
     <h2 class="font-semibold mb-2">Paiements enregistrés</h2>
+
     <table class="w-full text-sm border-collapse mb-6">
+
         <thead>
+
             <tr class="text-left border-b">
+
                 <th class="py-1">Date</th><th>Montant</th><th>Mode</th><th>Référence</th><th>Par</th>
+
             </tr>
+
         </thead>
+
         <tbody>
+
             {% for p in paiements %}
+
             <tr class="border-b">
+
                 <td class="py-1">{{ p.date_paiement }}</td>
+
                 <td>{{ p.montant }} FCFA</td>
+
                 <td>{{ p.get_mode_paiement_display }}{% if p.operateur_mobile_money %} ({{ p.get_operateur_mobile_money_display }}){% endif %}</td>
+
                 <td>{{ p.reference_bancaire|default:"—" }}</td>
+
                 <td>{{ p.utilisateur|default:"—" }}</td>
+
             </tr>
+
             {% empty %}
+
             <tr><td colspan="5" class="py-2 text-gray-400">Aucun paiement.</td></tr>
+
             {% endfor %}
+
         </tbody>
+
     </table>
+
+
 
     <h2 class="font-semibold mb-2">Avoirs enregistrés</h2>
+
     <table class="w-full text-sm border-collapse mb-6">
+
         <thead>
+
             <tr class="text-left border-b">
+
                 <th class="py-1">N°</th><th>Montant</th><th>Type</th><th>Motif</th><th>Date</th><th>Créé par</th>
+
             </tr>
+
         </thead>
+
         <tbody>
+
             {% for a in avoirs %}
+
             <tr class="border-b">
+
                 <td class="py-1">{{ a.numero_avoir }}</td>
+
                 <td>{{ a.montant }} FCFA</td>
+
                 <td>{{ a.get_type_avoir_display }}</td>
+
                 <td>{{ a.motif|truncatechars:60 }}</td>
+
                 <td>{{ a.date_creation|date:"d/m/Y" }}</td>
+
                 <td>{{ a.cree_par|default:"—" }}</td>
+
             </tr>
+
             {% empty %}
+
             <tr><td colspan="6" class="py-2 text-gray-400">Aucun avoir.</td></tr>
+
             {% endfor %}
+
         </tbody>
+
     </table>
+
+
 
     <h2 class="font-semibold mb-2">Remboursements enregistrés</h2>
+
     <table class="w-full text-sm border-collapse mb-6">
+
         <thead>
+
             <tr class="text-left border-b">
+
                 <th class="py-1">Date</th><th>Montant</th><th>Mode</th><th>Référence</th><th>Par</th>
+
             </tr>
+
         </thead>
+
         <tbody>
+
             {% for r in remboursements %}
+
             <tr class="border-b">
+
                 <td class="py-1">{{ r.date_remboursement }}</td>
+
                 <td>{{ r.montant }} FCFA</td>
+
                 <td>{{ r.get_mode_remboursement_display }}</td>
+
                 <td>{{ r.reference|default:"—" }}</td>
+
                 <td>{{ r.utilisateur|default:"—" }}</td>
+
             </tr>
+
             {% empty %}
+
             <tr><td colspan="5" class="py-2 text-gray-400">Aucun remboursement.</td></tr>
+
             {% endfor %}
+
         </tbody>
+
     </table>
+
+
 
     <h2 class="font-semibold mb-2">Compensations</h2>
+
     <table class="w-full text-sm border-collapse mb-6">
+
         <thead>
+
             <tr class="text-left border-b">
+
                 <th class="py-1">Date</th><th>Source</th><th>Cible</th><th>Montant</th><th>Commentaire</th>
+
             </tr>
+
         </thead>
+
         <tbody>
+
             {% for c in compensations_emises %}
+
             <tr class="border-b">
+
                 <td class="py-1">{{ c.date_creation|date:"d/m/Y" }}</td>
+
                 <td>{{ c.facture_source.numero_facture }}</td>
+
                 <td>{{ c.facture_cible.numero_facture }}</td>
+
                 <td>{{ c.montant }} FCFA</td>
+
                 <td>{{ c.commentaire|default:"—" }}</td>
+
             </tr>
+
             {% empty %}
+
             <tr><td colspan="5" class="py-2 text-gray-400">Aucune compensation.</td></tr>
+
             {% endfor %}
+
         </tbody>
+
     </table>
 
+
+
     <h2 class="font-semibold mb-2">Historique des statuts</h2>
+
     <ul class="space-y-2 text-sm">
+
         {% for h in historique %}
+
         <li class="border-l-2 border-gray-300 pl-3">
+
             <span class="text-gray-500">{{ h.date_changement|date:"d/m/Y H:i" }}</span> —
+
             {{ h.ancien_statut|default:"—" }} → <strong>{{ h.nouveau_statut }}</strong>
+
             {% if h.utilisateur %}<span class="text-gray-400">({{ h.utilisateur }})</span>{% endif %}
+
             {% if h.commentaire %}<div class="text-gray-500 italic">{{ h.commentaire }}</div>{% endif %}
+
         </li>
+
         {% empty %}
+
         <li class="text-gray-400">Aucun changement enregistré.</li>
+
         {% endfor %}
+
     </ul>
+
 </div>
+
 {% endblock %}
+
+
+
+
+

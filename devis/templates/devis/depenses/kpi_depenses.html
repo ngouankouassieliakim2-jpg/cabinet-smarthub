@@ -1,0 +1,102 @@
+﻿{% extends "pilotage/base_pilotage.html" %}
+
+{% block contenu %}
+<div class="min-h-screen bg-slate-50 p-6 text-slate-900 lg:p-10">
+    <div class="mx-auto max-w-7xl space-y-6">
+        <section class="rounded-[28px] border border-slate-200 bg-gradient-to-br from-white via-[#FCEEF3]/30 to-white p-6 shadow-sm">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                    <div class="inline-flex items-center rounded-full bg-[#C81E6E]/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-[#C81E6E]">KPI</div>
+                    <h1 class="mt-3 text-2xl font-semibold tracking-tight text-slate-900">KPI Dépenses</h1>
+                </div>
+                <div class="flex flex-wrap items-center gap-3">
+                    <form method="get">
+                        <select name="annee" onchange="this.form.submit()" class="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:border-[#C81E6E] focus:outline-none">
+                            {% for a in annees_disponibles %}
+                            <option value="{{ a }}" {% if a == annee %}selected{% endif %}>{{ a }}</option>
+                            {% endfor %}
+                        </select>
+                    </form>
+                    <a href="?annee={{ annee }}&export=csv" class="text-sm font-medium text-[#C81E6E] underline">CSV</a>
+                    <a href="?annee={{ annee }}&export=excel" class="text-sm font-medium text-[#C81E6E] underline">Excel</a>
+                </div>
+            </div>
+
+            {% if depassements %}
+            <div class="mt-6 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+                <strong>{{ depassements|length }} budget(s) en dépassement</strong> pour {{ annee }} :
+                <ul class="mt-2 list-disc space-y-2 pl-5">
+                    {% for b in depassements %}
+                    <li><a href="{% url 'devis:detail_budget' b.id %}" class="font-medium underline">{{ b.categorie }}</a> — {{ b.taux_consommation }} %</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </section>
+
+        <section class="grid gap-6 lg:grid-cols-2">
+            <div class="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+                <h2 class="text-lg font-semibold text-slate-900">Dépenses par catégorie</h2>
+                <canvas id="chartCategorie" class="mt-4" height="90"></canvas>
+            </div>
+            <div class="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+                <h2 class="text-lg font-semibold text-slate-900">Évolution annuelle</h2>
+                <canvas id="chartEvolution" class="mt-4" height="90"></canvas>
+            </div>
+        </section>
+
+        <section class="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 class="text-lg font-semibold text-slate-900">Top fournisseurs les plus coûteux</h2>
+            <canvas id="chartFournisseurs" class="mt-4" height="120"></canvas>
+        </section>
+
+        <section class="grid gap-6 lg:grid-cols-2">
+            <div class="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+                <h2 class="text-lg font-semibold text-slate-900">Dépenses par service (pôle)</h2>
+                <div class="mt-4 overflow-x-auto">
+                    <table class="min-w-full text-sm">
+                        <thead class="bg-slate-50 text-left text-xs uppercase tracking-wider text-slate-500"><tr><th class="px-3 py-3">Service</th><th class="px-3 py-3">Montant HT</th></tr></thead>
+                        <tbody>
+                            {% for s in par_service %}
+                            <tr class="border-t border-slate-200"><td class="px-3 py-3">{{ s.cree_par__profil__pole__nom }}</td><td class="px-3 py-3">{{ s.total }} FCFA</td></tr>
+                            {% empty %}<tr><td colspan="2" class="px-3 py-4 text-center text-slate-500">Aucune donnée.</td></tr>{% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+                <h2 class="text-lg font-semibold text-slate-900">Dépenses par collaborateur</h2>
+                <div class="mt-4 overflow-x-auto">
+                    <table class="min-w-full text-sm">
+                        <thead class="bg-slate-50 text-left text-xs uppercase tracking-wider text-slate-500"><tr><th class="px-3 py-3">Collaborateur</th><th class="px-3 py-3">Montant HT</th></tr></thead>
+                        <tbody>
+                            {% for c in par_collaborateur %}
+                            <tr class="border-t border-slate-200"><td class="px-3 py-3">{{ c.cree_par__username }}</td><td class="px-3 py-3">{{ c.total }} FCFA</td></tr>
+                            {% empty %}<tr><td colspan="2" class="px-3 py-4 text-center text-slate-500">Aucune donnée.</td></tr>{% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+new Chart(document.getElementById('chartCategorie'), {
+    type: 'bar',
+    data: { labels: {{ cat_labels|safe }}, datasets: [{ label: 'Montant HT', data: {{ cat_valeurs|safe }}, backgroundColor: '#2563eb' }] },
+    options: { plugins: { legend: { display: false } } }
+});
+new Chart(document.getElementById('chartEvolution'), {
+    type: 'line',
+    data: { labels: {{ evo_labels|safe }}, datasets: [{ label: 'Total annuel (FCFA)', data: {{ evo_valeurs|safe }}, borderColor: '#16a34a', backgroundColor: '#bbf7d0', fill: true }] }
+});
+new Chart(document.getElementById('chartFournisseurs'), {
+    type: 'bar',
+    data: { labels: {{ four_labels|safe }}, datasets: [{ label: 'Montant HT', data: {{ four_valeurs|safe }}, backgroundColor: '#ef4444' }] },
+    options: { indexAxis: 'y', plugins: { legend: { display: false } } }
+});
+</script>
+{% endblock %}
+

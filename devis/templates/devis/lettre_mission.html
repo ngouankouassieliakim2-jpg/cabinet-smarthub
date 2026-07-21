@@ -1,4 +1,4 @@
-{% load static %}
+?{% load static %}
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -86,8 +86,8 @@
 <body>
 
   <div class="toolbar">
-    <a href="{% url 'liste_devis' %}" class="btn-back">&larr; Retour à la liste des devis</a>
-    <button class="btn-print" onclick="window.print()">🖨️ Imprimer / PDF</button>
+    <a href="{% url 'devis:liste_devis' %}" class="btn-back">&larr; Retour à la liste des devis</a>
+    <button class="btn-print" onclick="window.print()">🖨�? Imprimer / PDF</button>
   </div>
 
   <!-- MESSAGES (confirmation d'envoi email) -->
@@ -255,3 +255,4 @@
   </div>
 </body>
 </html>
+

@@ -12,6 +12,8 @@ class Notification(models.Model):
         ("relance_notification_interne", "Recouvrement — notification interne"),
         ("relance_escalade_direction", "Recouvrement — escalade Direction"),
         ("relance_alerte_contentieux", "Recouvrement — alerte contentieux"),
+        ("promesse_rompue", "Recouvrement — promesse rompue"),
+        ("budget_alerte", "Budget — seuil atteint"),
     ]
     type_notification = models.CharField("Type", max_length=30, choices=TYPE_CHOICES)
     titre = models.CharField("Titre", max_length=200)
@@ -19,6 +21,11 @@ class Notification(models.Model):
     url = models.CharField("Lien vers la page concernée", max_length=300, blank=True, default="")
     cle = models.CharField("Clé d'unicité", max_length=200, unique=True,
                            help_text="Empêche de dupliquer la même alerte (ex: type + id salarié + date).")
+    destinataire = models.ForeignKey(
+        "auth.User", on_delete=models.CASCADE, null=True, blank=True,
+        related_name="notifications_recues",
+        help_text="Si vide, notification générale (visible par tous, comme avant). "
+                   "Si rempli, visible par ce destinataire précis + toujours par Direction/Cadre.")
     lue = models.BooleanField("Lue", default=False)
     cree_le = models.DateTimeField("Créée le", auto_now_add=True)
 

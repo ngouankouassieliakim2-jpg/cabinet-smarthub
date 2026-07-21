@@ -1,4 +1,4 @@
-{% extends "pilotage/base_recouvrement.html" %}
+?{% extends "pilotage/base_recouvrement.html" %}
 {% block titre %}Étape 5 — Validation{% endblock %}
 
 {% block contenu %}
@@ -56,7 +56,7 @@
 
       {% if not dossier_complet %}
       <div class="mt-5 bg-red-50 border border-red-200 rounded p-4">
-        <p class="text-sm text-red-700 font-medium mb-1">⚠️ Le dossier est incomplet.</p>
+        <p class="text-sm text-red-700 font-medium mb-1">⚠�? Le dossier est incomplet.</p>
         <p class="text-sm text-red-600">Complétez les éléments marqués d'une croix rouge avant de valider. Utilisez la frise ci-dessus pour revenir aux étapes concernées.</p>
       </div>
       {% else %}
@@ -71,7 +71,7 @@
   <div class="bg-[#FCEEF3] border border-[#f3c9dd] rounded-lg p-6 text-center">
     {% if dossier_complet %}
     <p class="text-sm text-gray-700 mb-4">Le dossier est complet. Générez la lettre de mission ci-dessous.</p>
-    <a href="{% url 'valider_et_lettre' devis.id %}"
+    <a href="{% url 'devis:valider_et_lettre' devis.id %}"
        class="inline-block bg-[#C81E6E] text-white px-8 py-3 rounded font-medium hover:bg-[#a81659]">
       📄 Générer la lettre et valider (envoi au prospect)
     </a>
@@ -85,8 +85,9 @@
   </div>
 
   <div class="flex justify-between items-center pt-6">
-    <a href="{% url 'devis_etape4' devis.id %}" class="text-sm text-gray-500 hover:underline">← Retour à la visualisation</a>
+    <a href="{% url 'devis:devis_etape4' devis.id %}" class="text-sm text-gray-500 hover:underline">�? Retour à la visualisation</a>
   </div>
 
 </div>
 {% endblock %}
+

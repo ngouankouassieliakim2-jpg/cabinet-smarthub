@@ -86,6 +86,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'pilotage.context_processors.navigation',
                 'pilotage.context_processors.notifications_non_lues',
+                'pilotage.context_processors.sous_modules_auto',
             ],
         },
     },

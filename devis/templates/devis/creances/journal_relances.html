@@ -1,79 +1,80 @@
-{% extends "base_pilotage.html" %}
+{% extends "pilotage/base_pilotage.html" %}
+
 {% block contenu %}
-<div class="p-6">
-    <h1 class="text-xl font-semibold mb-4">Journal des relances</h1>
 
-    <div class="grid grid-cols-3 gap-4 mb-4 text-sm">
-        <div class="border rounded p-3">
-            <div class="text-gray-500">Total déclenchées</div>
-            <div class="text-lg font-semibold">{{ total }}</div>
-        </div>
-        <div class="border rounded p-3">
-            <div class="text-gray-500">Échecs</div>
-            <div class="text-lg font-semibold {% if echecs %}text-red-600{% endif %}">{{ echecs }}</div>
-        </div>
-        <div class="border rounded p-3">
-            <div class="text-gray-500">Taux de succès</div>
-            <div class="text-lg font-semibold">{% if taux_succes is not None %}{{ taux_succes }} %{% else %}—{% endif %}</div>
-        </div>
+<div class="min-h-screen bg-slate-50 text-slate-900 p-6 lg:p-10">
+    <div class="max-w-6xl mx-auto space-y-8">
+        <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between mb-6">
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-900">Journal des relances</h1>
+                    <p class="text-sm text-slate-500 mt-1">Historique des relances et performance de vos actions de recouvrement.</p>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        <div class="text-xs font-semibold uppercase tracking-wide text-slate-400">Total déclenchées</div>
+                        <div class="mt-2 text-xl font-bold text-slate-900">{{ total }}</div>
+                    </div>
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        <div class="text-xs font-semibold uppercase tracking-wide text-slate-400">Échecs</div>
+                        <div class="mt-2 text-xl font-bold {% if echecs %}text-red-600{% endif %}">{{ echecs }}</div>
+                    </div>
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        <div class="text-xs font-semibold uppercase tracking-wide text-slate-400">Taux de succès</div>
+                        <div class="mt-2 text-xl font-bold text-slate-900">{% if taux_succes is not None %}{{ taux_succes }} %{% else %}—{% endif %}</div>
+                    </div>
+                </div>
+            </div>
+
+            <form method="get" class="grid gap-4 lg:grid-cols-[1.5fr_1fr_auto] mb-6 items-end">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Recherche</label>
+                    <input type="text" name="q" value="{{ filtre_recherche }}" placeholder="N° facture..." class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-900 focus:border-[#C81E6E] focus:ring-2 focus:ring-[#C81E6E]/20" />
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Étape</label>
+                    <select name="etape" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-900 focus:border-[#C81E6E] focus:ring-2 focus:ring-[#C81E6E]/20">
+                        <option value="">Toutes étapes</option>
+                        {% for e in etapes %}
+                            <option value="{{ e.id }}" {% if filtre_etape == e.id|stringformat:"s" %}selected{% endif %}>{{ e.nom }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="flex flex-wrap items-center gap-3">
+                    <button type="submit" class="inline-flex items-center justify-center rounded-2xl bg-[#C81E6E] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#ad1457]">Filtrer</button>
+                    <a href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}export=csv" class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">CSV</a>
+                    <a href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}export=excel" class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Excel</a>
+                </div>
+            </form>
+
+            <div class="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <table class="min-w-full divide-y divide-slate-200 text-sm">
+                    <thead class="bg-slate-50">
+                        <tr class="text-left text-slate-700">
+                            <th class="px-4 py-3">Date</th>
+                            <th class="px-4 py-3">Facture</th>
+                            <th class="px-4 py-3">Étape</th>
+                            <th class="px-4 py-3">Résultat</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200 bg-white">
+                        {% for r in relances %}
+                            <tr class="hover:bg-slate-50 cursor-pointer" onclick="window.location='{% url 'devis:detail_creance' r.facture.id %}'">
+                                <td class="px-4 py-3">{{ r.date_declenchement|date:"d/m/Y H:i" }}</td>
+                                <td class="px-4 py-3">{{ r.facture.numero_facture }}</td>
+                                <td class="px-4 py-3">{{ r.etape.nom }}</td>
+                                <td class="px-4 py-3">{% if r.reussie %}<span class="text-green-600">OK</span>{% else %}<span class="text-red-600">Échec</span>{% endif %}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="4" class="px-4 py-8 text-center text-slate-500">Aucune relance trouvée.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
     </div>
-
-    <form method="get" class="flex flex-wrap gap-3 mb-4 items-end">
-        <div>
-            <label class="block text-xs text-gray-500">Recherche</label>
-            <input type="text" name="q" value="{{ filtre_recherche }}" placeholder="N° facture..." class="border rounded px-2 py-1 w-64">
-        </div>
-        <div>
-            <label class="block text-xs text-gray-500">Étape</label>
-            <select name="etape" class="border rounded px-2 py-1 w-56">
-                <option value="">Toutes étapes</option>
-                {% for e in etapes %}
-                    <option value="{{ e.id }}" {% if filtre_etape == e.id|stringformat:"s" %}selected{% endif %}>{{ e.nom }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="flex gap-2">
-            <button type="submit" class="bg-gray-800 text-white rounded px-4 py-2">Filtrer</button>
-            <a href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}export=csv" class="text-blue-600 underline py-2">CSV</a>
-            <a href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}export=excel" class="text-blue-600 underline py-2">Excel</a>
-        </div>
-    </form>
-
-    <div class="overflow-x-auto border rounded">
-        <table class="min-w-full text-sm border-collapse">
-            <thead class="bg-gray-100">
-                <tr class="text-left text-gray-700">
-                    <th class="px-3 py-2">Date</th>
-                    <th class="px-3 py-2">Facture</th>
-                    <th class="px-3 py-2">Étape</th>
-                    <th class="px-3 py-2">Résultat</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for r in relances %}
-                <tr class="border-t hover:bg-gray-50 cursor-pointer" onclick="window.location='{% url 'devis:detail_creance' r.facture.id %}'">
-                    <td class="px-3 py-2">{{ r.date_declenchement|date:"d/m/Y H:i" }}</td>
-                    <td class="px-3 py-2">{{ r.facture.numero_facture }}</td>
-                    <td class="px-3 py-2">{{ r.etape.nom }}</td>
-                    <td class="px-3 py-2">
-                        {% if r.reussie %}
-                            <span class="text-green-600">OK</span>
-                        {% else %}
-                            <span class="text-red-600">Échec</span>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="4" class="px-3 py-6 text-center text-gray-500">Aucune relance trouvée.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    {% if relances|length == 200 %}
-        <p class="text-xs text-gray-500 mt-2">Affichage limité aux 200 plus récentes.</p>
-    {% endif %}
 </div>
+
 {% endblock %}

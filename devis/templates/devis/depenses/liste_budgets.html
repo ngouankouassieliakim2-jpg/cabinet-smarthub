@@ -1,0 +1,75 @@
+﻿{% extends "pilotage/base_pilotage.html" %}
+
+{% block contenu %}
+<div class="min-h-screen bg-slate-50 p-6 text-slate-900 lg:p-10">
+    <div class="mx-auto max-w-7xl space-y-6">
+        <section class="rounded-[28px] border border-slate-200 bg-gradient-to-br from-white via-[#FCEEF3]/30 to-white p-6 shadow-sm">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                    <div class="inline-flex items-center rounded-full bg-[#C81E6E]/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-[#C81E6E]">Budgets</div>
+                    <h1 class="mt-3 text-2xl font-semibold tracking-tight text-slate-900">Budgets</h1>
+                    <p class="mt-2 text-sm text-slate-500">Suivi des budgets alloués, consommés et des seuils d’alerte.</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-3">
+                    <a href="{% url 'devis:dashboard_budgets' %}" class="text-sm font-medium text-[#C81E6E] underline">Dashboard</a>
+                    <a href="{% url 'devis:creer_budget' %}" class="inline-flex items-center justify-center rounded-full bg-[#C81E6E] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#a61756]">+ Nouveau budget</a>
+                </div>
+            </div>
+
+            <form method="get" class="mt-6 grid gap-4 md:grid-cols-[1fr_1fr_auto_auto_auto]">
+                <select name="exercice" class="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:border-[#C81E6E] focus:outline-none">
+                    {% for a in annees_disponibles %}<option value="{{ a }}" {% if exercice_filtre == a|stringformat:"s" %}selected{% endif %}>{{ a }}</option>{% endfor %}
+                </select>
+                <select name="categorie" class="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:border-[#C81E6E] focus:outline-none">
+                    <option value="">Toutes catégories</option>
+                    {% for c in categories %}<option value="{{ c.id }}" {% if categorie_filtre == c.id|stringformat:"s" %}selected{% endif %}>{{ c.nom }}</option>{% endfor %}
+                </select>
+                <button type="submit" class="inline-flex items-center justify-center rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800">Filtrer</button>
+                <a href="?{{ request.GET.urlencode }}&export=csv" class="inline-flex items-center justify-center rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">CSV</a>
+                <a href="?{{ request.GET.urlencode }}&export=excel" class="inline-flex items-center justify-center rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Excel</a>
+            </form>
+
+            <div class="mt-6 grid gap-4 md:grid-cols-2">
+                <div class="rounded-3xl border border-slate-200 bg-slate-50/80 p-4">
+                    <p class="text-sm text-slate-500">Total alloué</p>
+                    <p class="mt-2 text-xl font-semibold text-slate-900">{{ total_alloue }} FCFA</p>
+                </div>
+                <div class="rounded-3xl border border-slate-200 bg-slate-50/80 p-4">
+                    <p class="text-sm text-slate-500">Total consommé</p>
+                    <p class="mt-2 text-xl font-semibold text-slate-900">{{ total_consomme }} FCFA</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm">
+                    <thead class="bg-slate-50 text-left text-xs uppercase tracking-wider text-slate-500">
+                        <tr>
+                            <th class="px-4 py-3">Catégorie</th>
+                            <th class="px-4 py-3">Période</th>
+                            <th class="px-4 py-3">Alloué</th>
+                            <th class="px-4 py-3">Consommé</th>
+                            <th class="px-4 py-3">Taux</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for b in budgets %}
+                        <tr class="cursor-pointer border-t border-slate-200 transition hover:bg-slate-50" onclick="window.location='{% url 'devis:detail_budget' b.id %}'">
+                            <td class="px-4 py-4 font-medium text-slate-900">{{ b.categorie }}</td>
+                            <td class="px-4 py-4">{% if b.mois %}{{ b.mois }}/{{ b.exercice }}{% else %}{{ b.exercice }} (annuel){% endif %}</td>
+                            <td class="px-4 py-4">{{ b.montant_alloue }} FCFA</td>
+                            <td class="px-4 py-4">{{ b.consomme }} FCFA</td>
+                            <td class="px-4 py-4 {% if b.taux_consommation >= 100 %}font-semibold text-rose-600{% elif b.taux_consommation >= 80 %}font-semibold text-amber-600{% endif %}">{{ b.taux_consommation }} %</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5" class="px-4 py-6 text-center text-slate-500">Aucun budget.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}
+

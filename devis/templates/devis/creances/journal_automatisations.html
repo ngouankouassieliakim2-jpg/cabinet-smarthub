@@ -1,0 +1,76 @@
+{% extends "pilotage/base_pilotage.html" %}
+
+{% block contenu %}
+
+<div class="min-h-screen bg-slate-50 text-slate-900 p-6 lg:p-10">
+    <div class="max-w-6xl mx-auto space-y-8">
+        <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between mb-6">
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-900">Journal des automatisations</h1>
+                    <p class="text-sm text-slate-500 mt-1">Historique des exécutions et états des automatisations.</p>
+                </div>
+                <div class="flex flex-wrap gap-3 text-sm">
+                    <a href="?{{ request.GET.urlencode }}&export=csv" class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 font-semibold text-slate-700 hover:bg-slate-100">CSV</a>
+                    <a href="?{{ request.GET.urlencode }}&export=excel" class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 font-semibold text-slate-700 hover:bg-slate-100">Excel</a>
+                </div>
+            </div>
+
+            <form method="get" class="grid gap-4 lg:grid-cols-[1.5fr_1fr_auto] mb-6 items-end">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Commande</label>
+                    <input type="text" name="commande" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-900 focus:border-[#C81E6E] focus:ring-2 focus:ring-[#C81E6E]/20" value="{{ commande_filtre }}">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">État</label>
+                    <select name="etat" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-900 focus:border-[#C81E6E] focus:ring-2 focus:ring-[#C81E6E]/20">
+                        <option value="">Tous</option>
+                        {% for code, libelle in etats %}
+                            <option value="{{ code }}" {% if etat_filtre == code %}selected{% endif %}>{{ libelle }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="flex flex-wrap items-center gap-3">
+                    <button type="submit" class="inline-flex items-center justify-center rounded-2xl bg-[#C81E6E] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#ad1457]">Filtrer</button>
+                </div>
+            </form>
+
+            <div class="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <table class="min-w-full divide-y divide-slate-200 text-sm">
+                    <thead class="bg-slate-50">
+                        <tr class="text-left text-slate-700">
+                            <th class="px-4 py-3">Commande</th>
+                            <th class="px-4 py-3">Début</th>
+                            <th class="px-4 py-3">État</th>
+                            <th class="px-4 py-3">Résumé</th>
+                            <th class="px-4 py-3">Durée</th>
+                            <th class="px-4 py-3">Utilisateur</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200 bg-white">
+                        {% for execution in executions %}
+                            <tr class="hover:bg-slate-50">
+                                <td class="px-4 py-3">{{ execution.commande }}</td>
+                                <td class="px-4 py-3">{{ execution.date_debut|date:"d/m/Y H:i" }}</td>
+                                <td class="px-4 py-3">
+                                    {% if execution.etat == "SUCCES" %}<span class="text-green-600 font-semibold">OK</span>
+                                    {% elif execution.etat == "ERREUR" %}<span class="text-red-600 font-semibold">Échec</span>
+                                    {% else %}<span class="text-orange-500 font-semibold">En cours</span>{% endif %}
+                                </td>
+                                <td class="px-4 py-3">{{ execution.resume|default:"—" }}</td>
+                                <td class="px-4 py-3">{{ execution.duree_secondes|floatformat:1 }} s</td>
+                                <td class="px-4 py-3">{{ execution.utilisateur|default:"—" }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" class="px-4 py-8 text-center text-slate-500">Aucune exécution enregistrée.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+</div>
+
+{% endblock %}

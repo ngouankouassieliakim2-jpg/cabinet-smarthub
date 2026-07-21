@@ -1,26 +1,28 @@
-{% extends "pilotage/base_recouvrement.html" %}
-{% block titre %}Confirmer la création de la facture{% endblock %}
-
-{% block contenu %}
-<div class="max-w-4xl mx-auto p-4 sm:p-8">
-  <a href="{% url 'facture_creer' %}" class="text-blue-700 hover:underline">&larr; Retour à la sélection</a>
-
-  <div class="bg-white shadow rounded-lg p-6 mt-4">
-    <h1 class="text-2xl font-bold text-gray-800 mb-3">Créer une facture à partir du devis {{ devis.numero_devis }}</h1>
-    <p class="text-gray-600 mb-6">Client : {{ devis.pm_raison_sociale|default:devis.pp_nom_prenoms|default:'—' }}</p>
-
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm mb-6">
-      <div><span class="text-gray-500">NCC :</span> {{ devis.ncc|default:'—' }}</div>
-      <div><span class="text-gray-500">RCCM :</span> {{ devis.rccm_numero|default:'—' }}</div>
-      <div><span class="text-gray-500">Téléphone :</span> {{ devis.telephone|default:'—' }}</div>
-      <div><span class="text-gray-500">Email :</span> {{ devis.email|default:'—' }}</div>
-    </div>
-
-    <form method="post">
-      {% csrf_token %}
-      <input type="hidden" name="devis_id" value="{{ devis.id }}">
-      <button type="submit" class="bg-[#C81E6E] text-white px-5 py-2 rounded-lg hover:bg-[#a81659]">Confirmer et créer la facture</button>
-    </form>
-  </div>
-</div>
-{% endblock %}
+﻿{% extends "pilotage/base_recouvrement.html" %}
+{% block titre %}Confirmer la création de la facture{% endblock %}
+
+{% block contenu %}
+<div class="max-w-4xl mx-auto p-4 sm:p-8">
+  <a href="{% url 'devis:facture_creer' %}" class="text-blue-700 hover:underline">&larr; Retour à la sélection</a>
+
+  <div class="bg-white shadow rounded-lg p-6 mt-4">
+    <h1 class="text-2xl font-bold text-gray-800 mb-3">Créer une facture à partir du devis {{ devis.numero_devis }}</h1>
+    <p class="text-gray-600 mb-6">Client : {{ devis.pm_raison_sociale|default:devis.pp_nom_prenoms|default:'—' }}</p>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm mb-6">
+      <div><span class="text-gray-500">NCC :</span> {{ devis.ncc|default:'—' }}</div>
+      <div><span class="text-gray-500">RCCM :</span> {{ devis.rccm_numero|default:'—' }}</div>
+      <div><span class="text-gray-500">Téléphone :</span> {{ devis.telephone|default:'—' }}</div>
+      <div><span class="text-gray-500">Email :</span> {{ devis.email|default:'—' }}</div>
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="devis_id" value="{{ devis.id }}">
+      <button type="submit" class="bg-[#C81E6E] text-white px-5 py-2 rounded-lg hover:bg-[#a81659]">Confirmer et créer la facture</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+

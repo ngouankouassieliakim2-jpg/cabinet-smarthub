@@ -1,4 +1,5 @@
 from django.db import models
+from solo.models import SingletonModel
 
 
 class CategoriePrestation(models.Model):
@@ -144,6 +145,104 @@ class ParametresFNE(models.Model):
     def est_configure(self):
         """Vrai si une clé API est renseignée (condition minimale pour appeler la FNE)."""
         return bool(self.api_key and self.url_active)
+
+
+class ParametresMobileMoney(SingletonModel):
+    """Réglages d'accès aux API Wave et Orange Money (fiche unique du cabinet)."""
+
+    ENVIRONNEMENT_CHOICES = [
+        ("TEST", "Environnement de test"),
+        ("PROD", "Environnement de production"),
+    ]
+
+    wave_environnement = models.CharField(
+        "Wave — Environnement actif", max_length=5,
+        choices=ENVIRONNEMENT_CHOICES, default="TEST")
+    wave_api_key = models.CharField(
+        "Wave — Clé API (Bearer token)", max_length=255, blank=True,
+        help_text="Format wave_sn_test_... ou wave_sn_prod_..., générée dans le portail Wave Business, section Développeurs")
+    wave_signature_activee = models.BooleanField(
+        "Wave — Signature des requêtes activée", default=False,
+        help_text="⚠️ Une fois activée sur une clé API (côté portail Wave), elle ne peut plus être désactivée sans révoquer la clé et en recréer une nouvelle")
+    wave_signing_secret = models.CharField(
+        "Wave — Secret de signature (HMAC)", max_length=255, blank=True,
+        help_text="Format wave_sn_AKS_... — affiché une seule fois à la création de la clé API si la signature est activée. Sert à signer nos requêtes sortantes (en-tête Wave-Signature), pas à vérifier les webhooks entrants.")
+    wave_webhook_secret = models.CharField(
+        "Wave — Secret webhook", max_length=255, blank=True,
+        help_text="Utilisé pour vérifier l'authenticité des notifications reçues de Wave")
+
+    om_environnement = models.CharField(
+        "Orange Money — Environnement actif", max_length=5,
+        choices=ENVIRONNEMENT_CHOICES, default="TEST")
+    om_client_id = models.CharField(
+        "Orange Money — Client ID", max_length=255, blank=True,
+        help_text="Fourni par Orange Developer lors de l'inscription au service Web Payment")
+    om_client_secret = models.CharField(
+        "Orange Money — Client Secret", max_length=255, blank=True)
+    om_merchant_key = models.CharField(
+        "Orange Money — Clé marchand", max_length=255, blank=True,
+        help_text="Distincte du client_id/secret — fournie séparément par Orange")
+    om_return_url = models.URLField(
+        "Orange Money — URL de retour (paiement réussi)", blank=True)
+    om_cancel_url = models.URLField(
+        "Orange Money — URL d'annulation", blank=True)
+    om_notif_url = models.URLField(
+        "Orange Money — URL de notification (webhook)", blank=True,
+        help_text="URL de ce serveur qu'Orange appellera pour confirmer un paiement")
+
+    class Meta:
+        verbose_name = "Paramètres Mobile Money (Wave / Orange Money)"
+        verbose_name_plural = "Paramètres Mobile Money (Wave / Orange Money)"
+
+    def __str__(self):
+        return "Paramètres Mobile Money"
+
+    @classmethod
+    def get_solo(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
+    @property
+    def wave_configure(self):
+        return bool(self.wave_api_key)
+
+    @property
+    def orange_money_configure(self):
+        return bool(self.om_client_id and self.om_client_secret and self.om_merchant_key)
+
+
+class ParametresWhatsAppBusiness(SingletonModel):
+    """Réglages d'accès à l'API WhatsApp Business Cloud (Meta)."""
+
+    access_token = models.CharField(
+        "Access Token", max_length=512, blank=True,
+        help_text="Idéalement un token permanent généré via un utilisateur système")
+    phone_number_id = models.CharField(
+        "Phone Number ID", max_length=50, blank=True,
+        help_text="Identifiant technique Meta du numéro WhatsApp")
+    whatsapp_business_account_id = models.CharField(
+        "WhatsApp Business Account ID (WABA)", max_length=50, blank=True)
+    app_id = models.CharField("App ID (Meta for Developers)", max_length=50, blank=True)
+    app_secret = models.CharField("App Secret", max_length=255, blank=True)
+    verify_token = models.CharField(
+        "Verify Token (webhook)", max_length=255, blank=True,
+        help_text="Chaîne inventée par le cabinet, à renseigner aussi côté Meta")
+
+    class Meta:
+        verbose_name = "Paramètres WhatsApp Business"
+        verbose_name_plural = "Paramètres WhatsApp Business"
+
+    def __str__(self):
+        return "Paramètres WhatsApp Business"
+
+    @classmethod
+    def get_solo(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
+    @property
+    def est_configure(self):
+        return bool(self.access_token and self.phone_number_id)
 
 
 # ============ CONDITIONS GÉNÉRALES D'UTILISATION ============

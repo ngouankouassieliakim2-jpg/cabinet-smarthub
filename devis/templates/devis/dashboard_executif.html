@@ -1,0 +1,441 @@
+{% extends "pilotage/base_pilotage.html" %}
+
+{% block contenu %}
+<div class="min-h-screen bg-slate-50 text-slate-800 p-6 lg:p-10">
+    <div class="max-w-7xl mx-auto space-y-10">
+
+        <!-- 1. HEADER EXÉCUTIF -->
+        <header class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 lg:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div class="space-y-1">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-[#C81E6E] text-white flex items-center justify-center shadow-md shadow-[#C81E6E]/20">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                    </div>
+                    <h1 class="text-2xl font-bold tracking-tight text-slate-900">Dashboard exécutif</h1>
+                </div>
+                <p class="text-sm text-slate-500 pl-12">Vision globale des performances financières de l'entreprise</p>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-4">
+                <!-- Sélecteur d'année stylisé -->
+                <div class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 flex items-center gap-3 shadow-xs">
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Exercice</span>
+                    <form method="get" class="m-0">
+                        <select name="annee" onchange="this.form.submit()" class="bg-transparent text-sm font-semibold text-slate-700 focus:outline-none cursor-pointer">
+                            {% for a in annees_disponibles %}
+                                <option value="{{ a }}" {% if a == annee %}selected{% endif %}>{{ a }}</option>
+                            {% endfor %}
+                        </select>
+                    </form>
+                </div>
+
+                <!-- Boutons d'export -->
+                <div class="flex items-center gap-2">
+                    <a href="?annee={{ annee }}&amp;export=csv" class="inline-flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-sm font-medium px-4 py-2.5 rounded-xl shadow-xs transition duration-200">
+                        <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        CSV
+                    </a>
+                    <a href="?annee={{ annee }}&amp;export=excel" class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium px-4 py-2.5 rounded-xl shadow-sm shadow-emerald-600/20 transition duration-200">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        Excel
+                    </a>
+                </div>
+            </div>
+        </header>
+
+
+        <!-- 2. SECTION RECOUVREMENT -->
+        <section class="space-y-6">
+            <div class="border-b border-slate-200 pb-3">
+                <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <span class="text-[#C81E6E]">📈</span> Recouvrement
+                </h2>
+                <p class="text-sm text-slate-500">Suivi des créances clients et de la trésorerie entrante</p>
+            </div>
+
+            <!-- Grille KPI Recouvrement -->
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+                
+                <!-- Total créances -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition duration-200 flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Total créances</span>
+                        <div class="w-10 h-10 rounded-xl bg-pink-50 text-[#C81E6E] flex items-center justify-center">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-bold tracking-tight text-slate-900">{{ total_creances }} <span class="text-sm font-normal text-slate-500">FCFA</span></div>
+                    </div>
+                </div>
+
+                <!-- Montant échu -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition duration-200 flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Montant échu</span>
+                        <div class="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-bold tracking-tight text-rose-600">{{ echu }} <span class="text-sm font-normal text-rose-400">FCFA</span></div>
+                    </div>
+                </div>
+
+                <!-- Montant non échu -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition duration-200 flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Montant non échu</span>
+                        <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-bold tracking-tight text-slate-900">{{ non_echu }} <span class="text-sm font-normal text-slate-500">FCFA</span></div>
+                    </div>
+                </div>
+
+                <!-- Encaissé aujourd'hui -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition duration-200 flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Encaissé aujourd'hui</span>
+                        <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-bold tracking-tight text-emerald-600">{{ encaisse_jour }} <span class="text-sm font-normal text-emerald-400">FCFA</span></div>
+                    </div>
+                </div>
+
+                <!-- Factures en litige -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition duration-200 flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Factures en litige</span>
+                        <div class="w-10 h-10 rounded-xl bg-red-50 text-red-700 flex items-center justify-center">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-bold tracking-tight text-slate-900">{{ nb_litiges }}</div>
+                    </div>
+                </div>
+
+                <!-- Factures promises -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition duration-200 flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Factures promises</span>
+                        <div class="w-10 h-10 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center">
+                            <!-- Remplacé SVG cassé par icône horloge (Heroicons) -->
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-bold tracking-tight text-slate-900">{{ nb_promesses }}</div>
+                    </div>
+                </div>
+
+                <!-- Taux de recouvrement -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition duration-200 flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Taux de recouvrement</span>
+                        <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-bold tracking-tight text-slate-900">{{ taux_recouvrement }} <span class="text-sm font-normal text-slate-500">%</span></div>
+                    </div>
+                </div>
+
+                <!-- DSO -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition duration-200 flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">DSO (Délai moyen)</span>
+                        <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-bold tracking-tight text-slate-900">{% if delai_moyen %}{{ delai_moyen }} <span class="text-sm font-normal text-slate-500">j</span>{% else %}—{% endif %}</div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Graphique Encaissements mensuels dans une Card -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                <h3 class="text-base font-semibold text-slate-900 mb-4">Encaissements mensuels</h3>
+                <canvas id="chartEncaissements" height="80"></canvas>
+            </div>
+
+            <!-- Grille graphiques secondaires -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                    <h3 class="text-base font-semibold text-slate-900 mb-4">Ancienneté des créances</h3>
+                    <canvas id="chartAnciennete" height="100"></canvas>
+                </div>
+                <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                    <h3 class="text-base font-semibold text-slate-900 mb-4">Top clients à risque</h3>
+                    <canvas id="chartClients" height="100"></canvas>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- 3. SECTION DÉPENSES -->
+        <section class="space-y-6 pt-6">
+            <div class="border-b border-slate-200 pb-3">
+                <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <span class="text-red-600">💳</span> Dépenses
+                </h2>
+                <p class="text-sm text-slate-500">Pilotage budgétaire et suivi des validations</p>
+            </div>
+
+            <!-- Grille KPI Dépenses -->
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+
+                <!-- Dépenses du mois -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition duration-200 flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Dépenses du mois</span>
+                        <div class="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-bold tracking-tight text-slate-900">{{ depenses_mois }} <span class="text-sm font-normal text-slate-500">FCFA</span></div>
+                    </div>
+                </div>
+
+                <!-- Budget alloué -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition duration-200 flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Budget alloué ({{ annee }})</span>
+                        <div class="w-10 h-10 rounded-xl bg-pink-50 text-[#C81E6E] flex items-center justify-center">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-bold tracking-tight text-slate-900">{{ budgets.alloue }} <span class="text-sm font-normal text-slate-500">FCFA</span></div>
+                    </div>
+                </div>
+
+                <!-- Budget consommé -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition duration-200 flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Budget consommé</span>
+                        <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-bold tracking-tight text-slate-900">{{ budgets.consomme }} <span class="text-sm font-normal text-slate-500">FCFA</span></div>
+                    </div>
+                </div>
+
+                <!-- Budget disponible -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition duration-200 flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Budget disponible</span>
+                        <div class="w-10 h-10 rounded-xl {% if budgets.disponible < 0 %}bg-red-50 text-red-600{% else %}bg-emerald-50 text-emerald-600{% endif %} flex items-center justify-center">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"></path></svg>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-bold tracking-tight {% if budgets.disponible < 0 %}text-red-600{% else %}text-slate-900{% endif %}">
+                            {{ budgets.disponible }} <span class="text-sm font-normal {% if budgets.disponible < 0 %}text-red-400{% else %}text-slate-500{% endif %}">FCFA</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- En attente de validation -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition duration-200 flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">En attente de validation</span>
+                        <div class="w-10 h-10 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-bold tracking-tight text-slate-900">{{ validation_depenses.en_attente }}</div>
+                    </div>
+                </div>
+
+                <!-- Refusées -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition duration-200 flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Refusées</span>
+                        <div class="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-bold tracking-tight text-slate-900">{{ validation_depenses.refusees }}</div>
+                    </div>
+                </div>
+
+                <!-- Validées non payées -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition duration-200 flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Validées non payées</span>
+                        <div class="w-10 h-10 rounded-xl bg-pink-50 text-[#C81E6E] flex items-center justify-center">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-bold tracking-tight text-slate-900">{{ validation_depenses.validees_non_payees }}</div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Alerte Dépassements élégante -->
+            {% if depassements %}
+            <div class="bg-rose-50 border border-rose-200 rounded-2xl p-6 shadow-sm flex items-start gap-4">
+                <div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0 mt-0.5">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                </div>
+                <div class="space-y-2 flex-1">
+                    <h3 class="text-base font-semibold text-rose-900">Dépassement budgétaire détecté</h3>
+                    <p class="text-sm text-rose-700"><strong>{{ depassements|length }} budget(s)</strong> dépassent leur seuil autorisé :</p>
+                    <ul class="space-y-1.5 pt-1">
+                        {% for b in depassements %}
+                            <li class="flex items-center justify-between bg-white/60 border border-rose-200/60 rounded-xl px-4 py-2.5 text-sm">
+                                <a href="{% url 'devis:detail_budget' b.id %}" class="font-medium text-rose-800 hover:text-rose-950 underline transition">{{ b.categorie }}</a>
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-800">
+                                    {{ b.taux_consommation }} % consommé
+                                </span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Graphique Evolution dépenses dans une Card -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                <h3 class="text-base font-semibold text-slate-900 mb-4">Évolution des dépenses annuelles</h3>
+                <canvas id="chartEvoDepenses" height="80"></canvas>
+            </div>
+        </section>
+
+
+        <!-- 4. SECTION CASH PRÉVISIONNEL -->
+        <section class="space-y-6 pt-6">
+            <div class="border-b border-slate-200 pb-3">
+                <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <span class="text-emerald-600">💵</span> Cash prévisionnel
+                </h2>
+                <p class="text-sm text-slate-500">Projection de trésorerie et encaissements attendus</p>
+            </div>
+
+            <!-- Graphique Prévisions dans une Card -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                <h3 class="text-base font-semibold text-slate-900 mb-4">Encaissements attendus et pondérés</h3>
+                <canvas id="chartPrevisions" height="90"></canvas>
+            </div>
+        </section>
+
+    </div>
+</div>
+
+<!-- Scripts Chart.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+    // Configuration globale des polices et styles Chart.js pour un rendu pro
+    Chart.defaults.font.family = 'Inter, system-ui, -apple-system, sans-serif';
+    Chart.defaults.color = '#64748b';
+    Chart.defaults.scale.grid.color = '#f1f5f9';
+
+    new Chart(document.getElementById('chartEncaissements'), {
+        type: 'line',
+        data: { 
+            labels: {{ encaissements_labels|safe }}, 
+            datasets: [{ 
+                label: 'Encaissements mensuels (FCFA)', 
+                data: {{ encaissements_valeurs|safe }}, 
+                borderColor: '#2563eb', 
+                backgroundColor: 'rgba(37, 99, 235, 0.08)', 
+                fill: true,
+                tension: 0.3,
+                borderWidth: 2,
+                pointRadius: 4,
+                pointBackgroundColor: '#2563eb'
+            }] 
+        },
+        options: {
+            plugins: { legend: { display: false } }
+        }
+    });
+
+    new Chart(document.getElementById('chartAnciennete'), {
+        type: 'bar',
+        data: { 
+            labels: ['0-30 j', '31-60 j', '61-90 j', '90+ j'], 
+            datasets: [{ 
+                data: [{{ anciennete.j0_30 }}, {{ anciennete.j31_60 }}, {{ anciennete.j61_90 }}, {{ anciennete.j90_plus }}], 
+                backgroundColor: ['#22c55e', '#eab308', '#f97316', '#ef4444'],
+                borderRadius: 8
+            }] 
+        },
+        options: { 
+            plugins: { legend: { display: false } } 
+        }
+    });
+
+    new Chart(document.getElementById('chartClients'), {
+        type: 'bar',
+        data: { 
+            labels: {{ clients_risque_labels|safe }}, 
+            datasets: [{ 
+                data: {{ clients_risque_valeurs|safe }}, 
+                backgroundColor: '#ef4444',
+                borderRadius: 8
+            }] 
+        },
+        options: { 
+            indexAxis: 'y', 
+            plugins: { legend: { display: false } } 
+        }
+    });
+
+    new Chart(document.getElementById('chartEvoDepenses'), {
+        type: 'line',
+        data: { 
+            labels: {{ evo_dep_labels|safe }}, 
+            datasets: [{ 
+                label: 'Dépenses annuelles (FCFA)', 
+                data: {{ evo_dep_valeurs|safe }}, 
+                borderColor: '#dc2626', 
+                backgroundColor: 'rgba(220, 38, 38, 0.08)', 
+                fill: true,
+                tension: 0.3,
+                borderWidth: 2,
+                pointRadius: 4,
+                pointBackgroundColor: '#dc2626'
+            }] 
+        },
+        options: {
+            plugins: { legend: { display: false } }
+        }
+    });
+
+    new Chart(document.getElementById('chartPrevisions'), {
+        type: 'bar',
+        data: { 
+            labels: {{ previsions_labels|safe }}, 
+            datasets: [{ 
+                label: 'Encaissements attendus, pondérés (FCFA)', 
+                data: {{ previsions_valeurs|safe }}, 
+                backgroundColor: '#16a34a',
+                borderRadius: 8
+            }] 
+        },
+        options: { 
+            plugins: { legend: { display: false } } 
+        }
+    });
+</script>
+{% endblock %}
